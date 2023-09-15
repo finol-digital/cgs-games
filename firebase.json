@@ -1,10 +1,6 @@
 {
   "hosting": {
-<<<<<<< Updated upstream
-    "source": ".",
-=======
     "public": "out",
->>>>>>> Stashed changes
     "ignore": [
       "firebase.json",
       "**/.*",
