@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+import Image from "next/image";
+import cgsPic from "../public/cgs.png";
 
 export const metadata: Metadata = {
   title: {
@@ -25,7 +27,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+          <center>
+            <Image
+              src={cgsPic}
+              width="512"
+              height="250"
+              alt="Share your Card Game Simulator (CGS) games"
+              priority={true}
+            />
+          </center>
+          <hr></hr>
+        {children}
+      </body>
     </html>
   );
 }
