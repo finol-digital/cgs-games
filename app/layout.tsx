@@ -28,16 +28,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-          <center>
-            <Image
-              src={cgsPic}
-              width="512"
-              height="250"
-              alt="Share your Card Game Simulator (CGS) games"
-              priority={true}
-            />
-          </center>
-          <hr></hr>
+        <center>
+          <Image
+            src={cgsPic}
+            width="512"
+            height="250"
+            alt="Share your Card Game Simulator (CGS) games"
+            priority={true}
+          />
+        </center>
+        <hr></hr>
         {children}
       </body>
     </html>
