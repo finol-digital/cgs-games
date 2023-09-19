@@ -1,5 +1,6 @@
 import Image from "next/image";
 import cgsPic from "../public/cgs.png";
+import Footer from "./components/footer";
 
 export default function Page() {
   return (
@@ -14,6 +15,7 @@ export default function Page() {
       </center>
       <hr></hr>
       <h1>Welcome to cgs.games (under construction)!</h1>
+      <Footer />
     </>
   );
 }
