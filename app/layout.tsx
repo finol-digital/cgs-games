@@ -31,8 +31,7 @@ export default function RootLayout({
         <center>
           <Image
             src={cgsPic}
-            width="512"
-            height="250"
+            height="200"
             alt="Share your Card Game Simulator (CGS) games"
             priority={true}
           />
