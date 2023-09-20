@@ -8,7 +8,7 @@ export default function Page() {
       <center>
         <Image
           src={cgsPic}
-          height="192"
+          height="128"
           alt="Share your Card Game Simulator (CGS) games"
           priority={true}
         />

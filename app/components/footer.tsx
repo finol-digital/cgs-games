@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default async function Footer() {
   return (
-    <footer className="">
+    <footer>
       <hr></hr>
       <p>
         <Link href="https://cgs.games">CGS Games Homepage</Link>
