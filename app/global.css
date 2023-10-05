@@ -1,5 +1,30 @@
+* {
+  box-sizing: border-box;
+}
+
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  position: relative;
+}
+
+.main-container {
+  min-height: 100vh;
+  /* will cover the 100% of viewport */
+  overflow: hidden;
+  display: block;
+  position: relative;
+  padding-bottom: 120px;
+  /* height of your footer */
+}
+
 footer {
   position: absolute;
   bottom: 0;
-  width: 99%;
+  width: 100%;
 }

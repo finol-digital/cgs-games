@@ -6,7 +6,7 @@ import cgsPic from "public/cgs.png";
 
 export default function Page() {
   return (
-    <>
+    <div className="main-container">
       <center>
         <Image
           src={cgsPic}
@@ -24,6 +24,6 @@ export default function Page() {
         <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
       </p>
       <Footer />
-    </>
+    </div>
   );
 }
