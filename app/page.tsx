@@ -1,6 +1,8 @@
+import Footer from "components/footer";
+import GamesList from "components/gamesList";
 import Image from "next/image";
-import cgsPic from "../public/cgs.png";
-import Footer from "./components/footer";
+import Link from "next/link";
+import cgsPic from "public/cgs.png";
 
 export default function Page() {
   return (
@@ -14,7 +16,13 @@ export default function Page() {
         />
       </center>
       <hr></hr>
-      <h1>Welcome to cgs.games (under construction)!</h1>
+      <h1>Welcome to cgs.games!</h1>
+      <p>Get started by selecting a game from the list of games:</p>
+      <GamesList />
+      <p>
+        If you would like to add your game to the list of games, email{" "}
+        <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
+      </p>
       <Footer />
     </>
   );

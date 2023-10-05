@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import "./global.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://cgs.games"),
   title: {
     template: `%s | CGS Games`,
     default: "CGS Games",
