@@ -16,11 +16,11 @@ export default function Page() {
         />
       </center>
       <hr></hr>
-      <h1>Welcome to cgs.games!</h1>
-      <p>Get started by selecting a game from the list of games:</p>
+      <h1>Card Game Simulator (CGS) Games List</h1>
+      <p>Get started by selecting a game from the list:</p>
       <GamesList />
       <p>
-        If you would like to add your game to the list of games, email{" "}
+        If you would like to add your game to the list, email{" "}
         <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
       </p>
       <Footer />
