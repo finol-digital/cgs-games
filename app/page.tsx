@@ -20,7 +20,7 @@ export default function Page() {
       <p>Get started by selecting a game from the list:</p>
       <GamesList />
       <p>
-        If you would like to add your game to the list, email{" "}
+        If you would like to add your game to the list, please email{" "}
         <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
       </p>
       <Footer />
