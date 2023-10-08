@@ -1,21 +1,12 @@
-import Footer from "components/footer";
-import GamesList from "components/gamesList";
-import Image from "next/image";
+import Banner from "@/components/banner";
+import Footer from "@/components/footer";
+import GamesList from "@/components/gamesList";
 import Link from "next/link";
-import cgsPic from "public/cgs.png";
 
 export default function Page() {
   return (
-    <div className="main-container">
-      <center>
-        <Image
-          src={cgsPic}
-          height="128"
-          alt="Share your Card Game Simulator (CGS) games"
-          priority={true}
-        />
-      </center>
-      <hr></hr>
+    <main className="main-container">
+      <Banner />
       <h1>Card Game Simulator (CGS) Games List</h1>
       <p>Get started by selecting a game from the list:</p>
       <GamesList />
@@ -24,6 +15,6 @@ export default function Page() {
         <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
       </p>
       <Footer />
-    </div>
+    </main>
   );
 }

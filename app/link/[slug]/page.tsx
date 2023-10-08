@@ -1,3 +1,3 @@
 export default function Page() {
-  return <div className="main-container">Hello, Next.js!</div>;
+  return <main className="main-container">Hello, Next.js!</main>;
 }
