@@ -3,7 +3,7 @@ export default async function Banner() {
     <>
       <center>
         <img
-          // img src instead of next/Image ref
+          // img instead of next/Image
           src="/cgs.png"
           height="128"
           alt="Share your Card Game Simulator (CGS) games"
