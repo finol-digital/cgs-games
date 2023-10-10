@@ -6,9 +6,14 @@ Built with Next.js and Firebase.
 
 ## Instructions
 
-_First_: `npm install`
-_Format_: `npx prettier . --write`
-_Lint_: `npm run lint`
-_Build_: `npm run build`
-_Start_: `npm run start`
-_Deploy_: `firebase deploy`
+**First**: `npm install`
+
+**Format**: `npx prettier . --write`
+
+**Lint**: `npm run lint`
+
+**Build**: `npm run build`
+
+**Start**: `npm run start`
+
+**Deploy**: `firebase deploy`
