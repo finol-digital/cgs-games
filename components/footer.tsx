@@ -5,7 +5,7 @@ export default async function Footer() {
     <footer>
       <hr></hr>
       <p>
-        <Link href="https://cgs.games">CGS Games Homepage</Link>
+        <Link href="/">CGS Games Homepage</Link>
       </p>
       <p>
         <Link href="https://www.cardgamesimulator.com">CGS Website</Link>
