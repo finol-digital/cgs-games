@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "CGS Games",
     description: "Share your CGS games",
     locale: "en_US",
-    siteName: 'CGS Games',
+    siteName: "CGS Games",
     type: "website",
   },
   robots: {
