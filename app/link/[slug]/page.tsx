@@ -1,10 +1,37 @@
 import Banner from "@/components/banner";
 import Footer from "@/components/footer";
+import { getGame } from "@/lib/firebase/firestore";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-export default function Page() {
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const game = (await getGame(params.slug))?.at(0);
+  if (!game) return notFound();
+  return {
+    title: game.name,
+    description: "Play " + game.name + " on CGS",
+    openGraph: {
+      title: "CGS for " + game.name,
+      description: "Play " + game.name + " on CGS",
+      images: [
+        {
+          url: game.bannerImageUrl,
+        },
+      ],
+    },
+  };
+}
+
+export default async function Page({ params }: { params: { slug: string } }) {
+  const game = (await getGame(params.slug))?.at(0);
+  if (!game) return notFound();
   return (
     <main className="main-container">
-      <Banner />
+      <Banner url={game.bannerImageUrl} />
       <a href="https://apps.apple.com/us/app/card-game-simulator/id1392877362?itsct=apps_box_badge&amp;itscg=30200">
         <img
           src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1536624000"
