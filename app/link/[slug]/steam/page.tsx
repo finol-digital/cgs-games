@@ -8,7 +8,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!game) return notFound();
   return (
     <main className="main-container">
-      <Banner url={game.bannerImageUrl} />
+      <Banner url={game.bannerImageUrl} txt={game.name} />
       <h1>CGS for {game.name}</h1>
       <iframe
         src="https://store.steampowered.com/widget/1742850/"

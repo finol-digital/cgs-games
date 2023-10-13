@@ -9,7 +9,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!game) return notFound();
   return (
     <main className="main-container">
-      <Banner url={game.bannerImageUrl} />
+      <Banner url={game.bannerImageUrl} txt={game.name} />
       <h1>Play {game.name}</h1>
       <p>
         To get started with playing {game.name}, select your preferred platform:

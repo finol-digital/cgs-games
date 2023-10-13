@@ -8,7 +8,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!game) return notFound();
   return (
     <main className="main-container">
-      <Banner url={game.bannerImageUrl} />
+      <Banner url={game.bannerImageUrl} txt={game.name} />
       <h1>CGS for {game.name}</h1>
       <a href="https://apps.apple.com/us/app/card-game-simulator/id1392877362?itsct=apps_box_badge&amp;itscg=30200">
         <img

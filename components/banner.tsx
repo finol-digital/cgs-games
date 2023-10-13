@@ -1,4 +1,10 @@
-export default function Banner({ url = "/cgs.png" }: { url?: string }) {
+export default function Banner({
+  url = "/cgs.png",
+  txt = "Share your Card Game Simulator (CGS) games",
+}: {
+  url?: string;
+  txt?: string;
+}) {
   return (
     <>
       <center>
@@ -6,7 +12,7 @@ export default function Banner({ url = "/cgs.png" }: { url?: string }) {
           // img instead of next/Image
           src={url}
           height="128"
-          alt="Share your Card Game Simulator (CGS) games"
+          alt={txt}
           //priority={true}
         />
       </center>
