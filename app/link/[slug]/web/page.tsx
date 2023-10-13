@@ -1,15 +1,17 @@
-import { getGame } from "@/lib/firebase/firestore";
-import { notFound } from "next/navigation";
-import Script from "next/script";
+"use client";
+import { Unity, useUnityContext } from "react-unity-webgl";
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const game = (await getGame(params.slug))?.at(0);
-  if (!game) return notFound();
+export default function Page({ params }: { params: { slug: string } }) {
+  const { unityProvider } = useUnityContext({
+    loaderUrl: "/Unity/WebGL.loader.js",
+    dataUrl: "/Unity/WebGL.data",
+    frameworkUrl: "/Unity/WebGL.framework.js",
+    codeUrl: "/Unity/WebGL.wasm",
+  });
+
   return (
     <>
-      <canvas id="unity-canvas" width="960" height="600"></canvas>
-      <Script src="/Unity/WebGL.loader.js" />
-      <Script src="/UnityWebGL.js" />
+      <Unity unityProvider={unityProvider} />
     </>
   );
 }
