@@ -1,19 +1,39 @@
 import { Metadata } from "next";
 import "./global.css";
 
+const APP_NAME = "CGS Games";
+const APP_DEFAULT_TITLE = "CGS Games";
+const APP_TITLE_TEMPLATE = "%s | CGS Games";
+const APP_DESCRIPTION = "Share your CGS games";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://cgs.games"),
+  applicationName: APP_NAME,
   title: {
-    template: `%s | CGS Games`,
-    default: "CGS Games",
+    template: APP_TITLE_TEMPLATE,
+    default: APP_DEFAULT_TITLE,
   },
-  description: "Share your CGS games",
+  description: APP_DESCRIPTION,
+  manifest: "/manifest.json",
+  themeColor: "#FFFFFF",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_DEFAULT_TITLE,
+    // startUpImage: [],
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
-    title: "CGS Games",
-    description: "Share your CGS games",
-    locale: "en_US",
-    siteName: "CGS Games",
     type: "website",
+    siteName: APP_NAME,
+    title: {
+      template: APP_TITLE_TEMPLATE,
+      default: APP_DEFAULT_TITLE,
+    },
+    description: APP_DESCRIPTION,
+    locale: "en_US",
   },
   robots: {
     follow: true,
@@ -28,11 +48,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon.png"></link>
-        <meta name="theme-color" content="#fff" />
-      </head>
       <body>{children}</body>
     </html>
   );
