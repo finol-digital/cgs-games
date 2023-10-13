@@ -7,7 +7,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!game) return notFound();
   return (
     <>
-      <UnityWeb />
+      <UnityWeb url={game.autoUpdateUrl} />
     </>
   );
 }
