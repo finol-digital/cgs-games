@@ -1,17 +1,13 @@
-"use client";
-import { Unity, useUnityContext } from "react-unity-webgl";
+import UnityWeb from "@/components/unityWeb";
+import { getGame } from "@/lib/firebase/firestore";
+import { notFound } from "next/navigation";
 
-export default function Page({ params }: { params: { slug: string } }) {
-  const { unityProvider } = useUnityContext({
-    loaderUrl: "/Unity/WebGL.loader.js",
-    dataUrl: "/Unity/WebGL.data",
-    frameworkUrl: "/Unity/WebGL.framework.js",
-    codeUrl: "/Unity/WebGL.wasm",
-  });
-
+export default async function Page({ params }: { params: { slug: string } }) {
+  const game = (await getGame(params.slug))?.at(0);
+  if (!game) return notFound();
   return (
     <>
-      <Unity unityProvider={unityProvider} />
+      <UnityWeb />
     </>
   );
 }
