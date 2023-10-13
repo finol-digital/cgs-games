@@ -13,7 +13,7 @@ export async function generateMetadata({
     title: game.name,
     description: "Play " + game.name + " on CGS",
     openGraph: {
-      title: "Play " + game.name,
+      title: game.name,
       description: "Play " + game.name + " on CGS",
       images: [
         {

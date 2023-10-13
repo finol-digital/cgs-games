@@ -1,20 +1,13 @@
-const withPWA = require("next-pwa");
+// @ts-check
 
-module.exports = withPWA({
-  pwa: {
-    dest: "public",
-    register: true,
-    skipWaiting: true,
-    disable: process.env.NODE_ENV === "development",
-  },
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
 });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  /* config options here */
-  //Static Website with these 2 lines and firebase.json source vs public
+module.exports = withPWA({
+  // Your Next.js config
+  //Change `firebase.json`'s "source": "." to "public": "out"
+  //and the next two lines for Static Website
   //output: "export",
   //images: { unoptimized: true },
-};
-
-module.exports = nextConfig;
+});
