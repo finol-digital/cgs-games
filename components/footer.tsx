@@ -8,11 +8,8 @@ export default async function Footer() {
         <Link href="/">CGS Games Homepage</Link>
       </p>
       <p>
-        <Link href="https://www.cardgamesimulator.com">CGS Website</Link>
-      </p>
-      <p>
-        <Link href="https://github.com/finol-digital/Card-Game-Simulator/wiki">
-          CGS Wiki
+        <Link href="https://www.cardgamesimulator.com">
+          www.cardgamesimulator.com
         </Link>
       </p>
     </footer>
