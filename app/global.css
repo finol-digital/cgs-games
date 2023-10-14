@@ -30,9 +30,3 @@ footer {
   width: 100%;
   height: 100px;
 }
-
-canvas {
-  width: 960px;
-  height: 600px;
-  background: url("/Unity/WebGL.jpg") center / cover;
-}
