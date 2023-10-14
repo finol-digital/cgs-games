@@ -8,7 +8,7 @@ export default function UnityWeb({
 }: {
   url?: string;
 }) {
-  const { unityProvider } = useUnityContext({
+  const { unityProvider, isLoaded, sendMessage } = useUnityContext({
     loaderUrl: "/Unity/WebGL.loader.js",
     dataUrl: "/Unity/WebGL.data",
     frameworkUrl: "/Unity/WebGL.framework.js",
@@ -43,13 +43,17 @@ export default function UnityWeb({
     [devicePixelRatio],
   );
 
+  if (isLoaded === true) {
+    sendMessage("CardGameManager", "StartGetCardGame", url);
+  }
+
   return (
-    <>
+    <div style={{ width: "100%", height: "100%" }}>
       <Unity
         unityProvider={unityProvider}
-        style={{ width: 1280, height: 720 }}
+        style={{ width: "100%", height: "100%" }}
         devicePixelRatio={devicePixelRatio}
       />
-    </>
+    </div>
   );
 }
