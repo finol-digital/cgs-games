@@ -1,4 +1,6 @@
 "use client";
+
+import { useEffect, useState } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 
 export default function UnityWeb({
@@ -12,9 +14,42 @@ export default function UnityWeb({
     frameworkUrl: "/Unity/WebGL.framework.js",
     codeUrl: "/Unity/WebGL.wasm",
   });
+
+  // We'll use a state to store the device pixel ratio.
+  const [devicePixelRatio, setDevicePixelRatio] = useState(
+    window.devicePixelRatio,
+  );
+
+  useEffect(
+    function () {
+      // A function which will update the device pixel ratio of the Unity
+      // Application to match the device pixel ratio of the browser.
+      const updateDevicePixelRatio = function () {
+        setDevicePixelRatio(window.devicePixelRatio);
+      };
+      // A media matcher which watches for changes in the device pixel ratio.
+      const mediaMatcher = window.matchMedia(
+        `screen and (resolution: ${devicePixelRatio}dppx)`,
+      );
+      // Adding an event listener to the media matcher which will update the
+      // device pixel ratio of the Unity Application when the device pixel
+      // ratio changes.
+      mediaMatcher.addEventListener("change", updateDevicePixelRatio);
+      return function () {
+        // Removing the event listener when the component unmounts.
+        mediaMatcher.removeEventListener("change", updateDevicePixelRatio);
+      };
+    },
+    [devicePixelRatio],
+  );
+
   return (
     <>
-      <Unity unityProvider={unityProvider} />
+      <Unity
+        unityProvider={unityProvider}
+        style={{ width: 1280, height: 720 }}
+        devicePixelRatio={devicePixelRatio}
+      />
     </>
   );
 }
