@@ -1,3 +1,4 @@
+import Banner from "@/components/banner";
 import Footer from "@/components/footer";
 import UnityWeb from "@/components/unityWeb";
 import { getGame } from "@/lib/firebase/firestore";
@@ -8,6 +9,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!game) return notFound();
   return (
     <main className="main-container">
+      <Banner
+        img={game.bannerImageUrl}
+        txt={game.name}
+        home={"/link/" + params.slug}
+      />
       <UnityWeb url={game.autoUpdateUrl} />
       <Footer />
     </main>

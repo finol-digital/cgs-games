@@ -8,12 +8,13 @@ export default function UnityWeb({
 }: {
   url?: string;
 }) {
-  const { unityProvider, isLoaded, sendMessage } = useUnityContext({
-    loaderUrl: "/Unity/WebGL.loader.js",
-    dataUrl: "/Unity/WebGL.data",
-    frameworkUrl: "/Unity/WebGL.framework.js",
-    codeUrl: "/Unity/WebGL.wasm",
-  });
+  const { unityProvider, loadingProgression, isLoaded, sendMessage } =
+    useUnityContext({
+      loaderUrl: "/Unity/WebGL.loader.js",
+      dataUrl: "/Unity/WebGL.data",
+      frameworkUrl: "/Unity/WebGL.framework.js",
+      codeUrl: "/Unity/WebGL.wasm",
+    });
 
   // We'll use a state to store the device pixel ratio.
   const [devicePixelRatio, setDevicePixelRatio] = useState(
@@ -49,9 +50,16 @@ export default function UnityWeb({
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
+      {!isLoaded && (
+        <p>Loading Application... {Math.round(loadingProgression * 100)}%</p>
+      )}
       <Unity
         unityProvider={unityProvider}
-        style={{ width: "100%", height: "100%" }}
+        style={{
+          visibility: isLoaded ? "visible" : "hidden",
+          width: "100%",
+          height: "100%",
+        }}
         devicePixelRatio={devicePixelRatio}
       />
     </div>
