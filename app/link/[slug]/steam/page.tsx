@@ -8,13 +8,20 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!game) return notFound();
   return (
     <main className="main-container">
-      <Banner url={game.bannerImageUrl} txt={game.name} />
+      <Banner
+        img={game.bannerImageUrl}
+        txt={game.name}
+        home={"/link/" + params.slug}
+      />
       <h1>CGS for {game.name}</h1>
+      <h2>Install CGS</h2>
       <iframe
         src="https://store.steampowered.com/widget/1742850/"
         width="646"
         height="190"
       ></iframe>
+      <h2>Download {game.name}</h2>
+      <p>TODO: ADD INSTRUCTIONS</p>
       <Footer />
     </main>
   );

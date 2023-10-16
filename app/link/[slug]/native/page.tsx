@@ -1,6 +1,8 @@
 import Banner from "@/components/banner";
 import Footer from "@/components/footer";
+import StoreBadge from "@/components/storeBadge";
 import { getGame } from "@/lib/firebase/firestore";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export default async function Page({ params }: { params: { slug: string } }) {
@@ -8,32 +10,20 @@ export default async function Page({ params }: { params: { slug: string } }) {
   if (!game) return notFound();
   return (
     <main className="main-container">
-      <Banner url={game.bannerImageUrl} txt={game.name} />
+      <Banner
+        img={game.bannerImageUrl}
+        txt={game.name}
+        home={"/link/" + params.slug}
+      />
       <h1>CGS for {game.name}</h1>
-      <a href="https://apps.apple.com/us/app/card-game-simulator/id1392877362?itsct=apps_box_badge&amp;itscg=30200">
-        <img
-          src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1536624000"
-          alt="Download on the App Store"
-        />
-      </a>
-      <a href="https://apps.apple.com/us/app/card-game-simulator/id1398206553">
-        <img
-          src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-mac-app-store.svg"
-          alt="Download on the Mac App Store"
-        />
-      </a>
-      <a href="https://play.google.com/store/apps/details?id=com.finoldigital.cardgamesim&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1">
-        <img
-          src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-          alt="Get it on Google Play"
-        />
-      </a>
-      <a href="https://www.microsoft.com/en-us/p/card-game-simulator/9N96N5S4W3J0">
-        <img
-          src="https://get.microsoft.com/images/en-us%20dark.svg"
-          alt="Get it from Microsoft"
-        />
-      </a>
+      <h2>Install CGS</h2>
+      <StoreBadge />
+      <h2>Launch CGS for {game.name}</h2>
+      <p>
+        <Link href={"cardgamesim://?url=" + game.autoUpdateUrl}>
+          Click here to launch CGS for {game.name}
+        </Link>
+      </p>
       <Footer />
     </main>
   );
