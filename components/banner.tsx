@@ -22,7 +22,6 @@ export default function Banner({
           />
         </Link>
       </center>
-      <hr></hr>
     </>
   );
 }

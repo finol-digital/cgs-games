@@ -1,41 +1,43 @@
-import Banner from "@/components/banner";
 import Footer from "@/components/footer";
+import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export default async function Page({ params }: { params: { slug: string } }) {
   const game = (await getGame(params.slug))?.at(0);
   if (!game) return notFound();
   return (
-    <main className="main-container">
-      <Banner
-        img={game.bannerImageUrl}
-        txt={game.name}
-        home={"/link/" + params.slug}
-      />
-      <h1>Play {game.name}</h1>
-      <p>
-        To get started with playing {game.name}, select your preferred platform:
-      </p>
-      <ul>
-        <li>
-          <Link href={"/link/" + params.slug + "/web"}>
-            Preview in web browser
-          </Link>
-        </li>
-        <li>
-          <Link href={"/link/" + params.slug + "/native"}>
+    <>
+      <main className="main-container">
+        <Header
+          title={"Play " + game.name}
+          img={game.bannerImageUrl}
+          txt={game.name}
+          home={"/link/" + params.slug}
+        />
+        <p>
+          To get started with playing {game.name}, select your preferred
+          platform:
+        </p>
+        <form>
+          <button formAction={"/link/" + params.slug + "/native"}>
             Launch native app (Android/iOS/macOS/Windows)
-          </Link>
-        </li>
-        <li>
-          <Link href={"/link/" + params.slug + "/steam"}>
-            Use Steam (Windows/Linux/macOS)
-          </Link>
-        </li>
-      </ul>
-      <Footer />
-    </main>
+          </button>
+        </form>
+        <br />
+        <form>
+          <button formAction={"/link/" + params.slug + "/steam"}>
+            Install on Steam (Windows/macOS/Linux)
+          </button>
+        </form>
+        <br />
+        <form>
+          <button formAction={"/link/" + params.slug + "/web"}>
+            View in web browser
+          </button>
+        </form>
+      </main>
+      <Footer linkToList={true} />
+    </>
   );
 }
