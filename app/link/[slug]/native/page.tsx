@@ -9,28 +9,26 @@ export default async function Page({ params }: { params: { slug: string } }) {
   const game = (await getGame(params.slug))?.at(0);
   if (!game) return notFound();
   return (
-    <>
-      <main className="main-container">
-        <Header
-          home={"/link/" + params.slug}
-          img={game.bannerImageUrl}
-          txt={game.name}
-          title={"CGS for " + game.name}
-        />
-        <h2>Install CGS</h2>
-        <StoreBadge />
-        <h2>Launch CGS for {game.name}</h2>
-        <p>
-          <Link
-            href={
-              "cardgamesim://link?url=" + encodeURIComponent(game.autoUpdateUrl)
-            }
-          >
-            Click this link to launch CGS for {game.name}
-          </Link>
-        </p>
-      </main>
+    <main className="main-container">
+      <Header
+        home={"/link/" + params.slug}
+        img={game.bannerImageUrl}
+        txt={game.name}
+        title={"CGS for " + game.name}
+      />
+      <h2>Install CGS</h2>
+      <StoreBadge />
+      <h2>Launch CGS for {game.name}</h2>
+      <p>
+        <Link
+          href={
+            "cardgamesim://link?url=" + encodeURIComponent(game.autoUpdateUrl)
+          }
+        >
+          Click this link to launch CGS for {game.name}
+        </Link>
+      </p>
       <Footer linkToList={true} />
-    </>
+    </main>
   );
 }
