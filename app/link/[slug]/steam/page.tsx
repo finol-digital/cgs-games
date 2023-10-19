@@ -30,7 +30,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
           <li>
             Open the Games Management Menu by tapping on the card in the center
           </li>
-          <li>Click the Import button and select "Download from Web"</li>
+          <li>
+            Click the Import button and select &quot;Download from Web&quot;
+          </li>
           <li>Paste the AutoUpdateUrl and submit</li>
         </ol>
       </main>
