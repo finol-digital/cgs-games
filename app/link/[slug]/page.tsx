@@ -11,10 +11,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
     <>
       <main className="main-container">
         <Header
-          title={"Play " + game.name}
+          home={"/link/" + params.slug}
           img={game.bannerImageUrl}
           txt={game.name}
-          home={"/link/" + params.slug}
+          title={"Play " + game.name}
         />
         <p>To get started with playing {game.name}, choose your preference:</p>
         <br />

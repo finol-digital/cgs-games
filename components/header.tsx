@@ -1,21 +1,21 @@
 import Banner from "@/components/banner";
 
 export default function Header({
-  title,
+  home = "/",
   img = "/cgs.png",
   txt = "Share your Card Game Simulator (CGS) games",
-  home = "/",
+  title,
 }: {
-  title: string;
+  home?: string;
   img?: string;
   txt?: string;
-  home?: string;
+  title?: string;
 }) {
   return (
     <header>
-      <Banner img={img} txt={txt} home={home} />
+      <Banner home={home} img={img} txt={txt} />
       <hr />
-      <h1>{title}</h1>
+      {title && <h1>{title}</h1>}
     </header>
   );
 }

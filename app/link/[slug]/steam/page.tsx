@@ -1,3 +1,4 @@
+import AutoUpdateUrl from "@/components/autoUpdateUrl";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
@@ -10,10 +11,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
     <>
       <main className="main-container">
         <Header
-          title={"CGS for " + game.name + " on Steam"}
+          home={"/link/" + params.slug}
           img={game.bannerImageUrl}
           txt={game.name}
-          home={"/link/" + params.slug}
+          title={"CGS for " + game.name + " on Steam"}
         />
         <h2>Install CGS</h2>
         <iframe
@@ -22,7 +23,16 @@ export default async function Page({ params }: { params: { slug: string } }) {
           height="190"
         ></iframe>
         <h2>Import {game.name}</h2>
-        <p>TODO: ADD INSTRUCTIONS</p>
+        <AutoUpdateUrl url={game.autoUpdateUrl} />
+        <ol>
+          <li>Copy the above AutoUpdateUrl</li>
+          <li>Use Steam to launch CGS and go to the Main Menu</li>
+          <li>
+            Open the Games Management Menu by tapping on the card in the center
+          </li>
+          <li>Click the Import button and select "Download from Web"</li>
+          <li>Paste the AutoUpdateUrl and submit</li>
+        </ol>
       </main>
       <Footer linkToList={true} />
     </>

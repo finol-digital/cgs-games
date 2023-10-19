@@ -11,10 +11,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
     <>
       <main className="main-container">
         <Header
-          title={"CGS for " + game.name}
+          home={"/link/" + params.slug}
           img={game.bannerImageUrl}
           txt={game.name}
-          home={"/link/" + params.slug}
         />
         <UnityWeb url={game.autoUpdateUrl} />
       </main>
