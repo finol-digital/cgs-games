@@ -12,19 +12,15 @@ export const metadata = {
 export default async function Page() {
   const gamesList = await getGamesList();
   return (
-    <>
-      <main className="main-container">
-        <Header title="CGS Games List" />
-        <p>Get started by selecting a game from the list:</p>
-        <GamesList games={gamesList} />
-        <p>
-          If you would like to add your game to the list, please email{" "}
-          <Link href="mailto:david@finoldigital.com">
-            david@finoldigital.com
-          </Link>
-        </p>
-      </main>
+    <main className="main-container">
+      <Header title="CGS Games List" />
+      <p>Get started by selecting a game from the list:</p>
+      <GamesList games={gamesList} />
+      <p>
+        If you would like to add your game to the list, please email{" "}
+        <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
+      </p>
       <Footer />
-    </>
+    </main>
   );
 }
