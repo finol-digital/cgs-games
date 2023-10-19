@@ -1,17 +1,28 @@
 import Link from "next/link";
 
-export default async function Footer() {
+export default function Footer({
+  linkToList = false,
+}: {
+  linkToList?: boolean;
+}) {
   return (
     <footer>
-      <hr></hr>
+      <hr />
       <p>
         <Link href="/">CGS Games Homepage</Link>
       </p>
-      <p>
-        <Link href="https://www.cardgamesimulator.com">
-          www.cardgamesimulator.com
-        </Link>
-      </p>
+      {linkToList && (
+        <p>
+          <Link href="/link">CGS Games List</Link>
+        </p>
+      )}
+      {!linkToList && (
+        <p>
+          <Link href="https://www.cardgamesimulator.com">
+            www.cardgamesimulator.com
+          </Link>
+        </p>
+      )}
     </footer>
   );
 }

@@ -1,5 +1,5 @@
-import Banner from "@/components/banner";
 import Footer from "@/components/footer";
+import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,34 +8,35 @@ export default async function Page({ params }: { params: { slug: string } }) {
   const game = (await getGame(params.slug))?.at(0);
   if (!game) return notFound();
   return (
-    <main className="main-container">
-      <Banner
-        img={game.bannerImageUrl}
-        txt={game.name}
-        home={"/link/" + params.slug}
-      />
-      <h1>Play {game.name}</h1>
-      <p>
-        To get started with playing {game.name}, select your preferred platform:
-      </p>
-      <ul>
-        <li>
-          <Link href={"/link/" + params.slug + "/web"}>
-            Preview in web browser
-          </Link>
-        </li>
-        <li>
+    <>
+      <main className="main-container">
+        <Header
+          home={"/link/" + params.slug}
+          img={game.bannerImageUrl}
+          txt={game.name}
+          title={"Play " + game.name}
+        />
+        <p>To get started with playing {game.name}, choose your preference:</p>
+        <br />
+        <p>
           <Link href={"/link/" + params.slug + "/native"}>
             Launch native app (Android/iOS/macOS/Windows)
           </Link>
-        </li>
-        <li>
+        </p>
+        <br />
+        <p>
           <Link href={"/link/" + params.slug + "/steam"}>
-            Use Steam (Windows/Linux/macOS)
+            Install on Steam (Windows/macOS/Linux)
           </Link>
-        </li>
-      </ul>
-      <Footer />
-    </main>
+        </p>
+        <br />
+        <p>
+          <Link href={"/link/" + params.slug + "/web"}>
+            View in web browser
+          </Link>
+        </p>
+      </main>
+      <Footer linkToList={true} />
+    </>
   );
 }

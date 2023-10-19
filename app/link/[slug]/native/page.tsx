@@ -1,5 +1,5 @@
-import Banner from "@/components/banner";
 import Footer from "@/components/footer";
+import Header from "@/components/header";
 import StoreBadge from "@/components/storeBadge";
 import { getGame } from "@/lib/firebase/firestore";
 import Link from "next/link";
@@ -9,22 +9,28 @@ export default async function Page({ params }: { params: { slug: string } }) {
   const game = (await getGame(params.slug))?.at(0);
   if (!game) return notFound();
   return (
-    <main className="main-container">
-      <Banner
-        img={game.bannerImageUrl}
-        txt={game.name}
-        home={"/link/" + params.slug}
-      />
-      <h1>CGS for {game.name}</h1>
-      <h2>Install CGS</h2>
-      <StoreBadge />
-      <h2>Launch CGS for {game.name}</h2>
-      <p>
-        <Link href={"cardgamesim://?url=" + game.autoUpdateUrl}>
-          Click here to launch CGS for {game.name}
-        </Link>
-      </p>
-      <Footer />
-    </main>
+    <>
+      <main className="main-container">
+        <Header
+          home={"/link/" + params.slug}
+          img={game.bannerImageUrl}
+          txt={game.name}
+          title={"CGS for " + game.name}
+        />
+        <h2>Install CGS</h2>
+        <StoreBadge />
+        <h2>Launch CGS for {game.name}</h2>
+        <p>
+          <Link
+            href={
+              "cardgamesim://link?url=" + encodeURIComponent(game.autoUpdateUrl)
+            }
+          >
+            Click this link to launch CGS for {game.name}
+          </Link>
+        </p>
+      </main>
+      <Footer linkToList={true} />
+    </>
   );
 }
