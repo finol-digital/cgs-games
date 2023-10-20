@@ -30,7 +30,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
       </p>
       <br />
       <p>
-        <Link href={"/link/" + params.slug + "/web"}>View in web browser (Not Recommended)</Link>
+        <Link href={"/link/" + params.slug + "/web"}>
+          View in web browser (NOT Recommended)
+        </Link>
       </p>
       <Footer linkToList={true} />
     </main>
