@@ -20,7 +20,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         <Link href={"/link/" + params.slug + "/native"}>Launch native app</Link>
       </p>
       <UnityWeb url={game.autoUpdateUrl} />
-      <Footer linkToList={true} />
+      <Footer />
     </main>
   );
 }

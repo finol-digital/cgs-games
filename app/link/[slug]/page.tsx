@@ -34,7 +34,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
           View in web browser (NOT Recommended)
         </Link>
       </p>
-      <Footer linkToList={true} />
+      <Footer />
     </main>
   );
 }
