@@ -34,7 +34,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         </li>
         <li>Paste the AutoUpdateUrl and submit</li>
       </ol>
-      <Footer linkToList={true} />
+      <Footer />
     </main>
   );
 }

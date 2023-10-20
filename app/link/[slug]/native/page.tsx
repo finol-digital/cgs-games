@@ -28,7 +28,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
           Click this link to launch CGS for {game.name}
         </Link>
       </p>
-      <Footer linkToList={true} />
+      <Footer />
     </main>
   );
 }
