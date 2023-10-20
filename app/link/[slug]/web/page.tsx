@@ -16,7 +16,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         txt={game.name}
       />
       <p>
-        NOTE: This page is experimental. Instead of using this page, please{" "}
+        WARNING: This page is experimental. Instead of using this page, please{" "}
         <Link href={"/link/" + params.slug + "/native"}>Launch native app</Link>
       </p>
       <UnityWeb url={game.autoUpdateUrl} />
