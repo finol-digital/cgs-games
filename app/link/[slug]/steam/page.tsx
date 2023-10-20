@@ -15,13 +15,13 @@ export default async function Page({ params }: { params: { slug: string } }) {
         txt={game.name}
         title={"CGS for " + game.name + " on Steam"}
       />
-      <h2>Install CGS</h2>
+      <h2>1. Install CGS</h2>
       <iframe
         src="https://store.steampowered.com/widget/1742850/"
         width="646"
         height="190"
       ></iframe>
-      <h2>Import {game.name}</h2>
+      <h2>2. Import {game.name}</h2>
       <AutoUpdateUrl url={game.autoUpdateUrl} />
       <ol>
         <li>Copy the above AutoUpdateUrl</li>

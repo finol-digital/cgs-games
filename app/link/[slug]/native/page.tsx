@@ -16,9 +16,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
         txt={game.name}
         title={"CGS for " + game.name}
       />
-      <h2>Install CGS</h2>
+      <h2>1. Install CGS</h2>
       <StoreBadge />
-      <h2>Launch CGS for {game.name}</h2>
+      <h2>2. Launch CGS for {game.name}</h2>
       <p>
         <Link
           href={
