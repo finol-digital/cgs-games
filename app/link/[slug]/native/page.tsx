@@ -1,4 +1,4 @@
-import Footer from "@/components/footer";
+import FooterForGame from "@/components/footerForGame";
 import Header from "@/components/header";
 import StoreBadge from "@/components/storeBadge";
 import { getGame } from "@/lib/firebase/firestore";
@@ -28,14 +28,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
           Click this link to launch CGS for {game.name}
         </Link>
       </p>
-      {game.copyright && (
-        <Footer
-          disclaimer={
-            game.name + " is trademark/copyright of " + game.copyright
-          }
-        />
-      )}
-      {!game.copyright && <Footer />}
+      <FooterForGame game={game} />
     </main>
   );
 }

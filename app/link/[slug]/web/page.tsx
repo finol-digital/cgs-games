@@ -1,4 +1,4 @@
-import Footer from "@/components/footer";
+import FooterForGame from "@/components/footerForGame";
 import Header from "@/components/header";
 import UnityWeb from "@/components/unityWeb";
 import { getGame } from "@/lib/firebase/firestore";
@@ -20,14 +20,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         <Link href={"/link/" + params.slug + "/native"}>Launch native app</Link>
       </p>
       <UnityWeb url={game.autoUpdateUrl} />
-      {game.copyright && (
-        <Footer
-          disclaimer={
-            game.name + " is trademark/copyright of " + game.copyright
-          }
-        />
-      )}
-      {!game.copyright && <Footer />}
+      <FooterForGame game={game} />
     </main>
   );
 }
