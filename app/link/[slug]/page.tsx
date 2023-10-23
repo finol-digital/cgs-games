@@ -1,4 +1,4 @@
-import Footer from "@/components/footer";
+import FooterForGame from "@/components/footerForGame";
 import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
 import Link from "next/link";
@@ -34,14 +34,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
           View in web browser (NOT Recommended)
         </Link>
       </p>
-      {game.copyright && (
-        <Footer
-          disclaimer={
-            game.name + " is trademark/copyright of " + game.copyright
-          }
-        />
-      )}
-      {!game.copyright && <Footer />}
+      <FooterForGame game={game} />
     </main>
   );
 }

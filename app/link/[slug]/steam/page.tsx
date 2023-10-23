@@ -1,5 +1,5 @@
 import AutoUpdateUrl from "@/components/autoUpdateUrl";
-import Footer from "@/components/footer";
+import FooterForGame from "@/components/footerForGame";
 import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
 import { notFound } from "next/navigation";
@@ -34,14 +34,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         </li>
         <li>Paste the AutoUpdateUrl and submit</li>
       </ol>
-      {game.copyright && (
-        <Footer
-          disclaimer={
-            game.name + " is trademark/copyright of " + game.copyright
-          }
-        />
-      )}
-      {!game.copyright && <Footer />}
+      <FooterForGame game={game} />
     </main>
   );
 }

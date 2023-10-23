@@ -1,10 +1,5 @@
 import Link from "next/link";
 
-interface Game {
-  slug: string;
-  name: string;
-}
-
 export default function GamesList({ games }: { games: Game[] }) {
   return (
     <ul>
