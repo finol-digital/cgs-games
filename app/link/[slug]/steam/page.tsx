@@ -36,7 +36,9 @@ export default async function Page({ params }: { params: { slug: string } }) {
       </ol>
       {game.copyright && (
         <Footer
-          disclaimer={game.name + " is trademark/copyright of " + game.copyright}
+          disclaimer={
+            game.name + " is trademark/copyright of " + game.copyright
+          }
         />
       )}
       {!game.copyright && <Footer />}
