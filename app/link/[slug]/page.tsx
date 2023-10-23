@@ -34,7 +34,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
           View in web browser (NOT Recommended)
         </Link>
       </p>
-      <Footer />
+      {game.copyright && (
+        <Footer
+          disclaimer={
+            game.name + " is trademark/copyright of " + game.copyright
+          }
+        />
+      )}
+      {!game.copyright && <Footer />}
     </main>
   );
 }

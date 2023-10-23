@@ -34,7 +34,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
         </li>
         <li>Paste the AutoUpdateUrl and submit</li>
       </ol>
-      <Footer />
+      {game.copyright && (
+        <Footer
+          disclaimer={
+            game.name + " is trademark/copyright of " + game.copyright
+          }
+        />
+      )}
+      {!game.copyright && <Footer />}
     </main>
   );
 }

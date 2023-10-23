@@ -21,6 +21,7 @@ export async function getGame(slug: string) {
       name: doc.get("name"),
       bannerImageUrl: doc.get("bannerImageUrl"),
       autoUpdateUrl: doc.get("autoUpdateUrl"),
+      copyright: doc.get("copyright"),
     };
   });
 }
