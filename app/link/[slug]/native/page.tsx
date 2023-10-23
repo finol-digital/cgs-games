@@ -28,7 +28,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
           Click this link to launch CGS for {game.name}
         </Link>
       </p>
-      <Footer />
+      {game.copyright && (
+        <Footer
+          disclaimer={game.name + " is TM/copyright of " + game.copyright}
+        />
+      )}
+      {!game.copyright && <Footer />}
     </main>
   );
 }

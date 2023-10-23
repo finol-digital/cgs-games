@@ -20,7 +20,12 @@ export default async function Page({ params }: { params: { slug: string } }) {
         <Link href={"/link/" + params.slug + "/native"}>Launch native app</Link>
       </p>
       <UnityWeb url={game.autoUpdateUrl} />
-      <Footer />
+      {game.copyright && (
+        <Footer
+          disclaimer={game.name + " is TM/copyright of " + game.copyright}
+        />
+      )}
+      {!game.copyright && <Footer />}
     </main>
   );
 }
