@@ -44,14 +44,14 @@ export default function UnityWeb({
     [devicePixelRatio],
   );
 
-  if (isLoaded === true) {
-    sendMessage("CardGameManager", "StartGetCardGame", url);
-  }
+  //  if (isLoaded === true) {
+  //    sendMessage("CardGameManager", "StartGetCardGame", url);
+  //  }
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
       {!isLoaded && (
-        <p>Loading Application... {Math.round(loadingProgression * 100)}%</p>
+        <p>Loading CGS... {Math.round(loadingProgression * 100)}%</p>
       )}
       <Unity
         unityProvider={unityProvider}

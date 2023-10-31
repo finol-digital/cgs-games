@@ -1,3 +1,4 @@
+import CgsDeepLink from "@/components/cgsDeepLink";
 import FooterForGame from "@/components/footerForGame";
 import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
@@ -15,25 +16,21 @@ export default async function Page({ params }: { params: { slug: string } }) {
         txt={game.name}
         title={"Play " + game.name}
       />
-      <p>To get started with playing {game.name}, choose your preference:</p>
-      <br />
-      <p>
-        <Link href={"/link/" + params.slug + "/native"}>
-          Launch native app (Android/iOS/macOS/Windows)
-        </Link>
-      </p>
-      <br />
-      <p>
-        <Link href={"/link/" + params.slug + "/steam"}>
-          Install on Steam (Windows/macOS/Linux)
-        </Link>
-      </p>
-      <br />
-      <p>
-        <Link href={"/link/" + params.slug + "/web"}>
-          View in web browser (NOT Recommended)
-        </Link>
-      </p>
+      <h2>Launch the CGS app to play {game.name}:</h2>
+      <CgsDeepLink game={game} />
+      <h2>Alternatively:</h2>
+      <ul>
+        <li>
+          <Link href={"/link/" + params.slug + "/steam"}>
+            Install on Steam (Windows/macOS/Linux)
+          </Link>
+        </li>
+        <li>
+          <Link href={"/link/" + params.slug + "/web"}>
+            Play in web browser
+          </Link>
+        </li>
+      </ul>
       <FooterForGame game={game} />
     </main>
   );

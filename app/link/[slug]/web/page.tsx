@@ -2,7 +2,6 @@ import FooterForGame from "@/components/footerForGame";
 import Header from "@/components/header";
 import UnityWeb from "@/components/unityWeb";
 import { getGame } from "@/lib/firebase/firestore";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export default async function Page({ params }: { params: { slug: string } }) {
@@ -15,10 +14,6 @@ export default async function Page({ params }: { params: { slug: string } }) {
         img={game.bannerImageUrl}
         txt={game.name}
       />
-      <p>
-        WARNING: This page is experimental. Instead of using this page, please{" "}
-        <Link href={"/link/" + params.slug + "/native"}>Launch native app</Link>
-      </p>
       <UnityWeb url={game.autoUpdateUrl} />
       <FooterForGame game={game} />
     </main>
