@@ -32,7 +32,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         <li>
           Click the Import button and select &quot;Download from Web&quot;
         </li>
-        <li>Paste the AutoUpdateUrl and submit</li>
+        <li>Paste the AutoUpdateUrl and Submit Download</li>
       </ol>
       <FooterForGame game={game} />
     </main>
