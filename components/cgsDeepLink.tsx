@@ -4,7 +4,7 @@ export default function CgsDeepLink({ game }: { game: Game }) {
   return (
     <ol>
       <li>
-        <p>First install CGS from the appropriate Store:</p>
+        <p>First install CGS from the appropriate store:</p>
         <StoreBadge />
       </li>
       <li>
