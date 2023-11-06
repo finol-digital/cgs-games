@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 
 export default function UnityWeb({
@@ -14,6 +14,8 @@ export default function UnityWeb({
     isLoaded,
     sendMessage,
     requestFullscreen,
+    addEventListener,
+    removeEventListener,
   } = useUnityContext({
     loaderUrl: "/Unity/WebGL.loader.js",
     dataUrl: "/Unity/WebGL.data",
@@ -48,6 +50,17 @@ export default function UnityWeb({
     },
     [devicePixelRatio],
   );
+
+  const handleGameReady = useCallback(() => {
+    sendMessage("CardGameManager", "StartGetCardGame", url);
+  }, [sendMessage, url]);
+
+  useEffect(() => {
+    addEventListener("GameReady", handleGameReady);
+    return () => {
+      removeEventListener("GameReady", handleGameReady);
+    };
+  }, [addEventListener, removeEventListener, handleGameReady]);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
