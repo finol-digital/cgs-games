@@ -8,13 +8,18 @@ export default function UnityWeb({
 }: {
   url?: string;
 }) {
-  const { unityProvider, loadingProgression, isLoaded, sendMessage } =
-    useUnityContext({
-      loaderUrl: "/Unity/WebGL.loader.js",
-      dataUrl: "/Unity/WebGL.data",
-      frameworkUrl: "/Unity/WebGL.framework.js",
-      codeUrl: "/Unity/WebGL.wasm",
-    });
+  const {
+    unityProvider,
+    loadingProgression,
+    isLoaded,
+    sendMessage,
+    requestFullscreen,
+  } = useUnityContext({
+    loaderUrl: "/Unity/WebGL.loader.js",
+    dataUrl: "/Unity/WebGL.data",
+    frameworkUrl: "/Unity/WebGL.framework.js",
+    codeUrl: "/Unity/WebGL.wasm",
+  });
 
   // We'll use a state to store the device pixel ratio.
   const [devicePixelRatio, setDevicePixelRatio] = useState(
@@ -50,13 +55,18 @@ export default function UnityWeb({
         <p>Loading CGS... {Math.round(loadingProgression * 100)}%</p>
       )}
       {isLoaded && (
-        <button
-          onClick={() =>
-            sendMessage("CardGameManager", "StartGetCardGame", url)
-          }
-        >
-          Reload
-        </button>
+        <div>
+          <button
+            onClick={() =>
+              sendMessage("CardGameManager", "StartGetCardGame", url)
+            }
+          >
+            Sync
+          </button>
+          <button onClick={() => requestFullscreen(true)}>
+            Enter Fullscreen
+          </button>
+        </div>
       )}
       <Unity
         unityProvider={unityProvider}
