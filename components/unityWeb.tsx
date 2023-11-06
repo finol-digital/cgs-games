@@ -44,14 +44,19 @@ export default function UnityWeb({
     [devicePixelRatio],
   );
 
-  //  if (isLoaded === true) {
-  //    sendMessage("CardGameManager", "StartGetCardGame", url);
-  //  }
-
   return (
     <div style={{ width: "100%", height: "100%" }}>
       {!isLoaded && (
         <p>Loading CGS... {Math.round(loadingProgression * 100)}%</p>
+      )}
+      {isLoaded && (
+        <button
+          onClick={() =>
+            sendMessage("CardGameManager", "StartGetCardGame", url)
+          }
+        >
+          Reload
+        </button>
       )}
       <Unity
         unityProvider={unityProvider}
