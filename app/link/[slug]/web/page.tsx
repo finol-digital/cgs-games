@@ -14,7 +14,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
         img={game.bannerImageUrl}
         txt={game.name}
       />
-      <UnityWeb url={game.autoUpdateUrl} />
+      <UnityWeb url={game.autoUpdateUrl} name={game.name} />
       <FooterForGame game={game} />
     </main>
   );
