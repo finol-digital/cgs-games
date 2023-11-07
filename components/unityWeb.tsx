@@ -52,7 +52,8 @@ export default function UnityWeb({
   );
 
   const handleGameReady = useCallback(() => {
-    sendMessage("CardGameManager", "StartGetCardGame", url);
+    if (url != "https://cardgamesimulator.com/games/Standard/Standard.json")
+      sendMessage("CardGameManager", "StartGetCardGame", url);
   }, [sendMessage, url]);
 
   useEffect(() => {
