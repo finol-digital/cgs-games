@@ -5,7 +5,7 @@ import { Unity, useUnityContext } from "react-unity-webgl";
 
 export default function UnityWeb({
   url = "https://www.cardgamesimulator.com/games/Standard/Standard.json",
-  name = "Card Game Server",
+  name = "Card Game",
 }: {
   url?: string;
   name?: string;
@@ -77,7 +77,7 @@ export default function UnityWeb({
               sendMessage("CardGameManager", "StartGetCardGame", url)
             }
           >
-            Sync with {name}
+            Sync {name}
           </button>
           <button onClick={() => requestFullscreen(true)}>
             Enter Fullscreen
