@@ -9,8 +9,24 @@ module.exports = withPWA({
   async rewrites() {
     return [
       {
-        source: "/api/proxy/:path*",
-        destination: `https://:path*`,
+        source: "/api/proxy/:1",
+        destination: `https://:1`,
+      },
+      {
+        source: "/api/proxy/:1/:2",
+        destination: `https://:1/:2`,
+      },
+      {
+        source: "/api/proxy/:1/:2/:3",
+        destination: `https://:1/:2/:3`,
+      },
+      {
+        source: "/api/proxy/:1/:2/:3/:4",
+        destination: `https://:1/:2/:3/:4`,
+      },
+      {
+        source: "/api/proxy/:1/:2/:3/:4/:5",
+        destination: `https://:1/:2/:3/:4:/5`,
       },
     ];
   },
