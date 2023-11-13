@@ -5,12 +5,9 @@ export default function Footer({ disclaimer }: { disclaimer?: string }) {
     <footer>
       <hr />
       {disclaimer && <p>{disclaimer}</p>}
-      {!disclaimer && <p>Finol Digital LLC ©2023</p>}
+      {!disclaimer && <p>Finol Digital LLC ©{new Date().getFullYear()}</p>}
       <p>
         <Link href="/">CGS Games</Link>
-      </p>
-      <p>
-        <Link href="/link">CGS Games List</Link>
       </p>
     </footer>
   );
