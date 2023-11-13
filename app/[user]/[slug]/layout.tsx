@@ -5,9 +5,9 @@ import { notFound } from "next/navigation";
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: { user: string; slug: string };
 }): Promise<Metadata> {
-  const game = (await getGame(params.slug))?.at(0);
+  const game = (await getGame(params.user, params.slug))?.at(0);
   if (!game) return notFound();
   return {
     title: game.name,

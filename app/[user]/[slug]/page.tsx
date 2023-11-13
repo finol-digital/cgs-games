@@ -5,8 +5,12 @@ import { getGame } from "@/lib/firebase/firestore";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const game = (await getGame(params.slug))?.at(0);
+export default async function Page({
+  params,
+}: {
+  params: { user: string; slug: string };
+}) {
+  const game = (await getGame(params.user, params.slug))?.at(0);
   if (!game) return notFound();
   return (
     <main className="main-container">
