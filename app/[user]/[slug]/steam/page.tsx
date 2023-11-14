@@ -1,6 +1,4 @@
 import AutoUpdateUrl from "@/components/autoUpdateUrl";
-import FooterForGame from "@/components/footerForGame";
-import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
 import { notFound } from "next/navigation";
 
@@ -12,13 +10,7 @@ export default async function Page({
   const game = (await getGame(params.user, params.slug))?.at(0);
   if (!game) return notFound();
   return (
-    <main className="main-container">
-      <Header
-        home={"/link/" + params.slug}
-        img={game.bannerImageUrl}
-        txt={game.name}
-        title={"CGS for " + game.name + " on Steam"}
-      />
+    <>
       <h2>1. Install CGS</h2>
       <iframe
         src="https://store.steampowered.com/widget/1742850/"
@@ -38,7 +30,6 @@ export default async function Page({
         </li>
         <li>Paste the AutoUpdateUrl and Submit Download</li>
       </ol>
-      <FooterForGame game={game} />
-    </main>
+    </>
   );
 }

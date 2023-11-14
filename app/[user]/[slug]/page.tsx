@@ -1,6 +1,4 @@
 import CgsDeepLink from "@/components/cgsDeepLink";
-import FooterForGame from "@/components/footerForGame";
-import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,13 +11,7 @@ export default async function Page({
   const game = (await getGame(params.user, params.slug))?.at(0);
   if (!game) return notFound();
   return (
-    <main className="main-container">
-      <Header
-        home={"/link/" + params.slug}
-        img={game.bannerImageUrl}
-        txt={game.name}
-        title={"Play " + game.name}
-      />
+    <>
       <h2>Launch the CGS app to play {game.name}:</h2>
       <CgsDeepLink game={game} />
       <h2>Alternatively:</h2>
@@ -35,7 +27,6 @@ export default async function Page({
           </Link>
         </li>
       </ul>
-      <FooterForGame game={game} />
-    </main>
+    </>
   );
 }
