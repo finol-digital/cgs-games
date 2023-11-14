@@ -1,15 +1,7 @@
 import CgsDeepLink from "@/components/cgsDeepLink";
-import { getAllGames, getGame } from "@/lib/firebase/firestore";
+import { getGame } from "@/lib/firebase/firestore";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-export async function generateStaticParams() {
-  const allGames = await getAllGames();
-  return allGames.map((game) => ({
-    user: game.user,
-    slug: game.slug,
-  }));
-}
 
 export default async function Page({
   params,
