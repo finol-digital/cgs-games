@@ -2,7 +2,7 @@ import Footer from "@/components/footer";
 import Header from "@/components/header";
 import Link from "next/link";
 
-export default async function Page() {
+export default function Page() {
   return (
     <main className="main-container">
       <Header title="CGS Games" />
