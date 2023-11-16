@@ -1,14 +1,18 @@
 import Footer from "@/components/footer";
 import GamesList from "@/components/gamesList";
-import Header from "@/components/header";
+import HeaderWithAuth from "@/components/headerWithAuth";
+import { getAuthenticatedAppForUser } from "@/lib/firebase/firebase";
 import { getAllGames } from "@/lib/firebase/firestore";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
+  const { currentUser } = await getAuthenticatedAppForUser();
   const allGames = await getAllGames();
   return (
     <main className="main-container">
-      <Header title="CGS Games" />
+      <HeaderWithAuth initialUser={currentUser?.toJSON()} title="CGS Games" />
       <p>
         Welcome to the{" "}
         <Link href="https://www.cardgamesimulator.com">

@@ -5,5 +5,24 @@
     "frameworksBackend": {
       "region": "us-central1"
     }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
   }
 }

@@ -10,7 +10,7 @@ export default function Banner({
   txt?: string;
 }) {
   return (
-    <center>
+    <>
       <Link href={home}>
         <img
           // img instead of next/Image
@@ -20,6 +20,6 @@ export default function Banner({
           //priority={true}
         />
       </Link>
-    </center>
+    </>
   );
 }
