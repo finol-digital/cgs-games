@@ -12,10 +12,10 @@ export async function generateMetadata({
   const game = (await getGame(params.user, params.slug))?.at(0);
   if (!game) return notFound();
   return {
-    title: game.name,
+    title: game.name + " | CGS Games",
     description: "Play " + game.name + " on CGS",
     openGraph: {
-      title: game.name,
+      title: game.name + " | CGS Games",
       description: "Play " + game.name + " on CGS",
       images: [
         {

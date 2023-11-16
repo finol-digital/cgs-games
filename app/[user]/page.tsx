@@ -5,6 +5,8 @@ import { getGames } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {
