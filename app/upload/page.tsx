@@ -3,7 +3,7 @@ import Header from "@/components/header";
 import { Metadata } from "next";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "CGS Games Upload",
