@@ -1,11 +1,8 @@
 import Footer from "@/components/footer";
-import GamesList from "@/components/gamesList";
 import Header from "@/components/header";
-import { getAllGames } from "@/lib/firebase/firestore";
 import Link from "next/link";
 
-export default async function Page() {
-  const allGames = await getAllGames();
+export default function Page() {
   return (
     <main className="main-container">
       <Header title="CGS Games" />
@@ -16,15 +13,20 @@ export default async function Page() {
         </Link>{" "}
         (CGS) Games website!
       </p>
-      <p>Soon, you will be able to upload your own games to this website.</p>
       <p>
-        The user upload functionality is still in development, but you can get
-        started in the meantime by selecting a game from this list:
+        This website allows CGS users to share their games, and you can browse
+        the <Link href="/list">CGS Games List</Link> to see all games.
       </p>
-      <GamesList games={allGames} />
       <p>
-        If you would like to add your game to the list, please email{" "}
-        <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
+        If you want to create your own game, you can refer to{" "}
+        <Link href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS">
+          The Crash Course into Game Development with CGS
+        </Link>
+        .
+      </p>
+      <p>
+        Once you&apos;re ready to share your game, go to the{" "}
+        <Link href="/upload">CGS Games Upload</Link>.
       </p>
       <Footer />
     </main>
