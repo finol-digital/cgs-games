@@ -1,6 +1,5 @@
 import Footer from "@/components/footer";
 import Header from "@/components/header";
-import { getAuthenticatedAppForUser } from "@/lib/firebase/firebase";
 import { Metadata } from "next";
 import Link from "next/link";
 
@@ -16,7 +15,6 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const { currentUser } = await getAuthenticatedAppForUser();
   return (
     <main className="main-container">
       <Header title="CGS Games Upload" />
