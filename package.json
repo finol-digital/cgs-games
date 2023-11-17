@@ -26,14 +26,18 @@
     "typescript": "5.2.2"
   },
   "devDependencies": {
+    "encoding": "^0.1.13",
     "eslint-config-prettier": "^9.0.0",
     "prettier": "3.0.3",
+    "request": "^2.88.2",
     "webpack": "^5.88.2"
   },
   "browser": {
     "fs": false,
+    "os": false,
+    "path": false,
+    "child_process": false,
     "net": false,
-    "tls": false,
-    "child_process": false
+    "tls": false
   }
 }

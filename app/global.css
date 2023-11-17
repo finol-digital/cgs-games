@@ -19,7 +19,7 @@ body {
   overflow: hidden;
   display: block;
   position: relative;
-  padding-bottom: 200px;
+  padding-bottom: 160px;
   /* height of your footer */
 }
 
@@ -28,7 +28,7 @@ footer {
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 200px;
+  height: 160px;
 }
 
 .button {
