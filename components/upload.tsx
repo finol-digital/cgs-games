@@ -52,6 +52,7 @@ export default function Upload({ initialUser }: { initialUser: any }) {
 
   return (
     <>
+      <p>authentication, link to self, and upload functionality</p>
       {user ? (
         <>
           <a href="#" onClick={() => console.log("clicked")}>

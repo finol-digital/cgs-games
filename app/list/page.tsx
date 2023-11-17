@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "CGS Games List",
-  description: "",
+  description: "List of all CGS games.",
   openGraph: {
     title: "CGS Games List",
-    description: "",
+    description: "List of all CGS games.",
   },
 };
 
@@ -21,11 +21,11 @@ export default async function Page() {
   return (
     <main className="main-container">
       <Header title="CGS Games List" />
-      <p>Here are all the games available:</p>
+      <p>Here is the list of all games:</p>
       <GamesList games={allGames} />
       <p>
-        If you would like to add your game to the list, please email{" "}
-        <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
+        If you would like to add your game to this list, try the{" "}
+        <Link href="/upload">CGS Games Upload</Link>.
       </p>
       <Footer />
     </main>
