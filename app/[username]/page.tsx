@@ -10,25 +10,29 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: { user: string };
+  params: { username: string };
 }): Promise<Metadata> {
   return {
-    title: params.user,
-    description: params.user + "'s games",
+    title: params.username,
+    description: params.username + "'s games",
     openGraph: {
-      title: params.user,
-      description: params.user + "'s games",
+      title: params.username,
+      description: params.username + "'s games",
     },
   };
 }
 
-export default async function Page({ params }: { params: { user: string } }) {
-  const games = await getGames(params.user);
+export default async function Page({
+  params,
+}: {
+  params: { username: string };
+}) {
+  const games = await getGames(params.username);
   if (!games) return notFound();
   return (
     <main className="main-container">
-      <Header title={params.user + "'s games"} />
-      <p>{params.user} has these games:</p>
+      <Header title={params.username + "'s games"} />
+      <p>{params.username} has these games:</p>
       <GamesList games={games} />
       <Footer />
     </main>

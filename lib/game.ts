@@ -1,5 +1,5 @@
 interface Game {
-  user: string;
+  username: string;
   slug: string;
   name: string;
   bannerImageUrl: string;
