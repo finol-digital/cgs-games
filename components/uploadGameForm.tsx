@@ -12,19 +12,15 @@ function SignInButton() {
   );
 }
 
-function SignOutButton() {
-  return <button onClick={() => signOut()}>Sign Out</button>;
-}
-
 export default function UploadGameForm() {
   const { user, username } = useContext(UserContext);
   return (
     <>
       {user ? (
-        !username ? (
-          <UsernameForm />
-        ) : (
+        username ? (
           <SignOutButton />
+        ) : (
+          <UsernameForm />
         )
       ) : (
         <SignInButton />
@@ -35,4 +31,8 @@ export default function UploadGameForm() {
 
 function UsernameForm() {
   return null;
+}
+
+function SignOutButton() {
+  return <button onClick={() => signOut()}>Sign Out</button>;
 }
