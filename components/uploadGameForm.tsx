@@ -1,6 +1,8 @@
 "use client";
 
 import { signInWithGoogle, signOut } from "@/lib/firebase/auth";
+import { useContext } from "react";
+import { UserContext } from "../lib/context";
 
 function SignInButton() {
   return (
@@ -15,11 +17,7 @@ function SignOutButton() {
 }
 
 export default function UploadGameForm() {
-  const user = null;
-  const username = null;
-  // 1. user signed out <SignInButton />
-  // 2. user signed in, but missing username <UsernameForm />
-  // 3. user signed in, has username <SignOutButton />
+  const { user, username } = useContext(UserContext);
   return (
     <>
       {user ? (

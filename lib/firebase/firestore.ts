@@ -2,6 +2,7 @@ import { db } from "@/lib/firebase/firebase";
 import {
   QueryDocumentSnapshot,
   collection,
+  doc,
   getDocs,
   query,
   where,
@@ -41,4 +42,8 @@ function game(doc: QueryDocumentSnapshot) {
     autoUpdateUrl: doc.get("autoUpdateUrl"),
     copyright: doc.get("copyright"),
   };
+}
+
+export function getUserDoc(uid: string) {
+  return doc(db, "users", uid);
 }
