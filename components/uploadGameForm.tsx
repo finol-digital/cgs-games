@@ -14,7 +14,7 @@ function SignOutButton() {
   return <button onClick={() => signOut()}>Sign Out</button>;
 }
 
-export default async function UploadGameForm() {
+export default function UploadGameForm() {
   const user = null;
   const username = null;
   // 1. user signed out <SignInButton />
