@@ -6,9 +6,9 @@ import { notFound } from "next/navigation";
 export default async function Page({
   params,
 }: {
-  params: { user: string; slug: string };
+  params: { username: string; slug: string };
 }) {
-  const game = (await getGame(params.user, params.slug))?.at(0);
+  const game = (await getGame(params.username, params.slug))?.at(0);
   if (!game) return notFound();
   return (
     <>
