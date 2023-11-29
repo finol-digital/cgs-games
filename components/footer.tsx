@@ -3,17 +3,25 @@ import Link from "next/link";
 export default function Footer({ disclaimer }: { disclaimer?: string }) {
   return (
     <footer>
+      {disclaimer && (
+        <p>
+          <i>{disclaimer}</i>
+        </p>
+      )}
+      {!disclaimer && (
+        <p>
+          <i>Finol Digital LLC ©{new Date().getFullYear()}</i>
+        </p>
+      )}
       <hr />
-      {disclaimer && <p>{disclaimer}</p>}
-      {!disclaimer && <p>Finol Digital LLC ©{new Date().getFullYear()}</p>}
       <p>
         <Link href="/">CGS Games</Link>
       </p>
       <p>
-        <Link href="/list">CGS Games List</Link>
+        <Link href="/list">List</Link> | <Link href="/upload">Upload</Link>
       </p>
       <p>
-        <Link href="/upload">CGS Games Upload</Link>
+        <Link href="/terms">Terms</Link> | <Link href="/privacy">Privacy</Link>
       </p>
     </footer>
   );

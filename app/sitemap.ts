@@ -5,17 +5,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: "https://cgs.games",
       lastModified: new Date(),
-      priority: 1,
+      priority: 1.0,
     },
     {
       url: "https://cgs.games/list",
       lastModified: new Date(),
-      priority: 2,
+      priority: 0.9,
     },
     {
       url: "https://cgs.games/upload",
       lastModified: new Date(),
-      priority: 3,
+      priority: 0.8,
+    },
+    {
+      url: "https://cgs.games/privacy",
+      lastModified: new Date(),
+      priority: 0.7,
+    },
+    {
+      url: "https://cgs.games/terms",
+      lastModified: new Date(),
+      priority: 0.6,
     },
   ];
 }
