@@ -1,5 +1,15 @@
 import Footer from "@/components/footer";
 import Header from "@/components/header";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "CGS Games Terms of Use",
+  description: "Terms of Use for CGS Games.",
+  openGraph: {
+    title: "CGS Games Terms of Use",
+    description: "Terms of Use for CGS Games.",
+  },
+};
 
 const rawHTML = `
 <style>
