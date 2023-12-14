@@ -5,7 +5,7 @@ import { signInWithGoogle, signOut } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/firebase";
 import { doc, getDoc, writeBatch } from "firebase/firestore";
 import debounce from "lodash.debounce";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
 
 function SignInButton() {
@@ -60,7 +60,7 @@ function UsernameForm() {
   const onChange = (e: { target: { value: string } }) => {
     // Force form value typed in form to match correct format
     const val = e.target.value.toLowerCase();
-    const re = /^(?=[a-zA-Z0-9._]{3,15}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
+    const re = /^(?=[a-zA-Z0-9._\-]{3,15}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
 
     // Only set form value if length is < 3 OR it passes regex
     if (val.length < 3) {
