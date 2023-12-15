@@ -186,6 +186,7 @@ function AutoUpdateUrlForm() {
             onChange={(e) => setAutoUpdateUrl(e.target.value)}
             placeholder="https://www.cardgamesimulator.com/games/Standard/Standard.json"
           />
+          <br />
           <button type="submit" className="btn-green" disabled={!isValid}>
             Submit AutoUpdate Url to CGS Games
           </button>
