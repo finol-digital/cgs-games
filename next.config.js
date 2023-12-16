@@ -9,28 +9,34 @@ module.exports = withPWA({
   async rewrites() {
     return [
       {
-        source: "/api/proxy/:0",
-        destination: `https://:0`,
+        source: "/api/proxy/:first",
+        destination: "https://:first",
+        basePath: false,
       },
       {
-        source: "/api/proxy/:0/:1",
-        destination: `https://:0/:1`,
+        source: "/api/proxy/:first/:second",
+        destination: "https://:first/:second",
+        basePath: false,
       },
       {
-        source: "/api/proxy/:0/:1/:2",
-        destination: `https://:0/:1/:2`,
+        source: "/api/proxy/:first/:second/:third",
+        destination: "https://:first/:second/:third",
+        basePath: false,
       },
       {
-        source: "/api/proxy/:0/:1/:2/:3",
-        destination: `https://:0/:1/:2/:3`,
+        source: "/api/proxy/:first/:second/:third/:fourth",
+        destination: "https://:first/:second/:third/:fourth",
+        basePath: false,
       },
       {
-        source: "/api/proxy/:0/:1/:2/:3/:4",
-        destination: `https://:0/:1/:2/:3/:4`,
+        source: "/api/proxy/:first/:second/:third/:fourth/:fifth",
+        destination: "https://:first/:second/:third/:fourth/:fifth",
+        basePath: false,
       },
       {
-        source: "/api/proxy/:0/:1/:2/:3/:4/:5",
-        destination: `https://:0/:1/:2/:3/:4:/5`,
+        source: "/api/proxy/:first/:second/:third/:fourth/:fifth/:sixth",
+        destination: "https://:first/:second/:third/:fourth/:fifth/:sixth",
+        basePath: false,
       },
     ];
   },
