@@ -3,8 +3,16 @@
 import { UserContext } from "@/lib/context";
 import { signInWithGoogle, signOut } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/firebase";
-import { doc, getDoc, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  writeBatch,
+} from "firebase/firestore";
 import debounce from "lodash.debounce";
+import snakecase from "lodash.snakecase";
+import { useRouter } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
 
 function SignInButton() {
@@ -21,7 +29,7 @@ export default function UploadGameForm() {
     <>
       {user ? (
         username ? (
-          <SignOutButton />
+          <AutoUpdateUrlForm />
         ) : (
           <UsernameForm />
         )
@@ -59,7 +67,7 @@ function UsernameForm() {
   const onChange = (e: { target: { value: string } }) => {
     // Force form value typed in form to match correct format
     const val = e.target.value.toLowerCase();
-    const re = /^(?=[a-zA-Z0-9._]{3,15}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
+    const re = /^(?=[a-zA-Z0-9._\-]{3,15}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
 
     // Only set form value if length is < 3 OR it passes regex
     if (val.length < 3) {
@@ -146,6 +154,71 @@ function UsernameMessage({
   } else {
     return <p></p>;
   }
+}
+
+function isValidHttpUrl(string: string) {
+  let url;
+
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+function AutoUpdateUrlForm() {
+  const router = useRouter();
+  const { username } = useContext(UserContext);
+  const [autoUpdateUrl, setAutoUpdateUrl] = useState("");
+
+  const isValid = isValidHttpUrl(autoUpdateUrl);
+
+  const submitAutoUpdateUrl = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    if (!username) {
+      throw new Error("No username!");
+    }
+    const response = await fetch(autoUpdateUrl);
+    const cardGameDef: {
+      name: string;
+      bannerImageUrl: string;
+      copyright: string;
+    } = await response.json();
+    const slug = encodeURI(snakecase(cardGameDef.name));
+    const gameRef = doc(collection(db, "games"));
+    const game: Game = {
+      username: username,
+      slug: slug,
+      name: cardGameDef.name,
+      bannerImageUrl: cardGameDef.bannerImageUrl,
+      autoUpdateUrl: autoUpdateUrl,
+      copyright: cardGameDef.copyright ? cardGameDef.copyright : username,
+    };
+    await setDoc(gameRef, game);
+    router.push(`/${username}/${slug}`);
+  };
+
+  return (
+    <>
+      <section>
+        <h2>Enter CGS AutoUpdate Url</h2>
+        <form onSubmit={submitAutoUpdateUrl}>
+          <input
+            value={autoUpdateUrl}
+            onChange={(e) => setAutoUpdateUrl(e.target.value)}
+            placeholder="https://www.cardgamesimulator.com/games/Standard/Standard.json"
+          />
+          <br />
+          <button type="submit" className="btn-green" disabled={!isValid}>
+            Submit AutoUpdate Url to CGS Games
+          </button>
+        </form>
+      </section>
+      <SignOutButton />
+    </>
+  );
 }
 
 function SignOutButton() {

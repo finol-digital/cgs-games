@@ -17,11 +17,16 @@ export default function Page() {
   return (
     <main className="main-container">
       <Header title="CGS Games Upload" />
-      <p>This page is still in development!</p>
       <p>
-        If you would like to have your game uploaded in the meantime, you can
-        email{" "}
-        <Link href="mailto:david@finoldigital.com">david@finoldigital.com</Link>
+        If you want to create your own game, you can refer to{" "}
+        <Link href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS">
+          The Crash Course into Game Development with CGS
+        </Link>
+        .
+      </p>
+      <p>
+        After you have set up your CGS AutoUpdate Url, you can sign in and
+        upload:
       </p>
       <UploadGameForm />
       <Footer />
