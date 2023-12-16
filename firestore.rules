@@ -6,7 +6,19 @@ service cloud.firestore {
 
       match /games/{gameId} {
         allow read;
-        allow write: if false;
+        allow write: if isValidGame() && isValidUsernameSet();
+      }
+      
+      function isValidGame() {
+        return request.resource.data.username && request.resource.data.slug && request.resource.data.name && request.resource.data.autoUpdateUrl;
+      }
+      
+      function isValidUsernameSet() {
+      	let username = request.resource.data.username;
+        let createdValidUsername = exists(/databases/$(database)/documents/usernames/$(username));
+        let isValidUserDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+        
+        return createdValidUsername && isValidUserDoc;
       }
 
       match /users/{userId} {
