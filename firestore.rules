@@ -15,8 +15,8 @@ service cloud.firestore {
       
       function isValidUsernameSet() {
       	let username = request.resource.data.username;
-        let createdValidUsername = exists(/databases/$(database)/documents/usernames/$(username));
-        let isValidUserDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+        let createdValidUsername = username != null && exists(/databases/$(database)/documents/usernames/$(username));
+        let isValidUserDoc = request.auth != null && request.auth.uid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
         
         return createdValidUsername && isValidUserDoc;
       }
