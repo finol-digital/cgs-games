@@ -3,8 +3,15 @@
 import { UserContext } from "@/lib/context";
 import { signInWithGoogle, signOut } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/firebase";
-import { doc, getDoc, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  writeBatch,
+} from "firebase/firestore";
 import debounce from "lodash.debounce";
+import snakecase from "lodash.snakecase";
 import { useRouter } from "next/navigation";
 import { useCallback, useContext, useEffect, useState } from "react";
 
@@ -170,9 +177,26 @@ function AutoUpdateUrlForm() {
 
   const submitAutoUpdateUrl = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    // TODO:
-    const slug = ""; // TODO: encodeURI(kebabCase(title));
-    // TODO:
+    if (!username) {
+      throw new Error("No username!");
+    }
+    const response = await fetch(autoUpdateUrl);
+    const cardGameDef: {
+      name: string;
+      bannerImageUrl: string;
+      copyright: string;
+    } = await response.json();
+    const slug = encodeURI(snakecase(cardGameDef.name));
+    const gameRef = doc(collection(db, "games"));
+    const game: Game = {
+      username: username,
+      slug: slug,
+      name: cardGameDef.name,
+      bannerImageUrl: cardGameDef.bannerImageUrl,
+      autoUpdateUrl: autoUpdateUrl,
+      copyright: cardGameDef.copyright ? cardGameDef.copyright : username,
+    };
+    await setDoc(gameRef, game);
     router.push(`/${username}/${slug}`);
   };
 
