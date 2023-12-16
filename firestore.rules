@@ -10,7 +10,7 @@ service cloud.firestore {
       }
       
       function isValidGame() {
-        return request.resource.data.username && request.resource.data.slug && request.resource.data.name && request.resource.data.autoUpdateUrl;
+        return request.resource.data.username != null && request.resource.data.slug != null && request.resource.data.name != null && request.resource.data.autoUpdateUrl != null;
       }
       
       function isValidUsernameSet() {
