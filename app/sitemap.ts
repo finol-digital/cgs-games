@@ -18,12 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: "https://cgs.games/privacy",
+      url: "https://cgs.games/terms",
       lastModified: new Date(),
       priority: 0.7,
     },
     {
-      url: "https://cgs.games/terms",
+      url: "https://cgs.games/privacy",
       lastModified: new Date(),
       priority: 0.6,
     },

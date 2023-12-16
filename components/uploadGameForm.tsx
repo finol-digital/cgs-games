@@ -75,6 +75,17 @@ function UsernameForm() {
       setLoading(false);
       setIsValid(false);
     }
+    if (
+      val === "list" ||
+      val === "upload" ||
+      val === "terms" ||
+      val === "privacy" ||
+      val === "api"
+    ) {
+      setFormValue(val);
+      setLoading(false);
+      setIsValid(false);
+    }
 
     if (re.test(val)) {
       setFormValue(val);
