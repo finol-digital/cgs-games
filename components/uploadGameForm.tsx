@@ -4,10 +4,10 @@ import { UserContext } from "@/lib/context";
 import { signInWithGoogle, signOut } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/firebase";
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
-  setDoc,
   writeBatch,
 } from "firebase/firestore";
 import debounce from "lodash.debounce";
@@ -198,7 +198,6 @@ function AutoUpdateUrlForm() {
       copyright: string;
     } = await response.json();
     const slug = encodeURI(snakecase(cardGameDef.name));
-    const gameRef = doc(collection(db, "games"));
     const game: Game = {
       username: username,
       slug: slug,
@@ -207,7 +206,8 @@ function AutoUpdateUrlForm() {
       autoUpdateUrl: autoUpdateUrl,
       copyright: cardGameDef.copyright ? cardGameDef.copyright : username,
     };
-    await setDoc(gameRef, game);
+    console.log(game);
+    await addDoc(collection(db, "games"), game);
     router.push(`/${username}/${slug}`);
   };
 
