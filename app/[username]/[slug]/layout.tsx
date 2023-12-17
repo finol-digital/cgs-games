@@ -38,7 +38,7 @@ export default async function GameLayout({
   return (
     <main className="main-container">
       <Header
-        home={"/link/" + params.slug}
+        home={`/${game.username}/${game.slug}`}
         img={game.bannerImageUrl}
         txt={game.name}
         title={"Play " + game.name}
