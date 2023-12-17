@@ -17,12 +17,12 @@ export default async function Page({
       <h2>Alternatively:</h2>
       <ul>
         <li>
-          <Link href={`${game.username}/${game.slug}/steam`}>
+          <Link href={`/${game.username}/${game.slug}/steam`}>
             Install on Steam (Windows/macOS/Linux)
           </Link>
         </li>
         <li>
-          <Link href={`${game.username}/${game.slug}/web`}>
+          <Link href={`/${game.username}/${game.slug}/web`}>
             Play in web browser
           </Link>
         </li>
