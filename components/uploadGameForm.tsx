@@ -183,14 +183,16 @@ function AutoUpdateUrlForm() {
   const router = useRouter();
   const { username } = useContext(UserContext);
   const [autoUpdateUrl, setAutoUpdateUrl] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const isValid = isValidHttpUrl(autoUpdateUrl);
+  const isValid = !loading && isValidHttpUrl(autoUpdateUrl);
 
   const submitAutoUpdateUrl = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (!username) {
       throw new Error("No username!");
     }
+    setLoading(true);
     const response = await fetch(autoUpdateUrl);
     const cardGameDef: {
       name: string;
@@ -208,6 +210,7 @@ function AutoUpdateUrlForm() {
     };
     console.log(game);
     await addDoc(collection(db, "games"), game);
+    setLoading(false);
     router.push(`/${username}/${slug}`);
   };
 

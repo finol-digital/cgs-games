@@ -7,7 +7,7 @@ export default function GamesList({ games }: { games: Game[] }) {
         .sort((a: Game, b: Game) => a.name.localeCompare(b.name))
         .map((game: Game) => (
           <li key={game.slug}>
-            <Link href={"/link/" + game.slug}>{game.name}</Link>
+            <Link href={`/${game.username}/${game.slug}`}>{game.name}</Link>
           </li>
         ))}
     </ul>
