@@ -184,34 +184,41 @@ function AutoUpdateUrlForm() {
   const { username } = useContext(UserContext);
   const [autoUpdateUrl, setAutoUpdateUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const isValid = !loading && isValidHttpUrl(autoUpdateUrl);
 
   const submitAutoUpdateUrl = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (!username) {
-      throw new Error("No username!");
+    setError("");
+    try {
+      if (!username) {
+        throw new Error("No username!");
+      }
+      setLoading(true);
+      const response = await fetch(autoUpdateUrl);
+      const cardGameDef: {
+        name: string;
+        bannerImageUrl: string;
+        copyright: string;
+      } = await response.json();
+      const slug = encodeURI(snakecase(cardGameDef.name));
+      const game: Game = {
+        username: username,
+        slug: slug,
+        name: cardGameDef.name,
+        bannerImageUrl: cardGameDef.bannerImageUrl,
+        autoUpdateUrl: autoUpdateUrl,
+        copyright: cardGameDef.copyright ? cardGameDef.copyright : username,
+      };
+      console.log(game);
+      await addDoc(collection(db, "games"), game);
+      setLoading(false);
+      router.push(`/${username}/${slug}`);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err);
     }
-    setLoading(true);
-    const response = await fetch(autoUpdateUrl);
-    const cardGameDef: {
-      name: string;
-      bannerImageUrl: string;
-      copyright: string;
-    } = await response.json();
-    const slug = encodeURI(snakecase(cardGameDef.name));
-    const game: Game = {
-      username: username,
-      slug: slug,
-      name: cardGameDef.name,
-      bannerImageUrl: cardGameDef.bannerImageUrl,
-      autoUpdateUrl: autoUpdateUrl,
-      copyright: cardGameDef.copyright ? cardGameDef.copyright : username,
-    };
-    console.log(game);
-    await addDoc(collection(db, "games"), game);
-    setLoading(false);
-    router.push(`/${username}/${slug}`);
   };
 
   return (
@@ -225,6 +232,8 @@ function AutoUpdateUrlForm() {
             placeholder="https://www.cardgamesimulator.com/games/Standard/Standard.json"
           />
           <br />
+          {error && <p className="text-danger">Error: {error}</p>}
+          {!error && <p />}
           <button type="submit" className="btn-green" disabled={!isValid}>
             Submit AutoUpdate Url to CGS Games
           </button>
