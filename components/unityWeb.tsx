@@ -54,9 +54,10 @@ export default function UnityWeb({
   );
 
   const handleGameReady = useCallback(() => {
+    console.log("GameReady: " + url);
     if (url != "https://cardgamesimulator.com/games/Standard/Standard.json")
       sendMessage("CardGameManager", "StartGetCardGame", url);
-  }, [sendMessage, url]);
+  }, []);
 
   useEffect(() => {
     addEventListener("GameReady", handleGameReady);
@@ -93,6 +94,10 @@ export default function UnityWeb({
         }}
         devicePixelRatio={devicePixelRatio}
       />
+      <p>
+        If errored, try clicking the &quot;Sync {name}&quot; button and then
+        reload this page.
+      </p>
     </div>
   );
 }
