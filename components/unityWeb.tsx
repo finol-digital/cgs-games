@@ -10,6 +10,8 @@ export default function UnityWeb({
   url?: string;
   name?: string;
 }) {
+  const [isGameReady, setIsGameReady] = useState(false);
+  const [hasGameStarted, setHasGameStarted] = useState(false);
   const {
     unityProvider,
     loadingProgression,
@@ -54,9 +56,9 @@ export default function UnityWeb({
   );
 
   const handleGameReady = useCallback(() => {
-    if (url != "https://cardgamesimulator.com/games/Standard/Standard.json")
-      sendMessage("CardGameManager", "StartGetCardGame", url);
-  }, [sendMessage, url]);
+    setIsGameReady(true);
+    console.log("GameReady");
+  }, []);
 
   useEffect(() => {
     addEventListener("GameReady", handleGameReady);
@@ -64,6 +66,11 @@ export default function UnityWeb({
       removeEventListener("GameReady", handleGameReady);
     };
   }, [addEventListener, removeEventListener, handleGameReady]);
+
+  if (!hasGameStarted && isGameReady) {
+    setHasGameStarted(true);
+    sendMessage("CardGameManager", "StartGetCardGame", url);
+  }
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
