@@ -68,8 +68,8 @@ export default function UnityWeb({
   }, [addEventListener, removeEventListener, handleGameReady]);
 
   if (!hasGameStarted && isGameReady) {
-    setHasGameStarted(true);
     sendMessage("CardGameManager", "StartGetCardGame", url);
+    setHasGameStarted(true);
   }
 
   return (
@@ -100,6 +100,12 @@ export default function UnityWeb({
         }}
         devicePixelRatio={devicePixelRatio}
       />
+      {!hasGameStarted && (
+        <p>
+          If needed, please click the &quot;Sync {name}&quot; button and then
+          reload this page.
+        </p>
+      )}
     </div>
   );
 }
