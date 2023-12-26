@@ -1,4 +1,5 @@
 import Footer from "@/components/footer";
+import Game from "@/lib/game";
 
 export default function FooterForGame({ game }: { game: Game }) {
   if (game.copyright) {
