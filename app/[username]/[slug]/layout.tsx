@@ -9,7 +9,7 @@ export async function generateMetadata({
 }: {
   params: { username: string; slug: string };
 }): Promise<Metadata> {
-  const game = (await getGame(params.username, params.slug))?.at(0);
+  const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
   return {
     title: game.name + " | CGS Games",
