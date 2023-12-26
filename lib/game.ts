@@ -1,3 +1,5 @@
+import firebase from "firebase/compat/app";
+
 interface Game {
   username: string;
   slug: string;
@@ -5,4 +7,5 @@ interface Game {
   bannerImageUrl: string;
   autoUpdateUrl: string;
   copyright: string;
+  uploadedAt: firebase.firestore.Timestamp;
 }

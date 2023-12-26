@@ -8,6 +8,7 @@ import {
   collection,
   doc,
   getDoc,
+  serverTimestamp,
   writeBatch,
 } from "firebase/firestore";
 import debounce from "lodash.debounce";
@@ -203,13 +204,14 @@ function AutoUpdateUrlForm() {
         copyright: string;
       } = await response.json();
       const slug = encodeURI(snakecase(cardGameDef.name));
-      const game: Game = {
+      const game = {
         username: username,
         slug: slug,
         name: cardGameDef.name,
         bannerImageUrl: cardGameDef.bannerImageUrl,
         autoUpdateUrl: autoUpdateUrl,
         copyright: cardGameDef.copyright ? cardGameDef.copyright : username,
+        uploadedAt: serverTimestamp(),
       };
       console.log(game);
       await addDoc(collection(db, "games"), game);

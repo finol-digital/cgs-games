@@ -6,11 +6,17 @@ service cloud.firestore {
 
       match /games/{gameId} {
         allow read;
-        allow write: if isValidGame() && isValidUsernameSet();
+        allow write: if isUploadedAtNow() && isValidGame() && isValidUsernameSet();
+      }
+
+      function isUploadedAtNow() {
+        return request.resource.data.uploadedAt != null && request.resource.data.uploadedAt == request.time;
       }
       
       function isValidGame() {
-        return request.resource.data.username != null && request.resource.data.slug != null && request.resource.data.name != null && request.resource.data.autoUpdateUrl != null;
+        let hasUsernameAndSlug = request.resource.data.username != null && request.resource.data.slug != null;
+        let hasRequiredFields = request.resource.data.name != null && request.resource.data.autoUpdateUrl != null;
+        return hasUsernameAndSlug && hasRequiredFields;
       }
       
       function isValidUsernameSet() {
