@@ -30,7 +30,12 @@ export async function getGame(username: string, slug: string) {
     where("username", "==", username),
   );
   const results = await getDocs(
-    query(usernameQuery, where("slug", "==", slug), orderBy("uploadedAt"), limitToLast(1)),
+    query(
+      usernameQuery,
+      where("slug", "==", slug),
+      orderBy("uploadedAt"),
+      limitToLast(1),
+    ),
   );
   return results.docs.map((doc) => game(doc))?.at(0);
 }
