@@ -1,6 +1,6 @@
 import firebase from "firebase/compat/app";
 
-interface Game {
+export default interface Game {
   username: string;
   slug: string;
   name: string;

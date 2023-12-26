@@ -1,4 +1,5 @@
 import StoreBadge from "@/components/storeBadge";
+import Game from "@/lib/game";
 
 export default function CgsDeepLink({ game }: { game: Game }) {
   return (
