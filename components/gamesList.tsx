@@ -1,3 +1,4 @@
+import Game from "@/lib/game";
 import Link from "next/link";
 
 export default function GamesList({ games }: { games: Game[] }) {
