@@ -240,7 +240,7 @@ function AutoUpdateUrlForm() {
             placeholder="https://www.cardgamesimulator.com/games/Standard/Standard.json"
           />
           <br />
-          {error && <p className="text-danger">Error: {error}</p>}
+          {error && <p className="text-danger">{error}</p>}
           {!error && <p />}
           <button type="submit" className="btn-green" disabled={!isValid}>
             Submit AutoUpdate Url to CGS Games
