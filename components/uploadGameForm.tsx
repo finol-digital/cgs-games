@@ -168,7 +168,7 @@ function UsernameMessage({
   }
 }
 
-function isValidHttpUrl(string: string) {
+function isValidHttpsUrl(string: string) {
   let url;
 
   try {
@@ -177,7 +177,7 @@ function isValidHttpUrl(string: string) {
     return false;
   }
 
-  return url.protocol === "http:" || url.protocol === "https:";
+  return url.protocol === "https:";
 }
 
 function AutoUpdateUrlForm() {
@@ -187,7 +187,13 @@ function AutoUpdateUrlForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const isValid = !loading && isValidHttpUrl(autoUpdateUrl);
+  let isValid = false;
+  if (!loading) {
+    const isValidUrl = isValidHttpsUrl(autoUpdateUrl);
+    const inputError = isValidUrl ? "" : "Please input valid https url";
+    if (error != inputError) setError(inputError);
+    isValid = isValidUrl;
+  }
 
   const submitAutoUpdateUrl = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
