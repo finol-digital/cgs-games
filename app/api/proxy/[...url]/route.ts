@@ -14,7 +14,23 @@ export async function GET(
     uri = uri + "?" + request.nextUrl.searchParams.toString();
   }
   const url = new URL(uri);
-  console.log("api/proxy GET " + url);
+  console.log("Request /api/proxy GET " + url);
   const response = await fetch(url);
+  return new Response(response.body);
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: { url: string[] } },
+) {
+  const [host, ...path] = [...context.params.url];
+  let uri = stripTrailingSlash("https://" + host + "/" + path.join("/"));
+  const url = new URL(uri);
+  console.log("Request /api/proxy POST " + url);
+  const response = await fetch(url, {
+    method: "POST",
+    body: request.body,
+    headers: request.headers,
+  });
   return new Response(response.body);
 }
