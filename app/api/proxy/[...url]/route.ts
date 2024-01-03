@@ -20,7 +20,7 @@ export async function GET(
 }
 
 export async function POST(
-  request: NextRequest,
+  request: Request,
   context: { params: { url: string[] } },
 ) {
   const [host, ...path] = [...context.params.url];
@@ -29,7 +29,7 @@ export async function POST(
   console.log("Request /api/proxy POST " + url);
   const response = await fetch(url, {
     method: "POST",
-    body: request.body,
+    body: JSON.stringify(request.body),
     headers: request.headers,
   });
   return new Response(response.body);
