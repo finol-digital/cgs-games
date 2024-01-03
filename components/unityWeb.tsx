@@ -25,6 +25,10 @@ export default function UnityWeb({
     dataUrl: "/Unity/WebGL.data",
     frameworkUrl: "/Unity/WebGL.framework.js",
     codeUrl: "/Unity/WebGL.wasm",
+    streamingAssetsUrl: "/StreamingAssets",
+    companyName: "Finol Digital LLC",
+    productName: "Card Game Simulator",
+    productVersion: "1.0.0",
   });
 
   // We'll use a state to store the device pixel ratio.
@@ -57,7 +61,6 @@ export default function UnityWeb({
 
   const handleGameReady = useCallback(() => {
     setIsGameReady(true);
-    console.log("GameReady");
   }, []);
 
   useEffect(() => {
@@ -67,7 +70,7 @@ export default function UnityWeb({
     };
   }, [addEventListener, removeEventListener, handleGameReady]);
 
-  if (!hasGameStarted && isGameReady) {
+  if (isGameReady && !hasGameStarted) {
     sendMessage("CardGameManager", "StartGetCardGame", url);
     setHasGameStarted(true);
   }
@@ -79,13 +82,6 @@ export default function UnityWeb({
       )}
       {isLoaded && (
         <div>
-          <button
-            onClick={() =>
-              sendMessage("CardGameManager", "StartGetCardGame", url)
-            }
-          >
-            Sync {name}
-          </button>
           <button onClick={() => requestFullscreen(true)}>
             Enter Fullscreen
           </button>
@@ -100,12 +96,6 @@ export default function UnityWeb({
         }}
         devicePixelRatio={devicePixelRatio}
       />
-      {!hasGameStarted && (
-        <p>
-          If needed, please click the &quot;Sync {name}&quot; button and then
-          reload this page.
-        </p>
-      )}
     </div>
   );
 }
