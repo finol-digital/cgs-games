@@ -19,6 +19,14 @@ export async function GET(
   return new Response(response.body);
 }
 
+async function streamToString(stream: any) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 export async function POST(
   request: Request,
   context: { params: { url: string[] } },
@@ -26,10 +34,14 @@ export async function POST(
   const [host, ...path] = [...context.params.url];
   let uri = stripTrailingSlash("https://" + host + "/" + path.join("/"));
   const url = new URL(uri);
-  console.log("Request /api/proxy POST " + url);
+  const requestJson = await streamToString(request.body);
+  console.log("Request /api/proxy POST " + url) + " " + requestJson;
   const response = await fetch(url, {
     method: "POST",
-    body: JSON.stringify(request.body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: requestJson,
   });
-  return new Response(response.body);
+  return response;
 }
