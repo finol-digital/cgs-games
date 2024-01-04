@@ -1,5 +1,5 @@
 import { auth } from "@/lib/firebase/firebase";
-import { getUserDoc } from "@/lib/firebase/firestore";
+import { userDoc } from "@/lib/firebase/firestore";
 import { onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -14,7 +14,7 @@ export function useUserData() {
     let unsubscribe;
 
     if (user) {
-      const ref = getUserDoc(user.uid);
+      const ref = userDoc(user.uid);
       unsubscribe = onSnapshot(ref, (doc) => {
         setUsername(doc.data()?.username);
       });

@@ -1,5 +1,6 @@
 import { db } from "@/lib/firebase/firebase";
 import {
+  Query,
   QueryDocumentSnapshot,
   collection,
   doc,
@@ -11,27 +12,28 @@ import {
 } from "firebase/firestore";
 
 export async function getAllGames() {
-  const results = await getDocs(query(collection(db, "games")));
+  const gamesQuery = query(collection(db, "games"));
+  const results = await getLatestDocs(gamesQuery, 50);
   return results.docs.map((doc) => game(doc));
 }
 
 export async function getGames(username: string) {
-  const usernameQuery = query(
+  const gamesUsernameQuery = query(
     collection(db, "games"),
     where("username", "==", username),
   );
-  const results = await getDocs(usernameQuery);
+  const results = await getLatestDocs(gamesUsernameQuery, 50);
   return results.docs.map((doc) => game(doc));
 }
 
 export async function getGame(username: string, slug: string) {
-  const usernameQuery = query(
+  const gamesUsernameQuery = query(
     collection(db, "games"),
     where("username", "==", username),
   );
   const results = await getDocs(
     query(
-      usernameQuery,
+      gamesUsernameQuery,
       where("slug", "==", slug),
       orderBy("uploadedAt"),
       limitToLast(1),
@@ -52,6 +54,12 @@ function game(doc: QueryDocumentSnapshot) {
   };
 }
 
-export function getUserDoc(uid: string) {
+async function getLatestDocs(unfilteredQuery: Query, count: number) {
+  return getDocs(
+    query(unfilteredQuery, orderBy("uploadedAt"), limitToLast(count)),
+  );
+}
+
+export function userDoc(uid: string) {
   return doc(db, "users", uid);
 }

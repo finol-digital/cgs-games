@@ -10,7 +10,7 @@ export default async function Page({
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
   return (
-    <>
+    <section className="main-content">
       <h2>1. Install CGS</h2>
       <iframe
         src="https://store.steampowered.com/widget/1742850/"
@@ -30,6 +30,6 @@ export default async function Page({
         </li>
         <li>Paste the AutoUpdateUrl and Submit Download</li>
       </ol>
-    </>
+    </section>
   );
 }

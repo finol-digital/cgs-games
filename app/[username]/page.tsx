@@ -1,5 +1,5 @@
 import Footer from "@/components/footer";
-import GamesList from "@/components/gamesList";
+import GamesTable from "@/components/gamesTable";
 import Header from "@/components/header";
 import { getGames } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
@@ -32,8 +32,9 @@ export default async function Page({
   return (
     <main className="main-container">
       <Header title={params.username + "'s games"} />
-      <p>{params.username} has these games:</p>
-      <GamesList games={games} />
+      <div className="main-content">
+        <GamesTable games={games} />
+      </div>
       <Footer />
     </main>
   );

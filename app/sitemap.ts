@@ -8,7 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: "https://cgs.games/list",
+      url: "https://cgs.games/browse",
       lastModified: new Date(),
       priority: 0.9,
     },
