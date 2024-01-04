@@ -43,7 +43,7 @@ export default async function GameLayout({
         txt={game.name}
         title={"Play " + game.name}
       />
-      <>{children}</>
+      <section className="main-content">{children}</section>
       <FooterForGame game={game} />
     </main>
   );

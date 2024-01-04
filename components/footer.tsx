@@ -18,7 +18,7 @@ export default function Footer({ disclaimer }: { disclaimer?: string }) {
         <Link href="/">CGS Games</Link>
       </p>
       <p>
-        <Link href="/list">List</Link> | <Link href="/upload">Upload</Link>
+        <Link href="/browse">Browse</Link> | <Link href="/upload">Upload</Link>
       </p>
       <p>
         <Link href="/terms">Terms</Link> | <Link href="/privacy">Privacy</Link>

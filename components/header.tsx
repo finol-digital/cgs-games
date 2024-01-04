@@ -17,7 +17,11 @@ export default function Header({
         <Banner home={home} img={img} txt={txt} />
       </center>
       <hr />
-      {title && <h1>{title}</h1>}
+      {title && (
+        <center>
+          <h1>{title}</h1>
+        </center>
+      )}
     </header>
   );
 }
