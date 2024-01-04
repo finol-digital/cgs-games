@@ -6,9 +6,9 @@ export default function GamesTable({ games }: { games: Game[] }) {
     <>
       <table>
         <tr>
-          <th>Game</th>
-          <th>Username</th>
-          <th>Uploaded At</th>
+          <th align="left">Game</th>
+          <th align="left">Username</th>
+          <th align="left">Uploaded At</th>
         </tr>
         {games
           .sort((a: Game, b: Game) => a.name.localeCompare(b.name))
