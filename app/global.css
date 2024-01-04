@@ -38,8 +38,7 @@ body {
 }
 
 .main-content {
-  min-width: 640px;
-  max-width: 640px;
+  max-width: 900px;
   position: relative;
   margin: 0 auto;
 }
