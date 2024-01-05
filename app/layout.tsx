@@ -1,5 +1,5 @@
 import UserContextProvider from "@/components/userContextProvider";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import "./global.css";
 
 const APP_NAME = "CGS Games";
@@ -31,6 +31,10 @@ export const metadata: Metadata = {
     follow: true,
     index: true,
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#D3BD7A",
 };
 
 export default function RootLayout({
