@@ -35,7 +35,7 @@ export async function getGame(username: string, slug: string) {
     query(
       gamesUsernameQuery,
       where("slug", "==", slug),
-      orderBy("uploadedAt"),
+      orderBy("uploadedAt", "desc"),
       limit(1),
     ),
   );
@@ -55,7 +55,9 @@ function game(doc: QueryDocumentSnapshot) {
 }
 
 async function getLatestDocs(unfilteredQuery: Query, count: number) {
-  return getDocs(query(unfilteredQuery, orderBy("uploadedAt"), limit(count)));
+  return getDocs(
+    query(unfilteredQuery, orderBy("uploadedAt", "desc"), limit(count)),
+  );
 }
 
 export function userDoc(uid: string) {
