@@ -5,7 +5,7 @@ import {
   collection,
   doc,
   getDocs,
-  limitToLast,
+  limit,
   orderBy,
   query,
   where,
@@ -35,8 +35,8 @@ export async function getGame(username: string, slug: string) {
     query(
       gamesUsernameQuery,
       where("slug", "==", slug),
-      orderBy("uploadedAt"),
-      limitToLast(1),
+      orderBy("uploadedAt", "desc"),
+      limit(1),
     ),
   );
   return results.docs.map((doc) => game(doc))?.at(0);
@@ -56,7 +56,7 @@ function game(doc: QueryDocumentSnapshot) {
 
 async function getLatestDocs(unfilteredQuery: Query, count: number) {
   return getDocs(
-    query(unfilteredQuery, orderBy("uploadedAt"), limitToLast(count)),
+    query(unfilteredQuery, orderBy("uploadedAt", "desc"), limit(count)),
   );
 }
 
