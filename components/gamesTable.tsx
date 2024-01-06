@@ -11,22 +11,20 @@ export default function GamesTable({ games }: { games: Game[] }) {
           <th align="left">Upload User</th>
           <th align="left">Upload Date</th>
         </tr>
-        {games
-          .sort((a: Game, b: Game) => a.name.localeCompare(b.name))
-          .map((val, key) => {
-            return (
-              <tr key={key}>
-                <td>
-                  <Link href={`/${val.username}/${val.slug}`}>{val.name}</Link>
-                </td>
-                <td>{val.copyright}</td>
-                <td>
-                  <Link href={`/${val.username}`}>{val.username}</Link>
-                </td>
-                <td>{val.uploadedAt.toDate().toLocaleDateString()}</td>
-              </tr>
-            );
-          })}
+        {games.map((val, key) => {
+          return (
+            <tr key={key}>
+              <td>
+                <Link href={`/${val.username}/${val.slug}`}>{val.name}</Link>
+              </td>
+              <td>{val.copyright}</td>
+              <td>
+                <Link href={`/${val.username}`}>{val.username}</Link>
+              </td>
+              <td>{val.uploadedAt.toDate().toLocaleDateString()}</td>
+            </tr>
+          );
+        })}
       </table>
     </>
   );
