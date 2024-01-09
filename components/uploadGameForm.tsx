@@ -77,7 +77,7 @@ function UsernameForm() {
       setIsValid(false);
     }
     if (
-      val === "list" ||
+      val === "browse" ||
       val === "upload" ||
       val === "terms" ||
       val === "privacy" ||
