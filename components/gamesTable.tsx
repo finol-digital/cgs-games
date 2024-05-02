@@ -5,7 +5,6 @@ export default function GamesTable({ games }: { games: Game[] }) {
   return (
     <>
       <table>
-        <caption>CGS Games Table</caption>
         <thead>
           <tr>
             <th align="left">Game</th>
