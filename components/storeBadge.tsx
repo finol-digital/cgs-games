@@ -55,7 +55,7 @@ export default function StoreBadge() {
       {(windows || unknown) && (
         <Link
           target="_blank"
-          href="https://www.microsoft.com/en-us/p/card-game-simulator/9N96N5S4W3J0"
+          href="https://apps.microsoft.com/detail/9n96n5s4w3j0"
         >
           <img
             // img instead of next/Image
