@@ -116,6 +116,8 @@ button.btn-green {
 button.btn-google {
   background-color: white;
   color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
 }
 
 .btn-google img {
