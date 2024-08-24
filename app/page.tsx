@@ -1,8 +1,11 @@
 import Footer from "@/components/footer";
+import GamesDeck from "@/components/gamesDeck";
 import Header from "@/components/header";
+import { getAllGames } from "@/lib/firebase/firestore";
 import Link from "next/link";
 
-export default function Page() {
+export default async function Page() {
+  const allGames = await getAllGames();
   return (
     <main className="main-container">
       <Header title="CGS Games" />
@@ -15,20 +18,14 @@ export default function Page() {
           (CGS) Games website!
         </p>
         <p>
-          This website allows CGS users to share their games, and you can{" "}
-          <Link href="/browse">browse CGS Games here</Link>.
-        </p>
-        <p>
-          If you want to create your own game, you can refer to{" "}
+          You can{" "}
           <Link href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS">
-            The Crash Course into Game Development with CGS
+            create
           </Link>
-          .
+          and <Link href="/upload">upload</Link> your own custom card games, or
+          browse games uploaded by others:
         </p>
-        <p>
-          Once you&apos;re ready to share your game, go to the{" "}
-          <Link href="/upload">CGS Games Upload</Link>.
-        </p>
+        <GamesDeck games={allGames} />
       </div>
       <Footer />
     </main>

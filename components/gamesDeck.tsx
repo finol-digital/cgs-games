@@ -1,7 +1,7 @@
 import Game from "@/lib/game";
 import Link from "next/link";
 
-export default function GamesTable({ games }: { games: Game[] }) {
+export default function GamesDeck({ games }: { games: Game[] }) {
   return (
     <>
       <table>

@@ -1,5 +1,5 @@
 import Footer from "@/components/footer";
-import GamesTable from "@/components/gamesTable";
+import GamesDeck from "@/components/gamesDeck";
 import Header from "@/components/header";
 import { getAllGames } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
@@ -22,7 +22,7 @@ export default async function Page() {
     <main className="main-container">
       <Header title="CGS Games Browser" />
       <div className="main-content">
-        <GamesTable games={allGames} />
+        <GamesDeck games={allGames} />
         <p>
           If you would like to add your game, try the{" "}
           <Link href="/upload">CGS Games Upload</Link>.
