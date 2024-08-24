@@ -1,5 +1,5 @@
 import Footer from "@/components/footer";
-import GamesDeck from "@/components/gamesTable";
+import GamesDeck from "@/components/gamesDeck";
 import Header from "@/components/header";
 import { getGames } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
