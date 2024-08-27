@@ -21,6 +21,7 @@
     "eslint-config-next": "13.4.19",
     "eslint-plugin-prettier": "^5.0.0",
     "firebase": "^10.4.0",
+    "firebase-functions": "^5.1.0",
     "framer-motion": "^11.3.30",
     "lodash.debounce": "^4.0.8",
     "lodash.snakecase": "^4.1.1",
