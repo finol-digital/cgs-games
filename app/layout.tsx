@@ -1,4 +1,5 @@
 import UserContextProvider from "@/components/userContextProvider";
+import { Providers } from "./providers";
 import { Metadata, Viewport } from "next";
 import "./global.css";
 
@@ -45,7 +46,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <UserContextProvider>{children}</UserContextProvider>
+        <Providers>
+          <UserContextProvider>{children}</UserContextProvider>
+        </Providers>
       </body>
     </html>
   );

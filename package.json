@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^9.7.1",
+    "@nextui-org/card": "^2.0.33",
+    "@nextui-org/react": "^2.4.6",
+    "@nextui-org/system": "^2.2.5",
+    "@nextui-org/theme": "^2.2.9",
     "@types/node": "20.6.0",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
@@ -17,6 +21,8 @@
     "eslint-config-next": "13.4.19",
     "eslint-plugin-prettier": "^5.0.0",
     "firebase": "^10.4.0",
+    "firebase-functions": "^5.1.0",
+    "framer-motion": "^11.3.30",
     "lodash.debounce": "^4.0.8",
     "lodash.snakecase": "^4.1.1",
     "next": "^14.0.4",
@@ -29,8 +35,12 @@
   "devDependencies": {
     "@types/lodash.debounce": "^4.0.9",
     "@types/lodash.snakecase": "^4.1.9",
+    "autoprefixer": "^10.4.20",
     "eslint-config-prettier": "^9.0.0",
-    "prettier": "3.0.3",
+    "postcss": "^8.4.41",
+    "prettier": "^3.0.3",
+    "prettier-plugin-tailwindcss": "^0.6.6",
+    "tailwindcss": "^3.4.10",
     "webpack": "^5.88.2"
   }
 }
