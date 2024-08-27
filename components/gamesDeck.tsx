@@ -8,7 +8,7 @@ export default function GamesDeck({ games }: { games: Game[] }) {
     <div className="max-w-[800px] gap-2 grid grid-cols-1">
       {games.map((game, index) => {
         return (
-          <Card key={index} className="border-none">
+          <Card key={index} className="border-none bg-slate-400">
             <CardBody className="overflow-visible p-0">
               <center>
                 <Banner
@@ -18,13 +18,9 @@ export default function GamesDeck({ games }: { games: Game[] }) {
                 />
               </center>
             </CardBody>
-            <CardFooter className="text-small justify-between">
-              {game.copyright && (
-                <p className="text-default-500">
-                  Copyright of {game.copyright}
-                </p>
-              )}
-              <p className="text-default-500">
+            <CardFooter className="text-small text-gray-800 justify-between">
+              {game.copyright && <p>Copyright of {game.copyright}</p>}
+              <p>
                 Uploaded by{" "}
                 <Link href={`/${game.username}`}>{game.username}</Link>
               </p>
