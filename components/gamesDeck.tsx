@@ -18,7 +18,7 @@ export default function GamesDeck({ games }: { games: Game[] }) {
                 />
               </center>
             </CardBody>
-            <CardFooter className="text-small text-gray-800 justify-between">
+            <CardFooter className="justify-between text-small text-gray-800">
               {game.copyright && <p>Copyright of {game.copyright}</p>}
               <p>
                 Uploaded by{" "}
