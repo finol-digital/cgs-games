@@ -21,7 +21,7 @@ export default async function Page() {
           You can{" "}
           <Link href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS">
             create
-          </Link>
+          </Link>{" "}
           and <Link href="/upload">upload</Link> your own custom card games, or
           browse games uploaded by others:
         </p>

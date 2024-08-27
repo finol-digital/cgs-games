@@ -1,33 +1,37 @@
 import Game from "@/lib/game";
+import { Card, CardBody, CardFooter, CardHeader } from "@nextui-org/card";
 import Link from "next/link";
+import Banner from "./banner";
 
 export default function GamesDeck({ games }: { games: Game[] }) {
   return (
-    <>
-      <table>
-        <thead>
-          <tr>
-            <th align="left">Game</th>
-            <th align="left">Copyright</th>
-            <th align="left">Uploaded By</th>
-          </tr>
-        </thead>
-        <tbody>
-          {games.map((val, key) => {
-            return (
-              <tr key={key}>
-                <td>
-                  <Link href={`/${val.username}/${val.slug}`}>{val.name}</Link>
-                </td>
-                <td>{val.copyright}</td>
-                <td>
-                  <Link href={`/${val.username}`}>{val.username}</Link>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </>
+    <div className="max-w-[800px] gap-2 grid grid-cols-1">
+      {games.map((game, index) => {
+        return (
+          <Card key={index} className="border-none">
+            <CardBody className="overflow-visible p-0">
+              <center>
+                <Banner
+                  home={`/${game.username}/${game.slug}`}
+                  img={game.bannerImageUrl}
+                  txt={game.name}
+                />
+              </center>
+            </CardBody>
+            <CardFooter className="text-small justify-between">
+              {game.copyright && (
+                <p className="text-default-500">
+                  Copyright of {game.copyright}
+                </p>
+              )}
+              <p className="text-default-500">
+                Uploaded by{" "}
+                <Link href={`/${game.username}`}>{game.username}</Link>
+              </p>
+            </CardFooter>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
