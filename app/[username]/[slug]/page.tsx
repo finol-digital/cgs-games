@@ -1,3 +1,4 @@
+import AutoUpdateUrl from "@/components/autoUpdateUrl";
 import CgsDeepLink from "@/components/cgsDeepLink";
 import { getGame } from "@/lib/firebase/firestore";
 import Link from "next/link";
@@ -27,6 +28,7 @@ export default async function Page({
           </Link>
         </li>
       </ul>
+      <AutoUpdateUrl url={game.autoUpdateUrl} />
     </section>
   );
 }
