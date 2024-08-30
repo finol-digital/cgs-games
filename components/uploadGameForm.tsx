@@ -220,6 +220,10 @@ function AutoUpdateUrlForm() {
         uploadedAt: serverTimestamp(),
       };
       console.log(game);
+      const isValidUrl = isValidHttpsUrl(game.bannerImageUrl);
+      if (!isValidUrl) {
+        throw new Error("Invalid bannerImageUrl!");
+      }
       await addDoc(collection(db, "games"), game);
       setLoading(false);
       router.push(`/${username}/${slug}`);
