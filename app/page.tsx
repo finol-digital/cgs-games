@@ -4,6 +4,8 @@ import Header from "@/components/header";
 import { getAllGames } from "@/lib/firebase/firestore";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
   const allGames = await getAllGames();
   return (
