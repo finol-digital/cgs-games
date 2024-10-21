@@ -1,5 +1,12 @@
 {
   "projects": {
     "default": "cgs-games"
-  }
+  },
+  "targets": {},
+  "etags": {
+    "cgs-games": {
+      "extensionInstances": {}
+    }
+  },
+  "dataconnectEmulatorConfig": {}
 }
