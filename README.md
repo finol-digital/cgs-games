@@ -10,6 +10,8 @@ Built with Next.js and Firebase.
 
 **Format**: `npx prettier . --write`
 
+**Audit**: `npm audit fix`
+
 **Lint**: `npm run lint`
 
 **Build**: `npm run build`
