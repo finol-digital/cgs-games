@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
-export async function OPTIONS(req: NextRequest) {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
 const stripTrailingSlash = (str: string) => {
   return str.endsWith("/") ? str.slice(0, -1) : str;
 };
@@ -26,9 +16,13 @@ export async function GET(
   const url = new URL(uri);
   console.log("Request /api/proxy GET " + url);
   const response = await fetch(url);
-  return new Response(response.body, {
+  return new NextResponse(response.body, {
     status: 200,
-    headers: corsHeaders
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
   });
 }
 
@@ -51,7 +45,11 @@ export async function POST(
   console.log("Request /api/proxy POST " + url) + " " + requestJson;
   const response = await fetch(url, {
     method: "POST",
-    headers: corsHeaders,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
     body: requestJson,
   });
   return response;
