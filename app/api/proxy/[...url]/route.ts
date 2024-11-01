@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const stripTrailingSlash = (str: string) => {
   return str.endsWith("/") ? str.slice(0, -1) : str;
@@ -16,7 +16,14 @@ export async function GET(
   const url = new URL(uri);
   console.log("Request /api/proxy GET " + url);
   const response = await fetch(url);
-  return new Response(response.body);
+  return new NextResponse(response.body, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 }
 
 async function streamToString(stream: any) {
@@ -39,7 +46,9 @@ export async function POST(
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
     body: requestJson,
   });
