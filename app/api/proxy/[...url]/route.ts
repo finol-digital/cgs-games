@@ -46,9 +46,7 @@ export async function POST(
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Content-Type": "application/json",
     },
     body: requestJson,
   });
