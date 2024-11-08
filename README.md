@@ -19,3 +19,9 @@ Built with Next.js and Firebase.
 **Start**: `npm run start`
 
 **Deploy**: `firebase deploy`
+
+refresh in CGS app
+toast on copy
+view for gamesDeck
+delete in personal page
+page for create
