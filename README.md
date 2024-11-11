@@ -20,7 +20,9 @@ Built with Next.js and Firebase.
 
 **Deploy**: `firebase deploy`
 
-toast on copy
-view for gamesDeck
-delete in personal page
-page for create
+TODO:
+- Add login to header
+- Add option to delete game in gamesDeck
+- Consider what to do once here are more than 50 games in gamesDeck
+- Page to create new game
+- Add navigation to header and remove all outside links other than to cardgamesimulator.com
