@@ -20,7 +20,6 @@ Built with Next.js and Firebase.
 
 **Deploy**: `firebase deploy`
 
-refresh in CGS app
 toast on copy
 view for gamesDeck
 delete in personal page
