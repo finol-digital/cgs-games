@@ -1,6 +1,4 @@
-import Footer from "@/components/footer";
 import GamesDeck from "@/components/gamesDeck";
-import Header from "@/components/header";
 import { getGames } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -30,12 +28,9 @@ export default async function Page({
   const games = await getGames(params.username);
   if (!games) return notFound();
   return (
-    <main className="main-container">
-      <Header title={params.username + "'s games"} />
-      <div className="main-content">
-        <GamesDeck games={games} />
-      </div>
-      <Footer />
+    <main className="main-content">
+      <h1 className="text-center">{params.username}'s games</h1>
+      <GamesDeck games={games} />
     </main>
   );
 }

@@ -2,17 +2,18 @@ import Link from "next/link";
 
 export default function Banner({
   home = "/",
-  img = "/cgs.png",
-  txt = "Share your Card Game Simulator (CGS) games",
+  img = "/Card-Game-Simulator.png",
+  txt = "Card Game Simulator",
 }: {
   home?: string;
   img?: string;
   txt?: string;
 }) {
   return (
-    <>
-      <Link href={home}>
+    <div className="border-none bg-slate-400 flex justify-center">
+      <Link href={home} className="mt-8 mb-8 flex justify-center">
         <img
+          className="flex justify-center"
           // img instead of next/Image
           src={img}
           height="128"
@@ -20,6 +21,6 @@ export default function Banner({
           //priority={true}
         />
       </Link>
-    </>
+    </div>
   );
 }

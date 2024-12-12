@@ -1,27 +1,31 @@
-import Banner from "@/components/banner";
+"use client";
 
-export default function Header({
-  home = "/",
-  img = "/cgs.png",
-  txt = "Share your Card Game Simulator (CGS) games",
-  title,
-}: {
-  home?: string;
-  img?: string;
-  txt?: string;
-  title?: string;
-}) {
+import MainNav from "./mainNav";
+
+import { UserContext } from "@/lib/context";
+import { useContext } from "react";
+import SignInButton from "./signInButton";
+import UserMenu from "./userMenu";
+import UsernameForm from "./usernameForm";
+
+export default function Header() {
+  const { user, username } = useContext(UserContext);
   return (
-    <header>
-      <center>
-        <Banner home={home} img={img} txt={txt} />
-      </center>
-      <hr />
-      {title && (
-        <center>
-          <h1>{title}</h1>
-        </center>
-      )}
+    <header className="bg-[#D3BD7A] sticky top-0 w-full border-b">
+      <div className="h-14 container flex items-center">
+        <MainNav />
+        <div className="flex items-center justify-end flex-1">
+          {user ? (
+            username ? (
+              <UserMenu username={username} />
+            ) : (
+              <UsernameForm />
+            )
+          ) : (
+            <SignInButton />
+          )}
+        </div>
+      </div>
     </header>
   );
 }

@@ -4,6 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* variables */
 :root {
   background: #eef0f1;
   --color-bg: #eef0f1;
@@ -14,28 +15,21 @@
   --color-gray: #b5bdc4;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-*:before,
-*:after {
-  box-sizing: border-box;
-}
-
-html,
+/* layout */
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
-  height: 100%;
-  position: relative;
+  min-width: 100%;
+  padding: 0;
+  margin: 0;
+  width: 100%;
   font-family: "Noto Sans", sans-serif;
 }
 
 .main-container {
   background-color: var(--color-bg);
-  min-height: 100vh;
-  /* will cover the 100% of viewport */
+  /* will cover the viewport */
+  min-height: 80vh;
   overflow: hidden;
   display: block;
   position: relative;
@@ -45,7 +39,7 @@ body {
 
 .main-content {
   background-color: var(--color-bg);
-  max-width: 900px;
+  max-width: 800px;
   position: relative;
   margin: 0 auto;
 }
@@ -117,38 +111,7 @@ button.btn-green {
   color: white;
 }
 
-button.btn-google {
-  background-color: white;
-  color: var(--color-text);
-  display: inline-flex;
-  align-items: center;
-}
-
-.btn-google img {
-  width: 30px;
-  margin-right: 10px;
-}
-
-button.btn-logo {
-  background-color: var(--color-text);
-  color: white;
-  text-transform: uppercase;
-  font-size: 1.5rem;
-  padding: 0.5rem 1rem;
-}
-
-code {
-  overflow-x: scroll;
-}
-
-.url-snippet {
-  width: 75%;
-  margin-left: auto;
-  background: white;
-  padding: 5px;
-  margin: 5px 0;
-}
-
+/* text */
 .text-sm {
   font-size: 0.85rem;
 }
@@ -166,4 +129,16 @@ code {
 .text-info {
   font-weight: bold;
   color: var(--color-blue);
+}
+
+code {
+  overflow-x: scroll;
+}
+
+.url-snippet {
+  width: 75%;
+  margin-left: auto;
+  background: white;
+  padding: 5px;
+  margin: 5px 0;
 }

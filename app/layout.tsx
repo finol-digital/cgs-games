@@ -1,7 +1,8 @@
+import Header from "@/components/header";
 import UserContextProvider from "@/components/userContextProvider";
-import { Providers } from "./providers";
 import { Metadata, Viewport } from "next";
 import "./global.css";
+import { Providers } from "./providers";
 
 const APP_NAME = "CGS Games";
 const APP_DESCRIPTION = "Share your CGS games";
@@ -38,7 +39,7 @@ export const viewport: Viewport = {
   themeColor: "#D3BD7A",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -46,9 +47,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>
-          <UserContextProvider>{children}</UserContextProvider>
-        </Providers>
+        <div className="main-container">
+          <Providers>
+            <UserContextProvider>
+              <Header />
+              {children}
+            </UserContextProvider>
+          </Providers>
+        </div>
       </body>
     </html>
   );

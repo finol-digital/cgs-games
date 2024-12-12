@@ -1,5 +1,3 @@
-import FooterForGame from "@/components/footerForGame";
-import Header from "@/components/header";
 import { getGame } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -35,16 +33,5 @@ export default async function GameLayout({
 }) {
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
-  return (
-    <main className="main-container">
-      <Header
-        home={`/${game.username}/${game.slug}`}
-        img={game.bannerImageUrl}
-        txt={game.name}
-        title={"Play " + game.name}
-      />
-      <>{children}</>
-      <FooterForGame game={game} />
-    </main>
-  );
+  return <>{children}</>;
 }
