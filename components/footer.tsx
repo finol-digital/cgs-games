@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Footer({
   copyrightNotice,
 }: {
-  copyrightNotice?: String;
+  copyrightNotice?: string;
 }) {
   if (!copyrightNotice) {
     copyrightNotice = "Finol Digital LLC ©" + new Date().getFullYear();
