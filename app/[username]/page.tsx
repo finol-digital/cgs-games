@@ -11,7 +11,7 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const params = await props.params;
   return {
-    title: params.username,
+    title: params.username + " | CGS Games",
     description: params.username + "'s games",
     openGraph: {
       title: params.username,

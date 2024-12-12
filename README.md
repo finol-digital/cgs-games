@@ -22,6 +22,6 @@ Built with Next.js and Firebase.
 
 ## Next Steps
 
-- Consider what to do once there are more than 50 games in gamesDeck
+- Consider what to do once there are more than 50 games in gamesDeck (remove require-dynamic from / and /browse?)
 - Add option to delete your game
 - Pages for new and edit/manage with all parameters
