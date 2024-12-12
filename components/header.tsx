@@ -3,10 +3,10 @@
 import MainNav from "./mainNav";
 
 import { UserContext } from "@/lib/context";
+import Link from "next/link";
 import { useContext } from "react";
 import SignInButton from "./signInButton";
 import UserMenu from "./userMenu";
-import UsernameForm from "./usernameForm";
 
 export default function Header() {
   const { user, username } = useContext(UserContext);
@@ -19,7 +19,7 @@ export default function Header() {
             username ? (
               <UserMenu username={username} />
             ) : (
-              <UsernameForm />
+              <Link href="/upload">Upload Username</Link>
             )
           ) : (
             <SignInButton />

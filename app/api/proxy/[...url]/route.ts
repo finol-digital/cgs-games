@@ -6,9 +6,9 @@ const stripTrailingSlash = (str: string) => {
 
 export async function GET(
   request: NextRequest,
-  context: { params: { url: string[] } },
+  context: { params: Promise<{ url: string[] }> },
 ) {
-  const [host, ...path] = [...context.params.url];
+  const [host, ...path] = [...(await context.params).url];
   let uri = stripTrailingSlash("https://" + host + "/" + path.join("/"));
   if (request.nextUrl.searchParams) {
     uri = uri + "?" + request.nextUrl.searchParams.toString();
@@ -36,9 +36,9 @@ async function streamToString(stream: any) {
 
 export async function POST(
   request: Request,
-  context: { params: { url: string[] } },
+  context: { params: Promise<{ url: string[] }> },
 ) {
-  const [host, ...path] = [...context.params.url];
+  const [host, ...path] = [...(await context.params).url];
   let uri = stripTrailingSlash("https://" + host + "/" + path.join("/"));
   const url = new URL(uri);
   const requestJson = await streamToString(request.body);

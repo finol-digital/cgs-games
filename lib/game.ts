@@ -7,5 +7,5 @@ export default interface Game {
   bannerImageUrl: string;
   autoUpdateUrl: string;
   copyright: string;
-  uploadedAt: firebase.firestore.Timestamp;
+  uploadedAt: Date;
 }

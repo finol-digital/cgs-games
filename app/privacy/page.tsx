@@ -1,3 +1,4 @@
+import Footer from "@/components/footer";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -68,9 +69,12 @@ word-break: break-word !important;
 `;
 export default function Page() {
   return (
-    <main>
-      <h1 className="text-center">CGS Games Privacy Policy</h1>
-      <div dangerouslySetInnerHTML={{ __html: rawHTML }}></div>
-    </main>
+    <>
+      <main>
+        <h1 className="text-center">CGS Games Privacy Policy</h1>
+        <div dangerouslySetInnerHTML={{ __html: rawHTML }}></div>
+      </main>
+      <Footer />
+    </>
   );
 }

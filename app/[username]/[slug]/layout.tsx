@@ -1,12 +1,12 @@
+import Footer from "@/components/footer";
 import { getGame } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { username: string; slug: string };
+export async function generateMetadata(props: {
+  params: Promise<{ username: string; slug: string }>;
 }): Promise<Metadata> {
+  const params = await props.params;
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
   return {
@@ -24,14 +24,25 @@ export async function generateMetadata({
   };
 }
 
-export default async function GameLayout({
-  children,
-  params,
-}: {
+export default async function GameLayout(props: {
   children: React.ReactNode;
-  params: { username: string; slug: string };
+  params: Promise<{ username: string; slug: string }>;
 }) {
+  const { children } = props;
+  const params = await props.params;
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
-  return <>{children}</>;
+  const copyrightNotice =
+    game && game.name && game.copyright
+      ? game.name +
+        " is copyright/TM of " +
+        game.copyright +
+        "; CGS is unaffiliated"
+      : params.username + " ©" + game.uploadedAt;
+  return (
+    <>
+      {children}
+      <Footer copyrightNotice={copyrightNotice} />
+    </>
+  );
 }
