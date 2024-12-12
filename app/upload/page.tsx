@@ -1,5 +1,4 @@
 import Footer from "@/components/footer";
-import Header from "@/components/header";
 import UploadGameForm from "@/components/uploadGameForm";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -15,23 +14,25 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="main-container">
-      <Header title="CGS Games Upload" />
-      <div className="main-content">
+    <>
+      <main className="main-content">
+        <h1 className="text-center">CGS Games Upload</h1>
         <p>
-          If you want to create your own game, you can refer to{" "}
-          <Link href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS">
+          To create your own game in CGS, refer to{" "}
+          <Link
+            href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS"
+            target="_blank"
+          >
             The Crash Course into Game Development with CGS
           </Link>
           .
         </p>
         <p>
-          After you have set up your CGS AutoUpdate Url, you can sign in and
-          upload:
+          Once you have your CGS AutoUpdate Url, you can sign in and upload:
         </p>
         <UploadGameForm />
-      </div>
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }

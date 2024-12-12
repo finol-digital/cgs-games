@@ -1,17 +1,15 @@
 import Footer from "@/components/footer";
 import GamesDeck from "@/components/gamesDeck";
-import Header from "@/components/header";
 import { getGames } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { username: string };
+export async function generateMetadata(props: {
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
+  const params = await props.params;
   return {
     title: params.username,
     description: params.username + "'s games",
@@ -22,20 +20,19 @@ export async function generateMetadata({
   };
 }
 
-export default async function Page({
-  params,
-}: {
-  params: { username: string };
+export default async function Page(props: {
+  params: Promise<{ username: string }>;
 }) {
+  const params = await props.params;
   const games = await getGames(params.username);
   if (!games) return notFound();
   return (
-    <main className="main-container">
-      <Header title={params.username + "'s games"} />
-      <div className="main-content">
+    <>
+      <main className="main-content">
+        <h1 className="text-center">{params.username}&apos;s games</h1>
         <GamesDeck games={games} />
-      </div>
-      <Footer />
-    </main>
+      </main>
+      <Footer copyrightNotice={`${params.username}`} />
+    </>
   );
 }

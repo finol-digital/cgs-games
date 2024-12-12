@@ -50,7 +50,7 @@ function game(doc: QueryDocumentSnapshot) {
     bannerImageUrl: doc.get("bannerImageUrl"),
     autoUpdateUrl: doc.get("autoUpdateUrl"),
     copyright: doc.get("copyright"),
-    uploadedAt: doc.get("uploadedAt"),
+    uploadedAt: doc.get("uploadedAt").toDate(),
   };
 }
 

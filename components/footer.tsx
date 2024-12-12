@@ -1,18 +1,18 @@
 import Link from "next/link";
 
-export default function Footer({ disclaimer }: { disclaimer?: string }) {
+export default function Footer({
+  copyrightNotice,
+}: {
+  copyrightNotice?: string;
+}) {
+  if (!copyrightNotice) {
+    copyrightNotice = "Finol Digital LLC ©" + new Date().getFullYear();
+  }
   return (
     <footer>
-      {disclaimer && (
-        <p>
-          <i>{disclaimer}</i>
-        </p>
-      )}
-      {!disclaimer && (
-        <p>
-          <i>Finol Digital LLC ©{new Date().getFullYear()}</i>
-        </p>
-      )}
+      <p>
+        <i>{copyrightNotice}</i>
+      </p>
       <hr />
       <p>
         <Link href="/">CGS Games</Link>

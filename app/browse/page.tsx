@@ -1,6 +1,5 @@
 import Footer from "@/components/footer";
 import GamesDeck from "@/components/gamesDeck";
-import Header from "@/components/header";
 import { getAllGames } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -19,16 +18,16 @@ export const metadata: Metadata = {
 export default async function Page() {
   const allGames = await getAllGames();
   return (
-    <main className="main-container">
-      <Header title="CGS Games Browser" />
-      <div className="main-content">
+    <>
+      <main className="main-content">
+        <h1 className="text-center">CGS Games Browser</h1>
         <GamesDeck games={allGames} />
         <p>
           If you would like to add your game, try the{" "}
           <Link href="/upload">CGS Games Upload</Link>.
         </p>
-      </div>
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }

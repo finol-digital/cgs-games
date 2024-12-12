@@ -1,5 +1,4 @@
 import Footer from "@/components/footer";
-import Header from "@/components/header";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -157,10 +156,12 @@ Calibri;color:#595959;mso-themecolor:text1;mso-themetint:166;"><strong><bdt clas
 
 export default function Page() {
   return (
-    <main className="main-container">
-      <Header title="CGS Games" />
-      <div dangerouslySetInnerHTML={{ __html: rawHTML }}></div>
+    <>
+      <main>
+        <h1 className="text-center">CGS Games Terms of Use</h1>
+        <div dangerouslySetInnerHTML={{ __html: rawHTML }}></div>
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }

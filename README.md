@@ -4,7 +4,7 @@ Website for Card Game Simulator (CGS) users to share their games.
 
 Built with Next.js and Firebase.
 
-## Instructions
+## Local Setup
 
 **First**: `npm install`
 
@@ -20,9 +20,8 @@ Built with Next.js and Firebase.
 
 **Deploy**: `firebase deploy`
 
-TODO:
-- Add login to header
-- Add option to delete game in gamesDeck
-- Consider what to do once here are more than 50 games in gamesDeck
-- Page to create new game
-- Add navigation to header and remove all outside links other than to cardgamesimulator.com
+## Next Steps
+
+- Consider what to do once there are more than 50 games in gamesDeck
+- Add option to delete your game
+- Pages for new and edit/manage with all parameters

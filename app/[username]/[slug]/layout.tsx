@@ -1,14 +1,12 @@
-import FooterForGame from "@/components/footerForGame";
-import Header from "@/components/header";
+import Footer from "@/components/footer";
 import { getGame } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { username: string; slug: string };
+export async function generateMetadata(props: {
+  params: Promise<{ username: string; slug: string }>;
 }): Promise<Metadata> {
+  const params = await props.params;
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
   return {
@@ -26,25 +24,25 @@ export async function generateMetadata({
   };
 }
 
-export default async function GameLayout({
-  children,
-  params,
-}: {
+export default async function GameLayout(props: {
   children: React.ReactNode;
-  params: { username: string; slug: string };
+  params: Promise<{ username: string; slug: string }>;
 }) {
+  const { children } = props;
+  const params = await props.params;
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
+  const copyrightNotice =
+    game && game.name && game.copyright
+      ? game.name +
+        " is copyright/TM of " +
+        game.copyright +
+        "; CGS is unaffiliated"
+      : params.username + " ©" + game.uploadedAt.toDateString();
   return (
-    <main className="main-container">
-      <Header
-        home={`/${game.username}/${game.slug}`}
-        img={game.bannerImageUrl}
-        txt={game.name}
-        title={"Play " + game.name}
-      />
-      <>{children}</>
-      <FooterForGame game={game} />
-    </main>
+    <>
+      {children}
+      <Footer copyrightNotice={copyrightNotice} />
+    </>
   );
 }
