@@ -38,7 +38,7 @@ export default async function GameLayout(props: {
         " is copyright/TM of " +
         game.copyright +
         "; CGS is unaffiliated"
-      : params.username + " ©" + game.uploadedAt;
+      : params.username + " ©" + game.uploadedAt.toDateString();
   return (
     <>
       {children}

@@ -29,7 +29,7 @@ export default async function Page(props: {
   return (
     <>
       <main className="main-content">
-        <h1 className="text-center">{params.username}'s games</h1>
+        <h1 className="text-center">{params.username}&apos;s games</h1>
         <GamesDeck games={games} />
       </main>
       <Footer copyrightNotice={`${params.username}`} />
