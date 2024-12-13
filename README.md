@@ -23,5 +23,6 @@ Built with Next.js and Firebase.
 ## Next Steps
 
 - Consider what to do once there are more than 50 games in gamesDeck (remove require-dynamic from / and /browse?)
+- Use React 19 throughout, and replace NextUI with ShadCN
 - Add option to delete your game
 - Pages for new and edit/manage with all parameters
