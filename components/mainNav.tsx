@@ -9,7 +9,7 @@ export default function MainNav() {
         <img
           className="right-12"
           // img instead of next/Image
-          src="cgs.png"
+          src="/cgs.png"
           height="48"
           alt="[CGS]"
           //priority={true}
