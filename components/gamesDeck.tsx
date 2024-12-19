@@ -9,7 +9,7 @@ export default function GamesDeck({ games }: { games: Game[] }) {
     return <h3 className="text-center">No games found.</h3>;
   }
   return (
-    <div className="max-w-[800px] gap-2 grid grid-cols-1">
+    <div className="ml-5 mr-5 gap-2 grid grid-cols-1">
       {games.map((game, index) => {
         return (
           <Card
