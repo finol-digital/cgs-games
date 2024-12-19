@@ -11,14 +11,14 @@ export default async function Page() {
     <>
       <main className="main-content">
         <h1 className="text-center">CGS Games</h1>
-        <p>
+        <p className="text-center">
           Welcome to the{" "}
           <Link href="https://www.cardgamesimulator.com" target="_blank">
             Card Game Simulator
           </Link>{" "}
           (CGS) Games website!
         </p>
-        <p>
+        <p className="text-center">
           You can{" "}
           <Link
             href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS"
