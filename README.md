@@ -24,5 +24,5 @@ Built with Next.js and Firebase.
 
 - Add limit to gamesDeck, and set it to 3 for / and unlimited for /browse (remove require-dynamic from / and /browse?)
 - Replace NextUI, szhsin, and react-hot-toast with single dependency like MUI or ShadCN
-- Add option to delete your game
+- Add option to delete your game and link to upload from your name
 - Pages for new and edit/manage with all parameters
