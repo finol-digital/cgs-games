@@ -20,7 +20,6 @@
     "@types/react-dom": "19.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "eslint": "8.49.0",
     "eslint-config-next": "^15.1.0",
     "eslint-plugin-prettier": "^5.0.0",
     "firebase": "^10.4.0",
@@ -35,7 +34,7 @@
     "react-hot-toast": "^2.4.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "5.2.2"
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
     "@types/lodash.debounce": "^4.0.9",
