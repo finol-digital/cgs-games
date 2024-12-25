@@ -2,7 +2,7 @@
 
 import AutoUpdateUrl from "@/components/autoUpdateUrl";
 import Game from "@/lib/game";
-import { Accordion, AccordionItem } from "@szhsin/react-accordion";
+import { Accordion, AccordionItem } from "@nextui-org/accordion";
 import Link from "next/link";
 
 export default function AlternativeAccordion({
@@ -14,7 +14,7 @@ export default function AlternativeAccordion({
 }) {
   return (
     <Accordion>
-      <AccordionItem header="Use Steam">
+      <AccordionItem key="1" aria-label="Use Steam" title="Use Steam">
         <h4>1. Install CGS</h4>
         <iframe
           src="https://store.steampowered.com/widget/1742850/"
@@ -35,7 +35,11 @@ export default function AlternativeAccordion({
           <li>Paste the AutoUpdateUrl and Submit Download</li>
         </ol>
       </AccordionItem>
-      <AccordionItem header="Use Web Browser">
+      <AccordionItem
+        key="1"
+        aria-label="Use Web Browser"
+        title="Use Web Browser"
+      >
         You may try limited functionality at{" "}
         <Link href={`${cgsgg}`}>{cgsgg}</Link>
       </AccordionItem>
