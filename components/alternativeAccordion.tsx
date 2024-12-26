@@ -36,7 +36,7 @@ export default function AlternativeAccordion({
         </ol>
       </AccordionItem>
       <AccordionItem
-        key="1"
+        key="2"
         aria-label="Use Web Browser"
         title="Use Web Browser"
       >
