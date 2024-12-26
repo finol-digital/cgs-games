@@ -12,6 +12,8 @@ export default function SignInButton() {
       <Image
         className="h-8 w-8 mr-10"
         src="/google.png"
+        height="48"
+        width="48"
         alt="Sign in with Google"
       />{" "}
       Sign in with Google
