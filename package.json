@@ -12,6 +12,7 @@
     "@ducanh2912/next-pwa": "^9.7.1",
     "@nextui-org/accordion": "^2.2.6",
     "@nextui-org/card": "^2.2.8",
+    "@nextui-org/react": "^2.6.10",
     "@nextui-org/system": "^2.4.0",
     "@nextui-org/theme": "^2.4.0",
     "@types/node": "20.6.0",
