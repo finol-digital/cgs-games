@@ -22,7 +22,6 @@ Built with Next.js and Firebase.
 
 ## Next Steps
 
-- Add limit to gamesDeck, and set it to 3 for / and unlimited for /browse (remove require-dynamic from / and /browse?)
 - Deploy to Firebase App Hosting
 - Add option to delete your game and link to upload from your name
 - Pages for new and edit/manage with all parameters

@@ -1,6 +1,6 @@
 import Footer from "@/components/footer";
 import GamesDeck from "@/components/gamesDeck";
-import { getGames } from "@/lib/firebase/firestore";
+import { getGamesFor } from "@/lib/firebase/firestore";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -24,7 +24,7 @@ export default async function Page(props: {
   params: Promise<{ username: string }>;
 }) {
   const params = await props.params;
-  const games = await getGames(params.username);
+  const games = await getGamesFor(params.username);
   if (!games) return notFound();
   return (
     <>
