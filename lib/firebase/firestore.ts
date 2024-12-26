@@ -13,16 +13,21 @@ import {
 
 export async function getAllGames() {
   const gamesQuery = query(collection(db, "games"));
-  const results = await getLatestDocs(gamesQuery, 50);
+  const results = await getLatestDocs(gamesQuery, 100);
   return results.docs.map((doc) => game(doc));
 }
-
-export async function getGames(username: string) {
+export async function getGamesFor(username: string) {
   const gamesUsernameQuery = query(
     collection(db, "games"),
     where("username", "==", username),
   );
-  const results = await getLatestDocs(gamesUsernameQuery, 50);
+  const results = await getLatestDocs(gamesUsernameQuery, 100);
+  return results.docs.map((doc) => game(doc));
+}
+
+export async function getGames(limit: number) {
+  const gamesQuery = query(collection(db, "games"));
+  const results = await getLatestDocs(gamesQuery, limit);
   return results.docs.map((doc) => game(doc));
 }
 

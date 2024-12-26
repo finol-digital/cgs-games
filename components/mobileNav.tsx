@@ -1,19 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export default function MobileNav() {
   return (
     <nav className="md:hidden">
       <Link href="/" className="flex items-center ml-4">
-        <img
-          className="right-12"
-          // img instead of next/Image
-          src="/cgs.png"
-          height="48"
-          alt="[CGS]"
-          //priority={true}
-        />
+        <Image className="right-12" src="/cgs.png" height="48" alt="[CGS]" />
         CGS Games
       </Link>
     </nav>

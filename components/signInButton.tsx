@@ -1,6 +1,7 @@
 "use client";
 
 import { signInWithGoogle } from "@/lib/firebase/auth";
+import Image from "next/image";
 
 export default function SignInButton() {
   return (
@@ -8,7 +9,7 @@ export default function SignInButton() {
       className="bg-white h-10 flex items-center"
       onClick={signInWithGoogle}
     >
-      <img
+      <Image
         className="h-8 w-8 mr-10"
         src="/google.png"
         alt="Sign in with Google"

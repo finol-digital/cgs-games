@@ -13,8 +13,8 @@ export default function Banner({
     <div className="border-none bg-slate-400 flex justify-center">
       <Link href={home} className="mt-8 mb-8 flex justify-center">
         <img
+          // Can't use next/Image for external image
           className="flex justify-center"
-          // img instead of next/Image
           src={img}
           height="128"
           alt={txt}
