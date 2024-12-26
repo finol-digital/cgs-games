@@ -18,8 +18,6 @@ Built with Next.js and Firebase.
 
 **Start**: `npm run start`
 
-**Deploy**: `firebase deploy`
-
 ## Next Steps
 
 - Add option to delete your game and link to upload from your name
