@@ -18,6 +18,10 @@ Built with Next.js and Firebase.
 
 **Start**: `npm run start`
 
+## Deployment
+
+Firebase App Hosting will automatically deploy changes to the main branch, so simply raise and merge a PR from develop to main!
+
 ## Next Steps
 
 - Add option to delete your game and link to upload from your name
