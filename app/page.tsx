@@ -27,7 +27,7 @@ export default async function Page() {
             create
           </Link>{" "}
           and <Link href="/upload">upload</Link> your own custom card games, or
-          browse games uploaded by others:
+          <Link href="/browse">browse</Link> games uploaded by others:
         </p>
         <GamesDeck games={allGames} />
         <p className="text-center">

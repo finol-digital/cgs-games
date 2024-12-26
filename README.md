@@ -22,6 +22,5 @@ Built with Next.js and Firebase.
 
 ## Next Steps
 
-- Deploy to Firebase App Hosting
 - Add option to delete your game and link to upload from your name
 - Pages for new and edit/manage with all parameters
