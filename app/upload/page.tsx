@@ -17,7 +17,7 @@ export default function Page() {
     <>
       <main className="main-content">
         <h1 className="text-center">CGS Games Upload</h1>
-        <p>
+        <p className="ml-10 mr-10">
           To create your own game in CGS, refer to{" "}
           <Link
             href="https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS"
