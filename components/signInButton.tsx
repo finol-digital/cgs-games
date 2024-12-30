@@ -6,7 +6,7 @@ import Image from "next/image";
 export default function SignInButton() {
   return (
     <button
-      className="bg-white h-10 flex items-center"
+      className="bg-white h-10 flex items-center text-black"
       onClick={signInWithGoogle}
     >
       <Image

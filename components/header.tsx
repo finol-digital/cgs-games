@@ -16,7 +16,7 @@ export default function Header() {
       <div className="h-16 container flex items-center">
         <MainNav />
         <MobileNav />
-        <div className="flex items-center justify-end flex-1">
+        <div className="flex items-center justify-end flex-auto">
           {user ? (
             username ? (
               <UserMenu username={username} />
