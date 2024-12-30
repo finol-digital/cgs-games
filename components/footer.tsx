@@ -13,7 +13,7 @@ export default function Footer({
       <p>
         <i>{copyrightNotice}</i>
       </p>
-      <div className="bg-[#D3BD7A]">
+      <div className="bg-gold">
         <p>
           <Link href="/">CGS Games</Link>
         </p>

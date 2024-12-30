@@ -6,7 +6,7 @@ export default function AutoUpdateUrl({ url }: { url: string }) {
   return (
     <div>
       <p>AutoUpdateUrl: </p>
-      <code className="url-snippet text-black">{`${url}`}</code>
+      <code className="p-5 w-3/4 my-5 mx-0 ml-auto bg-white text-black overflow-x-scroll">{`${url}`}</code>
       <button
         onClick={() => {
           navigator.clipboard.writeText(url);

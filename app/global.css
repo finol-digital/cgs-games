@@ -8,11 +8,12 @@
 :root {
   background: #432e16;
   --color-bg: #432e16;
+  --color-gold: #d3bd7a;
   --color-text: #ffffff;
-  --color-blue: #3b49df;
+  --color-gray: #b5bdc4;
+  --color-dark-grey: #3c5d6e;
   --color-red: #df3b3b;
   --color-green: #3bdf72;
-  --color-gray: #b5bdc4;
 }
 
 /* layout */
@@ -55,39 +56,9 @@ footer {
 
 /* Link */
 a {
-  color: #3c5d6e;
+  color: var(--color-dark-grey);
   background-color: transparent;
   text-decoration: none;
-}
-
-/* AutoUpdateUrl */
-.url-snippet {
-  overflow-x: scroll;
-  width: 75%;
-  margin-left: auto;
-  background: white;
-  padding: 5px;
-  margin: 5px 0;
-}
-
-/* text */
-.text-sm {
-  font-size: 0.85rem;
-}
-
-.text-danger {
-  font-weight: bold;
-  color: var(--color-red);
-}
-
-.text-success {
-  font-weight: bold;
-  color: var(--color-green);
-}
-
-.text-info {
-  font-weight: bold;
-  color: var(--color-blue);
 }
 
 /* Buttons */
@@ -96,8 +67,8 @@ a {
   padding: 10px 20px;
   text-align: center;
   text-decoration: none;
-  color: #ffffff;
-  background-color: #3c5d6e;
+  color: white;
+  background-color: var(--color-dark-grey);
   border-radius: 6px;
   outline: none;
   transition: 0.3s;
@@ -133,19 +104,20 @@ button[disabled] {
   cursor: not-allowed;
 }
 
-button.btn-blue {
-  background-color: var(--color-blue);
-  color: white;
-}
-
-button.btn-red {
-  background-color: var(--color-red);
-  color: white;
-}
-
+/* Upload Form */
 button.btn-green {
   background-color: var(--color-green);
   color: white;
+}
+
+.text-danger {
+  font-weight: bold;
+  color: var(--color-red);
+}
+
+.text-success {
+  font-weight: bold;
+  color: var(--color-green);
 }
 
 @layer base {
