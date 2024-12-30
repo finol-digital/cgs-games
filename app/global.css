@@ -6,9 +6,9 @@
 
 /* variables */
 :root {
-  background: #eef0f1;
-  --color-bg: #eef0f1;
-  --color-text: #08090a;
+  background: #432e16;
+  --color-bg: #432e16;
+  --color-text: #ffffff;
   --color-blue: #3b49df;
   --color-red: #df3b3b;
   --color-green: #3bdf72;
@@ -29,11 +29,11 @@ body {
 .main-container {
   background-color: var(--color-bg);
   /* will cover the viewport */
-  min-height: 80vh;
+  min-height: 83vh;
   overflow: hidden;
   display: block;
   position: relative;
-  padding-bottom: 200px;
+  padding-bottom: 160px;
   /* height of your footer */
 }
 
@@ -50,7 +50,47 @@ footer {
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 200px;
+  height: 160px;
+}
+
+/* Link */
+a {
+  color: #3c5d6e;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+/* AutoUpdateUrl */
+code {
+  overflow-x: scroll;
+}
+
+.url-snippet {
+  width: 75%;
+  margin-left: auto;
+  background: white;
+  padding: 5px;
+  margin: 5px 0;
+}
+
+/* text */
+.text-sm {
+  font-size: 0.85rem;
+}
+
+.text-danger {
+  font-weight: bold;
+  color: var(--color-red);
+}
+
+.text-success {
+  font-weight: bold;
+  color: var(--color-green);
+}
+
+.text-info {
+  font-weight: bold;
+  color: var(--color-blue);
 }
 
 /* Buttons */
@@ -109,38 +149,6 @@ button.btn-red {
 button.btn-green {
   background-color: var(--color-green);
   color: white;
-}
-
-/* text */
-.text-sm {
-  font-size: 0.85rem;
-}
-
-.text-danger {
-  font-weight: bold;
-  color: var(--color-red);
-}
-
-.text-success {
-  font-weight: bold;
-  color: var(--color-green);
-}
-
-.text-info {
-  font-weight: bold;
-  color: var(--color-blue);
-}
-
-code {
-  overflow-x: scroll;
-}
-
-.url-snippet {
-  width: 75%;
-  margin-left: auto;
-  background: white;
-  padding: 5px;
-  margin: 5px 0;
 }
 
 @layer base {
