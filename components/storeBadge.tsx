@@ -16,7 +16,8 @@ export default function StoreBadge() {
           target="_blank"
           href="https://play.google.com/store/apps/details?id=com.finoldigital.cardgamesim&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1"
         >
-          <Image
+          <img
+            // Can't use next/Image for external image
             src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
             width="250"
             height="83"
@@ -29,7 +30,8 @@ export default function StoreBadge() {
           target="_blank"
           href="https://apps.apple.com/us/app/card-game-simulator/id1392877362?itsct=apps_box_badge&amp;itscg=30200"
         >
-          <Image
+          <img
+            // Can't use next/Image for external image
             src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83&amp;releaseDate=1536624000"
             width="250"
             height="83"
@@ -42,7 +44,8 @@ export default function StoreBadge() {
           target="_blank"
           href="https://apps.apple.com/us/app/card-game-simulator/id1398206553"
         >
-          <Image
+          <img
+            // Can't use next/Image for external image
             src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-mac-app-store.svg"
             width="250"
             height="83"
