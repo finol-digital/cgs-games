@@ -17,8 +17,12 @@ export default function MainNav() {
         <b>CGS Games</b>
       </Link>
       <div className="flex items-center gap-3 lg:gap-4 ml-8">
-        <Link href="/browse"><b>Browse</b></Link>
-        <Link href="/upload"><b>Upload</b></Link>
+        <Link href="/browse">
+          <b>Browse</b>
+        </Link>
+        <Link href="/upload">
+          <b>Upload</b>
+        </Link>
       </div>
     </nav>
   );
