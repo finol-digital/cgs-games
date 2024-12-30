@@ -61,11 +61,8 @@ a {
 }
 
 /* AutoUpdateUrl */
-code {
-  overflow-x: scroll;
-}
-
 .url-snippet {
+  overflow-x: scroll;
   width: 75%;
   margin-left: auto;
   background: white;
