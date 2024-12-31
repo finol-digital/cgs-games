@@ -12,7 +12,7 @@ import UserMenu from "./userMenu";
 export default function Header() {
   const { user, username } = useContext(UserContext);
   return (
-    <header className="bg-[#D3BD7A] sticky top-0 w-full border-b">
+    <header className="bg-gold sticky top-0 w-full border-b">
       <div className="h-16 container flex items-center">
         <MainNav />
         <MobileNav />
@@ -21,7 +21,9 @@ export default function Header() {
             username ? (
               <UserMenu username={username} />
             ) : (
-              <Link href="/upload">Upload Username</Link>
+              <Link href="/upload" className="brownlink">
+                Upload Username
+              </Link>
             )
           ) : (
             <SignInButton />

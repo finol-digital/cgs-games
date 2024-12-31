@@ -14,7 +14,7 @@ export default function GamesDeck({ games }: { games: Game[] }) {
         return (
           <Card
             key={index}
-            className="border-none bg-slate-400 flex items-center"
+            className="border-none bg-slate-600 flex items-center"
           >
             <CardBody>
               <center>
@@ -25,7 +25,7 @@ export default function GamesDeck({ games }: { games: Game[] }) {
                 />
               </center>
             </CardBody>
-            <CardFooter className="justify-between text-small text-gray-800">
+            <CardFooter className="justify-between text-small text-white">
               {game.copyright && (
                 <p className="ml-4 mr-4">Copyright of {game.copyright}</p>
               )}
