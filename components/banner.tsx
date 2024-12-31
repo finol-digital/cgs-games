@@ -10,7 +10,7 @@ export default function Banner({
   txt?: string;
 }) {
   return (
-    <div className="border-none bg-slate-600 flex justify-center">
+    <div className="border-none bg-slate-800 flex justify-center">
       <Link href={home} className="mt-8 mb-8 flex justify-center">
         <img
           // Can't use next/Image for external image

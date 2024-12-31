@@ -103,7 +103,7 @@ function AutoUpdateUrlForm() {
         <br />
         {error && <p className="text-danger">{error}</p>}
         {!error && <p />}
-        <button type="submit" className="btn-green" disabled={!isValid}>
+        <button type="submit" disabled={!isValid}>
           Submit AutoUpdate Url to CGS Games
         </button>
       </form>
