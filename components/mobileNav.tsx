@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function MobileNav() {
   return (
     <nav className="md:hidden">
-      <Link href="/" className="flex items-center ml-4">
+      <Link href="/" className="flex items-center ml-4 brownlink">
         <Image
           className="right-12"
           src="/cgs.png"
