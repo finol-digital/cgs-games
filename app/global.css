@@ -54,14 +54,10 @@ footer {
 }
 
 /* Link */
-a {
-  color: var(--color-green);
-  background-color: transparent;
-  text-decoration: none;
-}
-
 .brownlink {
   color: var(--color-bg);
+  background-color: transparent;
+  text-decoration: none;
 }
 
 /* Buttons */
@@ -108,19 +104,14 @@ button[disabled] {
 }
 
 /* Upload Form */
-button.btn-green {
-  background-color: var(--color-green);
-  color: white;
+.text-success {
+  font-weight: bold;
+  color: var(--color-green);
 }
 
 .text-danger {
   font-weight: bold;
   color: var(--color-red);
-}
-
-.text-success {
-  font-weight: bold;
-  color: var(--color-green);
 }
 
 @layer base {

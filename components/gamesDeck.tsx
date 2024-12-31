@@ -14,7 +14,7 @@ export default function GamesDeck({ games }: { games: Game[] }) {
         return (
           <Card
             key={index}
-            className="border-none bg-slate-600 flex items-center"
+            className="border-none bg-slate-800 flex items-center"
           >
             <CardBody>
               <center>
