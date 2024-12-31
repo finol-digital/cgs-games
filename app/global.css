@@ -10,10 +10,9 @@
   --color-bg: #432e16;
   --color-gold: #d3bd7a;
   --color-text: #ffffff;
-  --color-gray: #b5bdc4;
-  --color-dark-grey: #3c5d6e;
+  --color-gray: #475569;
+  --color-green: #058066;
   --color-red: #df3b3b;
-  --color-green: #3bdf72;
 }
 
 /* layout */
@@ -56,9 +55,13 @@ footer {
 
 /* Link */
 a {
-  color: var(--color-dark-grey);
+  color: var(--color-green);
   background-color: transparent;
   text-decoration: none;
+}
+
+.brownlink {
+  color: var(--color-bg);
 }
 
 /* Buttons */
@@ -68,7 +71,7 @@ a {
   text-align: center;
   text-decoration: none;
   color: white;
-  background-color: var(--color-dark-grey);
+  background-color: var(--color-gray);
   border-radius: 6px;
   outline: none;
   transition: 0.3s;

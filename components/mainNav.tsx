@@ -14,14 +14,14 @@ export default function MainNav() {
           width="48"
           alt="[CGS]"
         />
-        <b>CGS Games</b>
+        <b className="brownlink">CGS Games</b>
       </Link>
       <div className="flex items-center gap-3 lg:gap-4 ml-8">
         <Link href="/browse">
-          <b>Browse</b>
+          <b className="brownlink">Browse</b>
         </Link>
         <Link href="/upload">
-          <b>Upload</b>
+          <b className="brownlink">Upload</b>
         </Link>
       </div>
     </nav>

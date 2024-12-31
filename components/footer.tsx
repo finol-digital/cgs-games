@@ -15,15 +15,27 @@ export default function Footer({
       </p>
       <div className="bg-gold">
         <p>
-          <Link href="/">CGS Games</Link>
+          <Link href="/" className="brownlink">
+            CGS Games
+          </Link>
         </p>
-        <p>
-          <Link href="/browse">Browse</Link> |{" "}
-          <Link href="/upload">Upload</Link>
+        <p className="text-black">
+          <Link href="/browse" className="brownlink">
+            Browse
+          </Link>{" "}
+          |{" "}
+          <Link href="/upload" className="brownlink">
+            Upload
+          </Link>
         </p>
-        <p>
-          <Link href="/terms">Terms</Link> |{" "}
-          <Link href="/privacy">Privacy</Link>
+        <p className="text-black">
+          <Link href="/terms" className="brownlink">
+            Terms
+          </Link>{" "}
+          |{" "}
+          <Link href="/privacy" className="brownlink">
+            Privacy
+          </Link>
         </p>
         <br></br>
       </div>

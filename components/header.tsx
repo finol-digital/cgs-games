@@ -21,7 +21,9 @@ export default function Header() {
             username ? (
               <UserMenu username={username} />
             ) : (
-              <Link href="/upload">Upload Username</Link>
+              <Link href="/upload" className="brownlink">
+                Upload Username
+              </Link>
             )
           ) : (
             <SignInButton />
