@@ -1,12 +1,12 @@
-import Footer from "@/components/footer";
-import { Metadata } from "next";
+import Footer from '@/components/footer';
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "CGS Games Terms of Use",
-  description: "Terms of Use for CGS Games.",
+  title: 'CGS Games Terms of Use',
+  description: 'Terms of Use for CGS Games.',
   openGraph: {
-    title: "CGS Games Terms of Use",
-    description: "Terms of Use for CGS Games.",
+    title: 'CGS Games Terms of Use',
+    description: 'Terms of Use for CGS Games.',
   },
 };
 

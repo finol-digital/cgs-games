@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { signOut } from "@/lib/firebase/auth";
-import Link from "next/link";
+import { signOut } from '@/lib/firebase/auth';
+import Link from 'next/link';
 
 export default function UserMenu({ username }: { username: string }) {
   return (

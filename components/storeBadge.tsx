@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function StoreBadge() {
   const android = /Android/i.test(navigator?.userAgent);
@@ -40,10 +40,7 @@ export default function StoreBadge() {
         </Link>
       )}
       {(mac || unknown) && (
-        <Link
-          target="_blank"
-          href="https://apps.apple.com/us/app/card-game-simulator/id1398206553"
-        >
+        <Link target="_blank" href="https://apps.apple.com/us/app/card-game-simulator/id1398206553">
           <img
             // Can't use next/Image for external image
             src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-mac-app-store.svg"
@@ -54,10 +51,7 @@ export default function StoreBadge() {
         </Link>
       )}
       {(windows || unknown) && (
-        <Link
-          target="_blank"
-          href="https://apps.microsoft.com/detail/9n96n5s4w3j0"
-        >
+        <Link target="_blank" href="https://apps.microsoft.com/detail/9n96n5s4w3j0">
           <Image
             src="https://get.microsoft.com/images/en-us%20dark.svg"
             width="250"

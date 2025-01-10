@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { UserContext } from "@/lib/context";
-import { db } from "@/lib/firebase/firebase";
-import { doc, getDoc, writeBatch } from "firebase/firestore";
-import debounce from "lodash.debounce";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { UserContext } from '@/lib/context';
+import { db } from '@/lib/firebase/firebase';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import debounce from 'lodash.debounce';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
 export default function UsernameForm() {
-  const [formValue, setFormValue] = useState("");
+  const [formValue, setFormValue] = useState('');
   const [isValid, setIsValid] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -42,11 +42,11 @@ export default function UsernameForm() {
       setIsValid(false);
     }
     if (
-      val === "browse" ||
-      val === "upload" ||
-      val === "terms" ||
-      val === "privacy" ||
-      val === "api"
+      val === 'browse' ||
+      val === 'upload' ||
+      val === 'terms' ||
+      val === 'privacy' ||
+      val === 'api'
     ) {
       setFormValue(val);
       setLoading(false);
@@ -68,14 +68,12 @@ export default function UsernameForm() {
       if (username.length >= 3) {
         const ref = doc(db, `usernames/${username}`);
         const exists = (await getDoc(ref)).exists();
-        console.log(
-          "Firestore read executed! " + username + " exists: " + exists
-        );
+        console.log('Firestore read executed! ' + username + ' exists: ' + exists);
         setIsValid(!exists);
         setLoading(false);
       }
     }, 500),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -87,17 +85,8 @@ export default function UsernameForm() {
       <section>
         <h2>Choose Username</h2>
         <form onSubmit={onSubmit}>
-          <input
-            name="username"
-            placeholder="myname"
-            value={formValue}
-            onChange={onChange}
-          />
-          <UsernameMessage
-            username={formValue}
-            isValid={isValid}
-            loading={loading}
-          />
+          <input name="username" placeholder="myname" value={formValue} onChange={onChange} />
+          <UsernameMessage username={formValue} isValid={isValid} loading={loading} />
           <button type="submit" className="btn-green" disabled={!isValid}>
             Choose
           </button>

@@ -1,21 +1,21 @@
-import Header from "@/components/header";
-import UserContextProvider from "@/components/userContextProvider";
-import { Metadata, Viewport } from "next";
-import "./global.css";
-import { Providers } from "./providers";
+import Header from '@/components/header';
+import UserContextProvider from '@/components/userContextProvider';
+import { Metadata, Viewport } from 'next';
+import './global.css';
+import { Providers } from './providers';
 
-const APP_NAME = "CGS Games";
-const APP_DESCRIPTION = "Share your CGS games";
+const APP_NAME = 'CGS Games';
+const APP_DESCRIPTION = 'Share your CGS games';
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://cgs.games"),
+  metadataBase: new URL('https://cgs.games'),
   applicationName: APP_NAME,
   title: APP_NAME,
   description: APP_DESCRIPTION,
-  manifest: "/manifest.json",
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: 'default',
     title: APP_NAME,
     // startUpImage: [],
   },
@@ -23,11 +23,11 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    type: "website",
+    type: 'website',
     siteName: APP_NAME,
     title: APP_NAME,
     description: APP_DESCRIPTION,
-    locale: "en_US",
+    locale: 'en_US',
   },
   robots: {
     follow: true,
@@ -36,15 +36,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  colorScheme: "dark",
-  themeColor: "#D3BD7A",
+  colorScheme: 'dark',
+  themeColor: '#D3BD7A',
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className="dark">

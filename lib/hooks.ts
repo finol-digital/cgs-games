@@ -1,8 +1,8 @@
-import { auth } from "@/lib/firebase/firebase";
-import { userDoc } from "@/lib/firebase/firestore";
-import { onSnapshot } from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from '@/lib/firebase/firebase';
+import { userDoc } from '@/lib/firebase/firestore';
+import { onSnapshot } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 // Custom hook to read auth record and user profile doc
 export function useUserData() {

@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import MainNav from "./mainNav";
+import MainNav from './mainNav';
 
-import { UserContext } from "@/lib/context";
-import Link from "next/link";
-import { useContext } from "react";
-import MobileNav from "./mobileNav";
-import SignInButton from "./signInButton";
-import UserMenu from "./userMenu";
+import { UserContext } from '@/lib/context';
+import Link from 'next/link';
+import { useContext } from 'react';
+import MobileNav from './mobileNav';
+import SignInButton from './signInButton';
+import UserMenu from './userMenu';
 
 export default function Header() {
   const { user, username } = useContext(UserContext);

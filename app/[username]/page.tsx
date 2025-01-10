@@ -1,17 +1,17 @@
-import Footer from "@/components/footer";
-import GamesDeck from "@/components/gamesDeck";
-import { getGamesFor } from "@/lib/firebase/firestore";
-import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import Footer from '@/components/footer';
+import GamesDeck from '@/components/gamesDeck';
+import { getGamesFor } from '@/lib/firebase/firestore';
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(props: {
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const params = await props.params;
   return {
-    title: params.username + " | CGS Games",
+    title: params.username + ' | CGS Games',
     description: params.username + "'s games",
     openGraph: {
       title: params.username,
@@ -20,9 +20,7 @@ export async function generateMetadata(props: {
   };
 }
 
-export default async function Page(props: {
-  params: Promise<{ username: string }>;
-}) {
+export default async function Page(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
   const games = await getGamesFor(params.username);
   if (!games) return notFound();

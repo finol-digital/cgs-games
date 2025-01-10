@@ -1,12 +1,8 @@
-import Link from "next/link";
+import Link from 'next/link';
 
-export default function Footer({
-  copyrightNotice,
-}: {
-  copyrightNotice?: string;
-}) {
+export default function Footer({ copyrightNotice }: { copyrightNotice?: string }) {
   if (!copyrightNotice) {
-    copyrightNotice = "Finol Digital LLC ©" + new Date().getFullYear();
+    copyrightNotice = 'Finol Digital LLC ©' + new Date().getFullYear();
   }
   return (
     <footer>
@@ -22,8 +18,8 @@ export default function Footer({
         <p className="text-black">
           <Link href="/browse" className="brownlink">
             Browse
-          </Link>{" "}
-          |{" "}
+          </Link>{' '}
+          |{' '}
           <Link href="/upload" className="brownlink">
             Upload
           </Link>
@@ -31,8 +27,8 @@ export default function Footer({
         <p className="text-black">
           <Link href="/terms" className="brownlink">
             Terms
-          </Link>{" "}
-          |{" "}
+          </Link>{' '}
+          |{' '}
           <Link href="/privacy" className="brownlink">
             Privacy
           </Link>

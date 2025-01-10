@@ -1,16 +1,16 @@
-import Footer from "@/components/footer";
-import GamesDeck from "@/components/gamesDeck";
-import { getAllGames } from "@/lib/firebase/firestore";
-import { Metadata } from "next";
+import Footer from '@/components/footer';
+import GamesDeck from '@/components/gamesDeck';
+import { getAllGames } from '@/lib/firebase/firestore';
+import { Metadata } from 'next';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: "CGS Games Browser",
-  description: "Browse CGS games.",
+  title: 'CGS Games Browser',
+  description: 'Browse CGS games.',
   openGraph: {
-    title: "CGS Games Browser",
-    description: "Browse CGS games.",
+    title: 'CGS Games Browser',
+    description: 'Browse CGS games.',
   },
 };
 
