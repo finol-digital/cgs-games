@@ -69,13 +69,13 @@ export default function UsernameForm() {
         const ref = doc(db, `usernames/${username}`);
         const exists = (await getDoc(ref)).exists();
         console.log(
-          "Firestore read executed! " + username + " exists: " + exists,
+          "Firestore read executed! " + username + " exists: " + exists
         );
         setIsValid(!exists);
         setLoading(false);
       }
     }, 500),
-    [],
+    []
   );
 
   useEffect(() => {

@@ -6,7 +6,7 @@ const stripTrailingSlash = (str: string) => {
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ url: string[] }> },
+  context: { params: Promise<{ url: string[] }> }
 ) {
   const [host, ...path] = [...(await context.params).url];
   let uri = stripTrailingSlash("https://" + host + "/" + path.join("/"));
@@ -36,7 +36,7 @@ async function streamToString(stream: any) {
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ url: string[] }> },
+  context: { params: Promise<{ url: string[] }> }
 ) {
   const [host, ...path] = [...(await context.params).url];
   let uri = stripTrailingSlash("https://" + host + "/" + path.join("/"));
