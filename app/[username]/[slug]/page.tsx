@@ -1,16 +1,14 @@
-import AlternativeAccordion from "@/components/alternativeAccordion";
-import Banner from "@/components/banner";
-import CgsDeepLink from "@/components/cgsDeepLink";
-import { getGame } from "@/lib/firebase/firestore";
-import { notFound } from "next/navigation";
+import AlternativeAccordion from '@/components/alternativeAccordion';
+import Banner from '@/components/banner';
+import CgsDeepLink from '@/components/cgsDeepLink';
+import { getGame } from '@/lib/firebase/firestore';
+import { notFound } from 'next/navigation';
 
-export default async function Page(props: {
-  params: Promise<{ username: string; slug: string }>;
-}) {
+export default async function Page(props: { params: Promise<{ username: string; slug: string }> }) {
   const params = await props.params;
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
-  const cgsgg = "https://cgs.gg/?url=" + encodeURIComponent(game.autoUpdateUrl);
+  const cgsgg = 'https://cgs.gg/?url=' + encodeURIComponent(game.autoUpdateUrl);
   return (
     <>
       <Banner

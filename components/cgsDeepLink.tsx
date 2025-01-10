@@ -1,5 +1,5 @@
-import StoreBadge from "@/components/storeBadge";
-import Game from "@/lib/game";
+import StoreBadge from '@/components/storeBadge';
+import Game from '@/lib/game';
 
 export default function CgsDeepLink({ game }: { game: Game }) {
   return (
@@ -12,10 +12,8 @@ export default function CgsDeepLink({ game }: { game: Game }) {
         <p>Then launch CGS for {game.name}:</p>
         <a
           className="button"
-          href={
-            "cardgamesim://link?url=" + encodeURIComponent(game.autoUpdateUrl)
-          }
-          aria-label={"Launch CGS for " + game.name}
+          href={'cardgamesim://link?url=' + encodeURIComponent(game.autoUpdateUrl)}
+          aria-label={'Launch CGS for ' + game.name}
         >
           <span>Launch CGS for {game.name}</span>
         </a>

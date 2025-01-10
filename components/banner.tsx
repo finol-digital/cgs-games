@@ -1,9 +1,9 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function Banner({
-  home = "/",
-  img = "/Card-Game-Simulator.png",
-  txt = "Card Game Simulator",
+  home = '/',
+  img = '/Card-Game-Simulator.png',
+  txt = 'Card Game Simulator',
 }: {
   home?: string;
   img?: string;

@@ -1,15 +1,9 @@
-"use client";
+'use client';
 
-import { UserContext } from "@/lib/context";
-import { useUserData } from "@/lib/hooks";
+import { UserContext } from '@/lib/context';
+import { useUserData } from '@/lib/hooks';
 
-export default function UserContextProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function UserContextProvider({ children }: { children: React.ReactNode }) {
   const userData = useUserData();
-  return (
-    <UserContext.Provider value={userData}>{children}</UserContext.Provider>
-  );
+  return <UserContext.Provider value={userData}>{children}</UserContext.Provider>;
 }

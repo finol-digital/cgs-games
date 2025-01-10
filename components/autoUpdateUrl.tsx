@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import toast, { Toaster } from "react-hot-toast";
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function AutoUpdateUrl({ url }: { url: string }) {
   return (
@@ -10,7 +10,7 @@ export default function AutoUpdateUrl({ url }: { url: string }) {
       <button
         onClick={() => {
           navigator.clipboard.writeText(url);
-          toast("Copied!");
+          toast('Copied!');
         }}
       >
         Copy
