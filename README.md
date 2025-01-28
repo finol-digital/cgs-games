@@ -8,7 +8,7 @@ Built with Next.js and Firebase.
 
 **First**: `npm install`
 
-**Format**: `prettier --write --ignore-path .gitignore --config .prettierrc.json .`
+**Format**: `prettier --config .prettierrc.json --ignore-path .gitignore --write .`
 
 **Audit**: `npm audit fix`
 
