@@ -25,8 +25,3 @@ Built with Next.js and Firebase.
 Firebase App Hosting will automatically deploy changes to the main branch.
 
 Simply raise and merge a PR from develop to main!
-
-## Next Steps
-
-- Add option to delete your game and link to upload from your name
-- Pages for new and edit/manage with all parameters
