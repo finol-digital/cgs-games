@@ -5,19 +5,34 @@ export async function GET() {
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   const responseJson = await response.json();
-  const dataContainer = {
-    data: responseJson.spoilers,
+  const dataContainer: {
+    data: {
+      uuid: string;
+      name: string;
+      card_image_url: string;
+      back_card_name: string;
+      back_card_image_url: string;
+    }[];
+  } = {
+    data: [],
   };
-  for (let i = 0; i < dataContainer.data.length; i++) {
+  for (let i = 0; i < responseJson.spoilers.length; i++) {
+    dataContainer.data.push({
+      uuid: '',
+      name: '',
+      card_image_url: '',
+      back_card_name: '',
+      back_card_image_url: '',
+    });
     dataContainer.data[i].uuid = crypto.randomUUID();
-    dataContainer.data[i].name = dataContainer.data[i].card_name;
+    dataContainer.data[i].name = responseJson.spoilers[i].card_name;
     dataContainer.data[i].card_image_url =
-      'https://cgs.games/api/proxy/alpha.silvie.gg' + dataContainer.data[i].card_image_url;
-    if (dataContainer.data[i].back_card && dataContainer.data[i].back_card.card_name) {
-      dataContainer.data[i].back_card_name = dataContainer.data[i].back_card.card_name;
+      'https://cgs.games/api/proxy/alpha.silvie.gg' + responseJson.spoilers[i].card_image_url;
+    if (responseJson.spoilers[i].back_card && responseJson.spoilers[i].back_card.card_name) {
+      dataContainer.data[i].back_card_name = responseJson.spoilers.back_card.card_name;
       dataContainer.data[i].back_card_image_url =
         'https://cgs.games/api/proxy/alpha.silvie.gg' +
-        dataContainer.data[i].back_card.card_image_url;
+        responseJson.spoilers[i].back_card.card_image_url;
     }
   }
   return new NextResponse(JSON.stringify(dataContainer), {
