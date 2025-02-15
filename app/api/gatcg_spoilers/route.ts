@@ -5,6 +5,7 @@ export async function GET() {
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   const responseJson = await response.json();
+  console.log(responseJson);
   const dataContainer: {
     data: {
       uuid: string;
@@ -29,12 +30,13 @@ export async function GET() {
     dataContainer.data[i].card_image_url =
       'https://cgs.games/api/proxy/alpha.silvie.gg' + responseJson.spoilers[i].card_image_url;
     if (responseJson.spoilers[i].back_card && responseJson.spoilers[i].back_card.card_name) {
-      dataContainer.data[i].back_card_name = responseJson.spoilers.back_card.card_name;
+      dataContainer.data[i].back_card_name = responseJson.spoilers[i].back_card.card_name;
       dataContainer.data[i].back_card_image_url =
         'https://cgs.games/api/proxy/alpha.silvie.gg' +
         responseJson.spoilers[i].back_card.card_image_url;
     }
   }
+  console.log(dataContainer);
   return new NextResponse(JSON.stringify(dataContainer), {
     status: 200,
     headers: {
