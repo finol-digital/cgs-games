@@ -28,12 +28,11 @@ export async function GET() {
     dataContainer.data[i].uuid = crypto.randomUUID();
     dataContainer.data[i].name = responseJson.spoilers[i].card_name;
     dataContainer.data[i].card_image_url =
-      'https://cgs.games/api/proxy/alpha.silvie.gg' + responseJson.spoilers[i].card_image_url;
+      'https://alpha.silvie.gg' + responseJson.spoilers[i].card_image_url;
     if (responseJson.spoilers[i].back_card && responseJson.spoilers[i].back_card.card_name) {
       dataContainer.data[i].back_card_name = responseJson.spoilers[i].back_card.card_name;
       dataContainer.data[i].back_card_image_url =
-        'https://cgs.games/api/proxy/alpha.silvie.gg' +
-        responseJson.spoilers[i].back_card.card_image_url;
+        'https://alpha.silvie.gg' + responseJson.spoilers[i].back_card.card_image_url;
     }
   }
   console.log(dataContainer);
