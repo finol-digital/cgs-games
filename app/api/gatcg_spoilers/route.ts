@@ -25,7 +25,7 @@ export async function GET() {
       back_card_name: '',
       back_card_image_url: '',
     });
-    dataContainer.data[i].uuid = crypto.randomUUID();
+    dataContainer.data[i].uuid = responseJson.spoilers[i].id;
     dataContainer.data[i].name = responseJson.spoilers[i].card_name;
     dataContainer.data[i].card_image_url =
       'https://alpha.silvie.gg' + responseJson.spoilers[i].card_image_url;
