@@ -6,10 +6,10 @@ export default function Footer({ copyrightNotice }: { copyrightNotice?: string }
   }
   return (
     <footer>
-      <p>
+      <p className="h-px20">
         <i>{copyrightNotice}</i>
       </p>
-      <div className="bg-gold">
+      <div className="bg-gold h-px140">
         <p>
           <Link href="/" className="brownlink">
             CGS Games

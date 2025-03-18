@@ -29,7 +29,7 @@ body {
 .main-container {
   background-color: var(--color-bg);
   /* will cover the viewport */
-  min-height: 83vh;
+  min-height: calc(100vh - 160px);
   overflow: hidden;
   display: block;
   position: relative;
