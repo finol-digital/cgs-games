@@ -33,3 +33,9 @@ env:
     secret: firebaseMessagingSenderId
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     secret: firebaseAppId
+  - variable: FIREBASE_PROJECT_ID
+    secret: firebaseProjectId
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: firebaseClientEmail
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: firebasePrivateKey
