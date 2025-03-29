@@ -1,6 +1,27 @@
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
-import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+function corsResponse(message: string, status: number) {
+    return new NextResponse(message, {
+        status,
+        headers: corsHeaders,
+    });
+}
+
+// Handle OPTIONS request for CORS
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 204,
+        headers: corsHeaders,
+    });
+}
 
 export async function DELETE(
     request: Request,
@@ -11,29 +32,15 @@ export async function DELETE(
         const headersList = await headers();
         const authHeader = headersList.get('Authorization');
         if (!authHeader?.startsWith('Bearer ')) {
-            return new NextResponse('Unauthorized - No token provided', { 
-                status: 401,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+            return corsResponse('Unauthorized - No token provided', 401);
         }
 
         const idToken = authHeader.split('Bearer ')[1];
-        
+
         // Verify the ID token
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         if (!decodedToken) {
-            return new NextResponse('Unauthorized - Invalid token', { 
-                status: 401,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+            return corsResponse('Unauthorized - Invalid token', 401);
         }
 
         // Await the params to get the game ID
@@ -42,95 +49,34 @@ export async function DELETE(
         const gameDoc = await gameRef.get();
 
         if (!gameDoc.exists) {
-            return new NextResponse('Game not found', { 
-                status: 404,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+            return corsResponse('Game not found', 404);
         }
 
         // Check if the authenticated user owns the game
         const gameData = gameDoc.data();
         if (!gameData?.username) {
-            return new NextResponse('Game data is invalid', { 
-                status: 400,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+            return corsResponse('Game data is invalid', 400);
         }
 
         // Get the user's username from the users collection
         const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
         if (!userDoc.exists) {
-            return new NextResponse('User not found', { 
-                status: 404,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+            return corsResponse('User not found', 404);
         }
 
         const userData = userDoc.data();
         if (!userData?.username) {
-            return new NextResponse('User data is invalid', { 
-                status: 400,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+            return corsResponse('User data is invalid', 400);
         }
 
         if (gameData.username !== userData.username) {
-            return new NextResponse('Forbidden - You can only delete your own games', { 
-                status: 403,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+            return corsResponse('Forbidden - You can only delete your own games', 403);
         }
 
         await gameRef.delete();
-        return new NextResponse('Game deleted successfully', { 
-            status: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            }
-        });
+        return corsResponse('Game deleted successfully', 200);
     } catch (error) {
         console.error('Error deleting game:', error);
-        return new NextResponse('Error deleting game', { 
-            status: 500,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            }
-        });
+        return corsResponse('Error deleting game', 500);
     }
 }
-
-// Handle OPTIONS request for CORS
-export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
-    });
-} 

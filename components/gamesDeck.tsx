@@ -14,8 +14,8 @@ export default function GamesDeck({
   }
   return (
     <div className="ml-5 mr-5 gap-2 grid grid-cols-1">
-      {games.map((game, index) => {
-        return <GameCard game={game} key={index} canDelete={canDelete} />;
+      {games.map((game) => {
+        return <GameCard game={game} key={game.id} canDelete={canDelete} />;
       })}
     </div>
   );
