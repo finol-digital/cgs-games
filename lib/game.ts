@@ -1,4 +1,5 @@
 export default interface Game {
+  id: string;
   username: string;
   slug: string;
   name: string;
