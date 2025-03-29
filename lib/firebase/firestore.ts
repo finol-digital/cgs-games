@@ -38,6 +38,7 @@ export async function getGame(username: string, slug: string) {
 
 function game(doc: QueryDocumentSnapshot) {
   return {
+    id: doc.id,
     username: doc.get('username'),
     slug: doc.get('slug'),
     name: doc.get('name'),

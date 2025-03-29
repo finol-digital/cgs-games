@@ -28,7 +28,7 @@ export default async function Page(props: { params: Promise<{ username: string }
     <>
       <main className="main-content">
         <h1 className="text-center">{params.username}&apos;s games</h1>
-        <GamesDeck games={games} />
+        <GamesDeck games={games} canDelete={true} />
       </main>
       <Footer copyrightNotice={`${params.username}`} />
     </>
