@@ -24,7 +24,7 @@ export default function GameCard({
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent card click event
     if (!confirm('Are you sure you want to delete this game?')) return;
-    
+
     setIsDeleting(true);
     try {
       // Get the current user's ID token
@@ -37,17 +37,17 @@ export default function GameCard({
       const response = await fetch(`/api/games/${game.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${idToken}`,
+          Authorization: `Bearer ${idToken}`,
           'Content-Type': 'application/json',
         },
         credentials: 'include',
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || 'Failed to delete game');
       }
-      
+
       // Refresh the page or update the UI
       window.location.reload();
     } catch (error) {
