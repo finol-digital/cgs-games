@@ -1,11 +1,11 @@
 'use client';
 
+import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';
 import { Card, CardBody, CardFooter } from '@nextui-org/card';
 import Link from 'next/link';
 import { useContext, useState } from 'react';
 import Banner from './banner';
-import { auth } from '@/lib/firebase/firebase';
 
 import { UserContext } from '@/lib/context';
 

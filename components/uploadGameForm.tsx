@@ -1,9 +1,8 @@
 'use client';
 
 import { UserContext } from '@/lib/context';
-import { db } from '@/lib/firebase/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import snakecase from 'lodash.snakecase';
+import { auth } from '@/lib/firebase/firebase';
+import { getIdToken } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useContext, useState } from 'react';
 import SignInButton from './signInButton';
@@ -49,33 +48,35 @@ function AutoUpdateUrlForm() {
         throw new Error('No username!');
       }
       setLoading(true);
-      const response = await fetch(autoUpdateUrl);
-      const cardGameDef: {
-        name: string;
-        bannerImageUrl: string;
-        copyright: string;
-      } = await response.json();
-      const slug = encodeURI(snakecase(cardGameDef.name));
-      const game = {
-        username: username,
-        slug: slug,
-        name: cardGameDef.name,
-        bannerImageUrl: cardGameDef.bannerImageUrl,
-        autoUpdateUrl: autoUpdateUrl,
-        copyright: cardGameDef.copyright ? cardGameDef.copyright : username,
-        uploadedAt: serverTimestamp(),
-      };
-      console.log(game);
-      const isValidUrl = isValidHttpsUrl(game.bannerImageUrl);
-      if (!isValidUrl) {
-        throw new Error('Invalid bannerImageUrl!');
+
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('No authenticated user found');
       }
-      await addDoc(collection(db, 'games'), game);
+
+      const idToken = await getIdToken(currentUser);
+      const response = await fetch('/api/games', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          autoUpdateUrl,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create game');
+      }
+
       setLoading(false);
-      router.push(`/${username}/${slug}`);
+      router.push(`/${username}/${data.slug}`);
     } catch (err: any) {
       setLoading(false);
-      setError(err);
+      setError(err.message);
     }
   };
 
