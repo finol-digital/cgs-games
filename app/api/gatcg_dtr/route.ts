@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const url = new URL('https://alpha.silvie.gg/api/spoilers?set=26,25,23,11');
+  const url = new URL('https://alpha.silvie.gg/api/spoilers?set=28,29');
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   const responseJson = await response.json();
