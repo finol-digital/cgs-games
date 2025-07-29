@@ -21,7 +21,7 @@
     "class-variance-authority": "^0.7.1",
     "eslint-config-next": "^15.1.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "firebase": "^11.2.0",
+    "firebase": "^11.10.0",
     "firebase-admin": "^13.2.0",
     "firebase-functions": "^6.1.0",
     "framer-motion": "^11.15.0",
