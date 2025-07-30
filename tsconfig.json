@@ -28,7 +28,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "__tests__/alternativeAccordion.test.jsx"
+    "__tests__/**/*.test.{js,jsx,ts,tsx}"
   ],
   "exclude": ["node_modules"]
 }
