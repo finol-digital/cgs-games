@@ -16,8 +16,8 @@
 - **Install dependencies:** `npm install`
 - **Format code:** `prettier --config .prettierrc.json --ignore-path .gitignore --write .`
 - **Lint:** `npm run lint`
-- **Build:** `npm run build`
 - **Test:** `npm run test`
+- **Build:** `npm run build`
 - **Start (local):** `npm run start`
 - **Emulate Firebase:** `firebase emulators:start` (uses `apphosting.local.yaml`)
 - **Deploy:** Merge PR from `develop` to `main` (auto-deploy via Firebase App Hosting)

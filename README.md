@@ -14,9 +14,9 @@ Built with Next.js and Firebase.
 
 **Lint**: `npm run lint`
 
-**Build**: `npm run build`
-
 **Test**: `npm run test`
+
+**Build**: `npm run build`
 
 **Start**: `npm run start`
 
