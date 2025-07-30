@@ -5,6 +5,7 @@
 - **Purpose:** Web platform for Card Game Simulator (CGS) users to share games.
 - **Tech Stack:** Next.js (App Router), Firebase (Firestore, Auth, Hosting, Emulators), TailwindCSS.
 - **Structure:**
+  - `__tests__/` – Unit tests
   - `app/` – Next.js app router pages and API routes
   - `components/` – React UI components
   - `lib/` – Shared logic, context, hooks, Firebase integration
@@ -16,6 +17,7 @@
 - **Format code:** `prettier --config .prettierrc.json --ignore-path .gitignore --write .`
 - **Lint:** `npm run lint`
 - **Build:** `npm run build`
+- **Test:** `npm run test`
 - **Start (local):** `npm run start`
 - **Emulate Firebase:** `firebase emulators:start` (uses `apphosting.local.yaml`)
 - **Deploy:** Merge PR from `develop` to `main` (auto-deploy via Firebase App Hosting)
