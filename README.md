@@ -16,6 +16,8 @@ Built with Next.js and Firebase.
 
 **Build**: `npm run build`
 
+**Test**: `npm run test`
+
 **Start**: `npm run start`
 
 **Emulate**: `firebase emulators:start`
