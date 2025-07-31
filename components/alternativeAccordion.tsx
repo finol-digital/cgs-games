@@ -26,7 +26,10 @@ export default function AlternativeAccordion({ game, cgsgg }: { game: Game; cgsg
         </ol>
       </AccordionItem>
       <AccordionItem key="2" aria-label="Use Web Browser" title="Use Web Browser">
-        You may try limited functionality at <Link href={`${cgsgg}`}>{cgsgg}</Link>
+        You may also play {game.name} in your browser at{' '}
+        <Link href={`${cgsgg}`} target="_blank">
+          cgs.gg
+        </Link>
       </AccordionItem>
     </Accordion>
   );
