@@ -1,0 +1,151 @@
+# This workflow validates that all game banner image URLs are accessible
+# It runs daily to ensure game data integrity
+
+name: Validate Game Banner Images
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+permissions:
+  contents: read
+
+jobs:
+  validate-banners:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          
+      - name: Validate game banner images
+        run: |
+          echo "🔍 Fetching games from https://cgs.games/api/games..."
+          
+          # Fetch all games from the API with timeout and retries
+          GAMES_JSON=$(curl -s -f --retry 3 --retry-delay 2 --max-time 30 https://cgs.games/api/games)
+          CURL_EXIT_CODE=$?
+          
+          if [ $CURL_EXIT_CODE -ne 0 ]; then
+            echo "❌ Failed to fetch games from API (curl exit code: $CURL_EXIT_CODE)"
+            exit 1
+          fi
+          
+          echo "✅ Games data fetched successfully"
+          
+          # Validate JSON and run banner validation
+          node -e "
+          try {
+            const games = JSON.parse(\`$GAMES_JSON\`);
+            
+            if (!Array.isArray(games)) {
+              console.error('❌ API response is not an array');
+              process.exit(1);
+            }
+            
+            console.log(\`📊 Found \${games.length} games to validate\`);
+            
+            if (games.length === 0) {
+              console.log('⚠️  No games found to validate');
+              return;
+            }
+            
+            let failures = [];
+            let successCount = 0;
+            
+            async function validateBannerUrl(game) {
+              try {
+                if (!game.bannerImageUrl) {
+                  const error = \`❌ \${game.name || 'Unknown'} (\${game.username || 'Unknown'}/\${game.slug || 'Unknown'}) - Missing bannerImageUrl\`;
+                  failures.push(error);
+                  console.log(error);
+                  return false;
+                }
+                
+                console.log(\`🔗 Checking: \${game.name} (\${game.username}/\${game.slug})\`);
+                
+                // Use fetch with timeout and proper error handling
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                
+                const response = await fetch(game.bannerImageUrl, { 
+                  method: 'HEAD',
+                  signal: controller.signal,
+                  headers: {
+                    'User-Agent': 'CGS-Games-Banner-Validator/1.0'
+                  }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                  const error = \`❌ \${game.name} (\${game.username}/\${game.slug}) - HTTP \${response.status} \${response.statusText}: \${game.bannerImageUrl}\`;
+                  failures.push(error);
+                  console.log(error);
+                  return false;
+                } else {
+                  console.log(\`   ✅ Accessible (HTTP \${response.status})\`);
+                  successCount++;
+                  return true;
+                }
+              } catch (error) {
+                let errorMessage = error.message;
+                if (error.name === 'AbortError') {
+                  errorMessage = 'Request timeout (>10s)';
+                }
+                
+                const errorMsg = \`❌ \${game.name} (\${game.username}/\${game.slug}) - \${errorMessage}: \${game.bannerImageUrl}\`;
+                failures.push(errorMsg);
+                console.log(errorMsg);
+                return false;
+              }
+            }
+            
+            async function validateAllBanners() {
+              console.log('🚀 Starting banner validation...\n');
+              
+              // Process games in batches to avoid overwhelming servers
+              const batchSize = 5;
+              for (let i = 0; i < games.length; i += batchSize) {
+                const batch = games.slice(i, i + batchSize);
+                await Promise.all(batch.map(validateBannerUrl));
+                
+                // Small delay between batches
+                if (i + batchSize < games.length) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+              }
+              
+              console.log(\`\n📋 Validation Summary:\`);
+              console.log(\`   ✅ \${successCount} games have accessible banners\`);
+              console.log(\`   ❌ \${failures.length} games have inaccessible banners\`);
+              
+              if (failures.length > 0) {
+                console.log(\`\n🚨 Failed Games:\`);
+                failures.forEach((failure, index) => {
+                  console.log(\`   \${index + 1}. \${failure}\`);
+                });
+                console.log(\`\n💥 Workflow failed due to \${failures.length} inaccessible banner(s)\`);
+                process.exit(1);
+              } else {
+                console.log(\`\n🎉 All game banners are accessible!\`);
+              }
+            }
+            
+            validateAllBanners().catch(error => {
+              console.error('❌ Validation failed with unexpected error:', error.message);
+              process.exit(1);
+            });
+            
+          } catch (parseError) {
+            console.error('❌ Failed to parse games JSON:', parseError.message);
+            process.exit(1);
+          }
+          "
