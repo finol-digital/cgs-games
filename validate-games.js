@@ -1,18 +1,19 @@
 // Validates that all game banner image URLs are accessible
 // Usage: node validate-games.js
 
-const https = require('https');
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+// Using native fetch API available in Node.js 18+.
 
 async function main() {
   console.log('🔍 Fetching games from https://cgs.games/api/games...');
   let games;
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     const gamesRes = await fetch('https://cgs.games/api/games', {
       method: 'GET',
       headers: { 'User-Agent': 'CGS-Games-Banner-Validator/1.0' },
-      timeout: 30000,
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
     if (!gamesRes.ok) {
       console.error(`❌ Failed to fetch games from API (HTTP ${gamesRes.status})`);
       process.exit(1);
