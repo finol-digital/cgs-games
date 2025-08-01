@@ -1,6 +1,4 @@
-# This workflow validates all games
-
-name: Validate Game Data
+name: Validate Games
 
 on:
   schedule:
@@ -24,5 +22,5 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Validate game banner images
-        run: node __tests__/validate-game-banners.js
+      - name: Validate game data
+        run: node validate-games.js

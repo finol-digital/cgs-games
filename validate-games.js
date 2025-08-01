@@ -1,5 +1,5 @@
 // Validates that all game banner image URLs are accessible
-// Usage: node __tests__/validate-game-banners.js
+// Usage: node validate-games.js
 
 const https = require('https');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
