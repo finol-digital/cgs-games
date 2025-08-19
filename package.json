@@ -46,7 +46,7 @@
     "@types/lodash.debounce": "^4.0.9",
     "@types/lodash.snakecase": "^4.1.9",
     "autoprefixer": "^10.4.20",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-prettier": "^10.1.8",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "postcss": "^8.4.41",
