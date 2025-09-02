@@ -9,13 +9,15 @@ export default function Banner({
   img?: string;
   txt?: string;
 }) {
+  const imgPath = img.startsWith('https://') ? '/api/proxy' + img.replace(/^https:\/\//, '') : img;
+
   return (
     <div className="border-none bg-slate-800 flex justify-center">
       <Link href={home} className="mt-8 mb-8 flex justify-center">
         <img
           // Can't use next/Image for external image
           className="flex justify-center"
-          src={img}
+          src={imgPath}
           height="128"
           alt={txt}
           //priority={true}
