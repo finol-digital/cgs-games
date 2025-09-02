@@ -11,11 +11,10 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
-export default [
-  ...compat.extends('next/core-web-vitals', 'plugin:prettier/recommended'),
-  {
-    rules: {
-      '@next/next/no-img-element': 'off',
-    },
+export default [{
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"]
+}, ...compat.extends('next/core-web-vitals', 'plugin:prettier/recommended'), {
+  rules: {
+    '@next/next/no-img-element': 'off',
   },
-];
+}];
