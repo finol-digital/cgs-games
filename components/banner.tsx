@@ -9,7 +9,7 @@ export default function Banner({
   img?: string;
   txt?: string;
 }) {
-  const imgPath = img.startsWith('https://') ? '/api/proxy/' + img.replace(/^https:\/\//, '') : img;
+  const imgPath = img && img.startsWith('https://') ? '/api/proxy/' + img.replace(/^https:\/\//, '') : (img ?? '/Card-Game-Simulator.png');
 
   return (
     <div className="border-none bg-slate-800 flex justify-center">
