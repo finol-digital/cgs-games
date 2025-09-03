@@ -1,4 +1,5 @@
-'use client';
+import React from 'react';
+('use client');
 
 import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';

@@ -15,6 +15,7 @@ export default [
       '.firebase/**',
       '.next/**',
       'next-env.d.ts',
+      'eslint.config.mjs',
       'node_modules/**',
       'out/**',
       'build/**',

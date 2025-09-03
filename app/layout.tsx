@@ -1,3 +1,4 @@
+import React from 'react';
 import Header from '@/components/header';
 import UserContextProvider from '@/components/userContextProvider';
 import { Metadata, Viewport } from 'next';
