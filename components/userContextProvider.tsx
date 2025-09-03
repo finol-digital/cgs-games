@@ -1,5 +1,6 @@
+'use client';
+
 import React from 'react';
-('use client');
 
 import { UserContext } from '@/lib/context';
 import { useUserData } from '@/lib/hooks';
