@@ -23,12 +23,13 @@ const eslintConfig = [
       'app/privacy/**',
     ],
   },
-  ...compat.extends('next/core-web-vitals', 'plugin:prettier/recommended'),
   js.configs.recommended,
+  ...compat.extends('next/core-web-vitals'),
   {
     rules: {
       '@next/next/no-img-element': 'off',
     },
   },
+  ...compat.extends('plugin:prettier/recommended'),
 ];
 export default eslintConfig;
