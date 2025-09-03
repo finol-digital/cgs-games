@@ -9,13 +9,12 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-export default [
+const eslintConfig = [
   {
     ignores: [
       '.firebase/**',
       '.next/**',
       'next-env.d.ts',
-      'eslint.config.mjs',
       'node_modules/**',
       'out/**',
       'build/**',
@@ -32,3 +31,4 @@ export default [
     },
   },
 ];
+export default eslintConfig;
