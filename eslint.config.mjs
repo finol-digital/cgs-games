@@ -11,7 +11,17 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts'],
+    ignores: [
+      '.firebase/**',
+      '.next/**',
+      'next-env.d.ts',
+      'node_modules/**',
+      'out/**',
+      'build/**',
+      'public/**',
+      'app/terms/**',
+      'app/privacy/**',
+    ],
   },
   ...compat.extends('next/core-web-vitals', 'plugin:prettier/recommended'),
   js.configs.recommended,
