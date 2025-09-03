@@ -1,3 +1,4 @@
+import React from 'react';
 import Footer from '@/components/footer';
 import { getGame } from '@/lib/firebase/firestore';
 import { Metadata } from 'next';

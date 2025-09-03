@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';
 import { Card, CardBody, CardFooter } from '@nextui-org/card';
