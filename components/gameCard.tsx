@@ -4,7 +4,7 @@ import React from 'react';
 
 import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';
-import { Card, CardBody, CardFooter } from '@nextui-org/card';
+import { Card, CardBody, CardFooter } from '@heroui/card';
 import Link from 'next/link';
 import { useContext, useState } from 'react';
 import Banner from './banner';

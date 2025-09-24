@@ -2,7 +2,7 @@
 
 import AutoUpdateUrl from '@/components/autoUpdateUrl';
 import Game from '@/lib/game';
-import { Accordion, AccordionItem } from '@nextui-org/accordion';
+import { Accordion, AccordionItem } from '@heroui/accordion';
 import Link from 'next/link';
 
 export default function AlternativeAccordion({ game, cgsgg }: { game: Game; cgsgg: string }) {
