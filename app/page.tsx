@@ -11,6 +11,7 @@ export default async function Page() {
     <>
       <main className="main-content">
         <h1 className="text-center">CGS Games</h1>
+        <h1 className="text-3xl font-bold underline">      Hello world!    </h1>
         <p className="text-center">
           Welcome to the{' '}
           <Link href="https://www.cardgamesimulator.com" target="_blank">

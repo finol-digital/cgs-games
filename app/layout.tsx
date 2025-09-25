@@ -2,7 +2,7 @@ import React from 'react';
 import Header from '@/components/header';
 import UserContextProvider from '@/components/userContextProvider';
 import { Metadata, Viewport } from 'next';
-import './global.css';
+import './globals.css';
 import { Providers } from './providers';
 
 const APP_NAME = 'CGS Games';
