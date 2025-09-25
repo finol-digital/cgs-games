@@ -11,11 +11,7 @@
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
-    "@heroui/accordion": "2.2.23",
-    "@heroui/card": "2.2.24",
     "@heroui/react": "^2.8.4",
-    "@heroui/system": "2.4.22",
-    "@heroui/theme": "2.4.22",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "24.5.2",
     "@types/react": "19.0.1",
