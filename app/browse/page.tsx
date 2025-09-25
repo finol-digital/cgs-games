@@ -19,7 +19,7 @@ export default async function Page() {
   return (
     <>
       <main className="main-content">
-        <h1 className="text-center">CGS Games Browser</h1>
+        <h1 className="text-center text-4xl font-bold">CGS Games Browser</h1>
         <GamesDeck games={allGames} />
       </main>
       <Footer />

@@ -16,7 +16,7 @@ export default function Page() {
   return (
     <>
       <main className="main-content">
-        <h1 className="text-center">CGS Games Upload</h1>
+        <h1 className="text-center text-4xl font-bold">CGS Games Upload</h1>
         <p>
           To create your own game in CGS, refer to{' '}
           <Link

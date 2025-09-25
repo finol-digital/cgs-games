@@ -158,7 +158,7 @@ export default function Page() {
   return (
     <>
       <main>
-        <h1 className="text-center">CGS Games Terms of Use</h1>
+        <h1 className="text-center text-4xl font-bold">CGS Games Terms of Use</h1>
         <div dangerouslySetInnerHTML={{ __html: rawHTML }}></div>
       </main>
       <Footer />
