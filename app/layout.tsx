@@ -3,7 +3,6 @@ import Header from '@/components/header';
 import UserContextProvider from '@/components/userContextProvider';
 import { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Providers } from './providers';
 
 const APP_NAME = 'CGS Games';
 const APP_DESCRIPTION = 'Share your CGS games';
@@ -46,12 +45,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body className="dark">
         <div className="main-container">
-          <Providers>
-            <UserContextProvider>
-              <Header />
-              {children}
-            </UserContextProvider>
-          </Providers>
+          <UserContextProvider>
+            <Header />
+            {children}
+          </UserContextProvider>
         </div>
       </body>
     </html>

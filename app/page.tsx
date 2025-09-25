@@ -6,7 +6,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
-  const allGames = await getGames(2);
+  const latestGames = await getGames(2);
   return (
     <>
       <main className="main-content">
@@ -29,7 +29,7 @@ export default async function Page() {
           and <Link href="/upload">upload</Link> your own custom card games, or{' '}
           <Link href="/browse">browse</Link> games uploaded by others:
         </p>
-        <GamesDeck games={allGames} />
+        <GamesDeck games={latestGames} />
         <p className="text-center">
           <Link href="/browse">Browse All Games</Link>
         </p>
