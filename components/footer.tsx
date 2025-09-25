@@ -9,7 +9,7 @@ export default function Footer({ copyrightNotice }: { copyrightNotice?: string }
       <p className="h-10 text-center">
         <i>{copyrightNotice}</i>
       </p>
-      <div className="bg-(--color-gold) h-50">
+      <div className="bg-[var(--color-gold)] h-50">
         <p className="text-center">
           <Link href="/" className="brownlink">
             CGS Games

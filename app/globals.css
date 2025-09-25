@@ -6,16 +6,15 @@
 
 /* variables */
 :root {
-  background: #432e16;
-  --color-bg: #432e16;
+  --color-brown: #432e16;
   --color-gold: #d3bd7a;
-  --color-text: #ffffff;
+  --color-white: #ffffff;
   --color-gray: #475569;
   --color-green: #05fac6;
   --color-red: #df3b3b;
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --background: var(--color-brown);
+  --foreground: var(--color-white);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
@@ -49,8 +48,6 @@
 
 /* layout */
 body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
   min-width: 100%;
   padding: 0;
   margin: 0;
@@ -59,7 +56,7 @@ body {
 }
 
 .main-container {
-  background-color: var(--color-bg);
+  background-color: var(--background);
   /* will cover the viewport */
   min-height: 100vh;
   overflow: hidden;
@@ -70,14 +67,14 @@ body {
 }
 
 .main-content {
-  background-color: var(--color-bg);
+  background-color: var(--background);
   max-width: 800px;
   position: relative;
   margin: 0 auto;
 }
 
 footer {
-  background-color: var(--color-bg);
+  background-color: var(--background);
   text-align: center;
   position: absolute;
   bottom: 0;
@@ -88,7 +85,7 @@ footer {
 
 /* Links */
 .brownlink {
-  color: var(--color-bg);
+  color: var(--background);
   background-color: transparent;
   text-decoration: none;
 }
@@ -127,7 +124,7 @@ a:focus {
 button {
   background-color: var(--color-gray);
   border: none;
-  color: var(--color-text);
+  color: var(--color-white);
   padding: 1rem 1rem;
   font-family: 'Noto Sans', sans-serif;
   font-weight: bold;
@@ -144,17 +141,6 @@ button:disabled,
 button[disabled] {
   filter: brightness(80%);
   cursor: not-allowed;
-}
-
-/* Upload Form */
-.text-success {
-  font-weight: bold;
-  color: var(--color-green);
-}
-
-.text-danger {
-  font-weight: bold;
-  color: var(--color-red);
 }
 
 @theme inline {
@@ -236,4 +222,15 @@ button[disabled] {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Upload Form */
+.text-success {
+  font-weight: bold;
+  color: var(--color-green);
+}
+
+.text-danger {
+  font-weight: bold;
+  color: var(--color-red);
 }
