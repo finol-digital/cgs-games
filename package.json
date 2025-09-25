@@ -14,8 +14,8 @@
     "@heroui/react": "^2.8.4",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "24.5.2",
-    "@types/react": "19.0.1",
-    "@types/react-dom": "19.0.2",
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.1",
     "class-variance-authority": "^0.7.1",
     "firebase": "^11.10.0",
     "firebase-admin": "^13.2.0",
@@ -28,7 +28,7 @@
     "react-dom": "^19.1.1",
     "react-firebase-hooks": "^5.1.1",
     "react-hot-toast": "^2.6.0",
-    "tailwind-merge": "^2.5.5",
+    "tailwind-merge": "^3.3.1",
     "typescript": "^5.9.2"
   },
   "devDependencies": {
@@ -55,7 +55,7 @@
     "webpack": "^5.88.2"
   },
   "overrides": {
-    "@types/react": "19.0.1",
-    "@types/react-dom": "19.0.2"
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.1"
   }
 }
