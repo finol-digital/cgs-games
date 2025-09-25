@@ -69,11 +69,18 @@ export default function GameCard({
   };
 
   return (
-    <Card key={key} className="border-none bg-slate-800 flex items-center relative group">
-      <CardHeader>
-        <CardTitle>{game.name}</CardTitle>
+    <Card
+      key={key}
+      className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-full min-h-[320px]"
+    >
+      <CardHeader className="flex-1 flex flex-col justify-center h-full">
+        <CardTitle>
+          <Link href={`/${game.username}/${game.slug}`}>{game.name}</Link>
+        </CardTitle>
         <CardDescription>
-          Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
+          <p className="text-center">
+            Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
+          </p>
         </CardDescription>
         {canDelete && username === game.username && (
           <CardAction>
@@ -88,20 +95,11 @@ export default function GameCard({
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="h-80">
-        <center>
-          <Banner
-            home={`/${game.username}/${game.slug}`}
-            img={game.bannerImageUrl}
-            txt={game.name}
-          />
-        </center>
+      <CardContent className="flex-1 flex items-center justify-center h-full">
+        <Banner home={`/${game.username}/${game.slug}`} img={game.bannerImageUrl} txt={game.name} />
       </CardContent>
-      <CardFooter className="h-20 justify-between text-sm text-white">
+      <CardFooter className="flex-1 flex items-center justify-center h-full">
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
-        <p className="ml-4 mr-4">
-          Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
-        </p>
       </CardFooter>
     </Card>
   );
