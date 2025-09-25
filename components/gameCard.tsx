@@ -70,20 +70,23 @@ export default function GameCard({
 
   return (
     <Card key={key} className="border-none bg-slate-800 flex items-center relative group">
-      {canDelete && username === game.username && (
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-          aria-label="Delete game"
-        >
-          {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
-        </button>
-      )}
       <CardHeader>
-        <CardTitle>Card Title</CardTitle>
-        <CardDescription>Card Description</CardDescription>
-        <CardAction>Card Action</CardAction>
+        <CardTitle>{game.name}</CardTitle>
+        <CardDescription>
+          Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
+        </CardDescription>
+        {canDelete && username === game.username && (
+          <CardAction>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-opacity"
+              aria-label="Delete game"
+            >
+              {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
+            </button>
+          </CardAction>
+        )}
       </CardHeader>
       <CardContent className="h-80">
         <center>
