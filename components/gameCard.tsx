@@ -72,7 +72,7 @@ export default function GameCard({
           {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
         </button>
       )}
-      <CardBody>
+      <CardBody className="h-80">
         <center>
           <Banner
             home={`/${game.username}/${game.slug}`}
@@ -81,7 +81,7 @@ export default function GameCard({
           />
         </center>
       </CardBody>
-      <CardFooter className="justify-between text-small text-white">
+      <CardFooter className="h-20 justify-between text-small text-white">
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
         <p className="ml-4 mr-4">
           Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
