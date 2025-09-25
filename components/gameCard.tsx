@@ -4,12 +4,20 @@ import React from 'react';
 
 import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';
-import { Card, CardBody, CardFooter } from '@heroui/card';
 import Link from 'next/link';
 import { useContext, useState } from 'react';
 import Banner from './banner';
 
 import { UserContext } from '@/lib/context';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from './ui/card';
 
 export default function GameCard({
   game,
@@ -72,7 +80,12 @@ export default function GameCard({
           {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
         </button>
       )}
-      <CardBody className="h-80">
+      <CardHeader>
+        <CardTitle>Card Title</CardTitle>
+        <CardDescription>Card Description</CardDescription>
+        <CardAction>Card Action</CardAction>
+      </CardHeader>
+      <CardContent className="h-80">
         <center>
           <Banner
             home={`/${game.username}/${game.slug}`}
@@ -80,7 +93,7 @@ export default function GameCard({
             txt={game.name}
           />
         </center>
-      </CardBody>
+      </CardContent>
       <CardFooter className="h-20 justify-between text-small text-white">
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
         <p className="ml-4 mr-4">

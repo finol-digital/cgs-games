@@ -29,7 +29,6 @@
 - **Game Data:** Managed via Firestore, logic in `lib/game.ts` and `lib/firebase/firestore.ts`.
 - **Authentication:** Firebase Auth, logic in `lib/firebase/auth.ts`.
 - **Forms:** Custom forms (e.g., `components/uploadGameForm.tsx`, `components/usernameForm.tsx`).
-- **Styling:** TailwindCSS, config in `tailwind.config.js`.
 - **Environment:** Local emulation uses `apphosting.local.yaml` for Firebase config.
 
 ## Integration Points

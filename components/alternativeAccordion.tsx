@@ -2,13 +2,13 @@
 
 import AutoUpdateUrl from '@/components/autoUpdateUrl';
 import Game from '@/lib/game';
-import { Accordion, AccordionItem } from '@heroui/accordion';
 import Link from 'next/link';
+import { Accordion, AccordionItem } from './ui/accordion';
 
 export default function AlternativeAccordion({ game, cgsgg }: { game: Game; cgsgg: string }) {
   return (
-    <Accordion>
-      <AccordionItem key="1" aria-label="Use Steam" title="Use Steam">
+    <Accordion type="multiple">
+      <AccordionItem key="1" aria-label="Use Steam" title="Use Steam" value={''}>
         <h4>1. Install CGS</h4>
         <iframe
           src="https://store.steampowered.com/widget/1742850/"
@@ -25,7 +25,7 @@ export default function AlternativeAccordion({ game, cgsgg }: { game: Game; cgsg
           <li>Paste the AutoUpdateUrl and Submit Download</li>
         </ol>
       </AccordionItem>
-      <AccordionItem key="2" aria-label="Use Web Browser" title="Use Web Browser">
+      <AccordionItem key="2" aria-label="Use Web Browser" title="Use Web Browser" value={''}>
         You can also play {game.name} in your browser at{' '}
         <Link href={`${cgsgg}`} target="_blank">
           cgs.gg
