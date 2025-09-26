@@ -71,9 +71,9 @@ export default function GameCard({
   return (
     <Card
       key={key}
-      className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-full min-h-[320px]"
+      className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-[320px] min-h-[320px]"
     >
-      <CardHeader className="flex-1 flex flex-col justify-center h-full">
+      <CardHeader className="h-16 flex flex-col justify-center">
         <CardTitle>
           <Link href={`/${game.username}/${game.slug}`}>{game.name}</Link>
         </CardTitle>
@@ -95,10 +95,10 @@ export default function GameCard({
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="flex-1 flex items-center justify-center h-full">
+      <CardContent className="h-32 flex items-center justify-center">
         <Banner home={`/${game.username}/${game.slug}`} img={game.bannerImageUrl} txt={game.name} />
       </CardContent>
-      <CardFooter className="flex-1 flex items-center justify-center h-full">
+      <CardFooter className="h-10 flex items-center justify-center">
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
       </CardFooter>
     </Card>
