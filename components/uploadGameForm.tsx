@@ -83,10 +83,13 @@ function AutoUpdateUrlForm() {
   return (
     <section>
       <form onSubmit={submitAutoUpdateUrl}>
-        <p>Enter CGS AutoUpdate Url:</p>
+        <label htmlFor="autoUpdateUrl" className="block">
+          Enter CGS AutoUpdate Url:
+        </label>
         <input
           type="text"
           name="autoUpdateUrl"
+          id="autoUpdateUrl"
           value={autoUpdateUrl}
           onChange={(e) => setAutoUpdateUrl(e.target.value)}
           required
