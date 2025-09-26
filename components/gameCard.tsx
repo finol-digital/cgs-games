@@ -19,15 +19,7 @@ import {
   CardTitle,
 } from './ui/card';
 
-export default function GameCard({
-  game,
-  key,
-  canDelete,
-}: {
-  game: Game;
-  key: any;
-  canDelete: boolean;
-}) {
+export default function GameCard({ game, canDelete }: { game: Game; canDelete: boolean }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { username } = useContext(UserContext);
 
@@ -69,11 +61,8 @@ export default function GameCard({
   };
 
   return (
-    <Card
-      key={key}
-      className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-[320px] min-h-[320px]"
-    >
-      <CardHeader className="h-16 flex flex-col justify-center">
+    <Card className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-[320px] min-h-[320px]">
+      <CardHeader className="flex flex-col justify-center">
         <CardTitle>
           <Link href={`/${game.username}/${game.slug}`}>{game.name}</Link>
         </CardTitle>
@@ -93,10 +82,10 @@ export default function GameCard({
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="h-32 flex items-center justify-center">
+      <CardContent className="flex items-center justify-center">
         <Banner home={`/${game.username}/${game.slug}`} img={game.bannerImageUrl} txt={game.name} />
       </CardContent>
-      <CardFooter className="h-10 flex items-center justify-center">
+      <CardFooter className="flex items-center justify-center">
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
       </CardFooter>
     </Card>
