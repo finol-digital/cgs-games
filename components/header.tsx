@@ -12,7 +12,7 @@ import UserMenu from './userMenu';
 export default function Header() {
   const { user, username } = useContext(UserContext);
   return (
-    <header className="bg-gold sticky top-0 w-full border-b">
+    <header className="bg-[var(--color-gold)] sticky top-0 w-full border-b">
       <div className="h-16 container flex items-center">
         <MainNav />
         <MobileNav />

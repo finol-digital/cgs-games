@@ -9,22 +9,14 @@ export default function Banner({
   img?: string;
   txt?: string;
 }) {
+  const imgDefault = img ?? '/Card-Game-Simulator.png';
   const imgPath =
-    img && img.startsWith('https://')
-      ? '/api/proxy/' + img.replace(/^https:\/\//, '')
-      : (img ?? '/Card-Game-Simulator.png');
+    img && img.startsWith('https://') ? '/api/proxy/' + img.replace(/^https:\/\//, '') : imgDefault;
 
   return (
-    <div className="border-none bg-slate-800 flex justify-center">
-      <Link href={home} className="mt-8 mb-8 flex justify-center">
-        <img
-          // Can't use next/Image for external image
-          className="flex justify-center"
-          src={imgPath}
-          height="128"
-          alt={txt}
-          //priority={true}
-        />
+    <div className="border-none bg-slate-800 flex justify-center items-center w-full h-32">
+      <Link href={home} className="flex justify-center items-center w-full h-full">
+        <img className="object-contain rounded w-full h-full" src={imgPath} alt={txt} />
       </Link>
     </div>
   );

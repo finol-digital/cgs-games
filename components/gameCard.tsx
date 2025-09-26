@@ -4,22 +4,22 @@ import React from 'react';
 
 import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';
-import { Card, CardBody, CardFooter } from '@nextui-org/card';
 import Link from 'next/link';
 import { useContext, useState } from 'react';
 import Banner from './banner';
 
 import { UserContext } from '@/lib/context';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from './ui/card';
 
-export default function GameCard({
-  game,
-  key,
-  canDelete,
-}: {
-  game: Game;
-  key: any;
-  canDelete: boolean;
-}) {
+export default function GameCard({ game, canDelete }: { game: Game; canDelete: boolean }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { username } = useContext(UserContext);
 
@@ -61,31 +61,32 @@ export default function GameCard({
   };
 
   return (
-    <Card key={key} className="border-none bg-slate-800 flex items-center relative group">
-      {canDelete && username === game.username && (
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-          aria-label="Delete game"
-        >
-          {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
-        </button>
-      )}
-      <CardBody>
-        <center>
-          <Banner
-            home={`/${game.username}/${game.slug}`}
-            img={game.bannerImageUrl}
-            txt={game.name}
-          />
-        </center>
-      </CardBody>
-      <CardFooter className="justify-between text-small text-white">
-        {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
-        <p className="ml-4 mr-4">
+    <Card className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-[320px] min-h-[320px]">
+      <CardHeader className="flex flex-col justify-center">
+        <CardTitle>
+          <Link href={`/${game.username}/${game.slug}`}>{game.name}</Link>
+        </CardTitle>
+        <CardDescription className="text-center">
           Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
-        </p>
+        </CardDescription>
+        {canDelete && username === game.username && (
+          <CardAction>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-opacity"
+              aria-label="Delete game"
+            >
+              {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
+            </button>
+          </CardAction>
+        )}
+      </CardHeader>
+      <CardContent className="flex items-center justify-center">
+        <Banner home={`/${game.username}/${game.slug}`} img={game.bannerImageUrl} txt={game.name} />
+      </CardContent>
+      <CardFooter className="flex items-center justify-center">
+        {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
       </CardFooter>
     </Card>
   );

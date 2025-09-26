@@ -82,12 +82,19 @@ function AutoUpdateUrlForm() {
 
   return (
     <section>
-      <h2>Enter CGS AutoUpdate Url</h2>
       <form onSubmit={submitAutoUpdateUrl}>
+        <label htmlFor="autoUpdateUrl" className="block">
+          Enter CGS AutoUpdate Url:
+        </label>
         <input
+          type="text"
+          name="autoUpdateUrl"
+          id="autoUpdateUrl"
           value={autoUpdateUrl}
           onChange={(e) => setAutoUpdateUrl(e.target.value)}
-          placeholder="https://www.cardgamesimulator.com/games/Standard/Standard.json"
+          required
+          className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          placeholder="https://www.cardgamesimulator.com/games/Standard/cgs.json"
         />
         <br />
         {error && <p className="text-danger">{error}</p>}
