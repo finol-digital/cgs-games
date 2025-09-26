@@ -77,10 +77,8 @@ export default function GameCard({
         <CardTitle>
           <Link href={`/${game.username}/${game.slug}`}>{game.name}</Link>
         </CardTitle>
-        <CardDescription>
-          <p className="text-center">
-            Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
-          </p>
+        <CardDescription className="text-center">
+          Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
         </CardDescription>
         {canDelete && username === game.username && (
           <CardAction>
