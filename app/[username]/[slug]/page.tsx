@@ -17,7 +17,7 @@ export default async function Page(props: { params: Promise<{ username: string; 
         txt={game.name}
       />
       <main className="main-content">
-        <h2 className="text-2xl font-bold mb-2 my-4">Launch the CGS app to play {game.name}:</h2>
+        <h2 className="text-2xl font-bold my-4">Launch the CGS app to play {game.name}:</h2>
         <CgsDeepLink game={game} />
         <h2 className="text-xl font-semibold mt-8 mb-2 my-4">Alternatively:</h2>
         <AlternativeAccordion game={game} cgsgg={cgsgg} />
