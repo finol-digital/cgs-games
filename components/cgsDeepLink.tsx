@@ -3,13 +3,13 @@ import Game from '@/lib/game';
 
 export default function CgsDeepLink({ game }: { game: Game }) {
   return (
-    <ol>
+    <ol className="list-decimal list-inside my2- ml-2">
       <li>
-        <p>First install CGS from the appropriate store:</p>
+        First install CGS from the appropriate store:
         <StoreBadge />
       </li>
       <li>
-        <p>Then launch CGS for {game.name}:</p>
+        Then launch CGS for {game.name}:<br></br>
         <a
           className="button"
           href={'cardgamesim://link?url=' + encodeURIComponent(game.autoUpdateUrl)}
