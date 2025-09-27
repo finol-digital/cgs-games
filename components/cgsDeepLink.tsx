@@ -3,7 +3,7 @@ import Game from '@/lib/game';
 
 export default function CgsDeepLink({ game }: { game: Game }) {
   return (
-    <ol className="list-decimal list-inside my2- ml-2">
+    <ol className="list-decimal list-inside my-2 ml-2">
       <li>
         First install CGS from the appropriate store:
         <StoreBadge />
