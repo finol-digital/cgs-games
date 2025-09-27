@@ -9,7 +9,7 @@ export default function CgsDeepLink({ game }: { game: Game }) {
         <StoreBadge />
       </li>
       <li>
-        Then launch CGS for {game.name}:<br></br>
+        Then launch CGS for {game.name}:<br />
         <a
           className="button"
           href={'cardgamesim://link?url=' + encodeURIComponent(game.autoUpdateUrl)}
