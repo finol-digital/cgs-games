@@ -39,44 +39,47 @@ async function main() {
   let successCount = 0;
 
   async function validateBannerUrl(game) {
-    try {
-      if (!game.bannerImageUrl) {
-        const error = `❌ ${game.name || 'Unknown'} (${game.username || 'Unknown'}/${
-          game.slug || 'Unknown'
-        }) - Missing bannerImageUrl`;
-        failures.push(error);
-        console.log(error);
-        return false;
-      }
-      console.log(`🔗 Checking: ${game.name} (${game.username}/${game.slug})`);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      const response = await fetch(game.bannerImageUrl, {
-        method: 'HEAD',
-        signal: controller.signal,
-        headers: { 'User-Agent': 'CGS-Games-Banner-Validator/1.0' },
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        const error = `❌ ${game.name} (${game.username}/${game.slug}) - HTTP ${response.status} ${response.statusText}: ${game.bannerImageUrl}`;
-        failures.push(error);
-        console.log(error);
-        return false;
-      } else {
-        console.log(`   ✅ Accessible (HTTP ${response.status})`);
-        successCount++;
-        return true;
-      }
-    } catch (error) {
-      let errorMessage = error.message;
-      if (error.name === 'AbortError') {
-        errorMessage = 'Request timeout (>10s)';
-      }
-      const errorMsg = `❌ ${game.name} (${game.username}/${game.slug}) - ${errorMessage}: ${game.bannerImageUrl}`;
-      failures.push(errorMsg);
-      console.log(errorMsg);
+    if (!game.bannerImageUrl) {
+      const error = `❌ ${game.name || 'Unknown'} (${game.username || 'Unknown'}/${game.slug || 'Unknown'}) - Missing bannerImageUrl`;
+      failures.push(error);
+      console.log(error);
       return false;
     }
+    console.log(`🔗 Checking: ${game.name} (${game.username}/${game.slug})`);
+    let lastError = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const response = await fetch(game.bannerImageUrl, {
+          method: 'HEAD',
+          signal: controller.signal,
+          headers: { 'User-Agent': 'CGS-Games-Banner-Validator/1.0' },
+        });
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          console.log(`   ✅ Accessible (HTTP ${response.status})`);
+          successCount++;
+          return true;
+        } else {
+          lastError = `HTTP ${response.status} ${response.statusText}`;
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          lastError = 'Request timeout (>10s)';
+        } else {
+          lastError = error.message;
+        }
+      }
+      if (attempt < 3) {
+        console.log(`   ⏳ Retry ${attempt} failed for ${game.bannerImageUrl}, retrying...`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+    const errorMsg = `❌ ${game.name} (${game.username}/${game.slug}) - ${lastError}: ${game.bannerImageUrl}`;
+    failures.push(errorMsg);
+    console.log(errorMsg);
+    return false;
   }
 
   async function validateAllBanners() {
