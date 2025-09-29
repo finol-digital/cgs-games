@@ -40,7 +40,9 @@ async function main() {
 
   async function validateBannerUrl(game) {
     if (!game.bannerImageUrl) {
-      const error = `❌ ${game.name || 'Unknown'} (${game.username || 'Unknown'}/${game.slug || 'Unknown'}) - Missing bannerImageUrl`;
+      const error = `❌ ${game.name || 'Unknown'} (${game.username || 'Unknown'}/${
+        game.slug || 'Unknown'
+      }) - Missing bannerImageUrl`;
       failures.push(error);
       console.log(error);
       return false;
