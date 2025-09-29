@@ -62,6 +62,19 @@ export default function GameCard({ game, canDelete }: { game: Game; canDelete: b
 
   return (
     <Card className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-[320px] min-h-[320px]">
+      {/* Delete button absolutely positioned in top-right */}
+      {canDelete && username === game.username && (
+        <CardAction className="absolute top-2 right-2 z-10">
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-opacity"
+            aria-label="Delete game"
+          >
+            {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
+          </button>
+        </CardAction>
+      )}
       <CardHeader className="flex flex-col justify-center">
         <CardTitle>
           <Link href={`/${game.username}/${game.slug}`}>{game.name}</Link>
@@ -69,18 +82,6 @@ export default function GameCard({ game, canDelete }: { game: Game; canDelete: b
         <CardDescription className="text-center">
           Uploaded by <Link href={`/${game.username}`}>{game.username}</Link>
         </CardDescription>
-        {canDelete && username === game.username && (
-          <CardAction>
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-opacity"
-              aria-label="Delete game"
-            >
-              {isDeleting ? <span className="animate-spin">↻</span> : <span>×</span>}
-            </button>
-          </CardAction>
-        )}
       </CardHeader>
       <CardContent className="flex items-center justify-center">
         <Banner home={`/${game.username}/${game.slug}`} img={game.bannerImageUrl} txt={game.name} />
