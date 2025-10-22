@@ -12,7 +12,7 @@ export default function CgsDeepLink({ game }: { game: Game }) {
         Then launch CGS for {game.name}:<br />
         <a
           className="button"
-          href={'cardgamesim://link?url=' + encodeURIComponent(game.autoUpdateUrl)}
+          href={'cardgamesim://main?url=' + encodeURIComponent(game.autoUpdateUrl)}
           aria-label={'Launch CGS for ' + game.name}
         >
           <span>Launch CGS for {game.name}</span>
