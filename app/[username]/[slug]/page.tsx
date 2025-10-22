@@ -8,7 +8,7 @@ export default async function Page(props: { params: Promise<{ username: string; 
   const params = await props.params;
   const game = await getGame(params.username, params.slug);
   if (!game) return notFound();
-  const cgsgg = 'https://cgs.gg/?url=' + encodeURIComponent(game.autoUpdateUrl);
+  const cgsgg = 'https://cgs.gg/main?url=' + encodeURIComponent(game.autoUpdateUrl);
   return (
     <>
       <Banner
