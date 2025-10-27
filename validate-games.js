@@ -4,6 +4,7 @@
 // Using native fetch API available in Node.js 18+.
 
 const TIMEOUT = 30000; // 30 seconds
+const RETRY_DELAY = 1000; // 1 second
 
 async function main() {
   console.log('🔍 Fetching games from https://cgs.games/api/games...');
@@ -77,7 +78,7 @@ async function main() {
       }
       if (attempt < 3) {
         console.log(`   ⏳ Retry ${attempt} failed for ${game.bannerImageUrl}, retrying...`);
-        await new Promise((resolve) => setTimeout(resolve, TIMEOUT));
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
       }
     }
     const errorMsg = `❌ ${game.name} (${game.username}/${game.slug}) - ${lastError}: ${game.bannerImageUrl}`;
