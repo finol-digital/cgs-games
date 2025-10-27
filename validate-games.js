@@ -3,12 +3,14 @@
 
 // Using native fetch API available in Node.js 18+.
 
+const TIMEOUT = 30000; // 30 seconds
+
 async function main() {
   console.log('🔍 Fetching games from https://cgs.games/api/games...');
   let games;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
     const gamesRes = await fetch('https://cgs.games/api/games', {
       method: 'GET',
       headers: { 'User-Agent': 'CGS-Games-Banner-Validator/1.0' },
@@ -52,7 +54,7 @@ async function main() {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
         const response = await fetch(game.bannerImageUrl, {
           method: 'HEAD',
           signal: controller.signal,
@@ -75,7 +77,7 @@ async function main() {
       }
       if (attempt < 3) {
         console.log(`   ⏳ Retry ${attempt} failed for ${game.bannerImageUrl}, retrying...`);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, TIMEOUT));
       }
     }
     const errorMsg = `❌ ${game.name} (${game.username}/${game.slug}) - ${lastError}: ${game.bannerImageUrl}`;
