@@ -3,12 +3,15 @@
 
 // Using native fetch API available in Node.js 18+.
 
+const TIMEOUT = 30000; // 30 seconds
+const RETRY_DELAY = 1000; // 1 second
+
 async function main() {
   console.log('🔍 Fetching games from https://cgs.games/api/games...');
   let games;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
     const gamesRes = await fetch('https://cgs.games/api/games', {
       method: 'GET',
       headers: { 'User-Agent': 'CGS-Games-Banner-Validator/1.0' },
@@ -52,7 +55,7 @@ async function main() {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
         const response = await fetch(game.bannerImageUrl, {
           method: 'HEAD',
           signal: controller.signal,
@@ -68,14 +71,14 @@ async function main() {
         }
       } catch (error) {
         if (error.name === 'AbortError') {
-          lastError = 'Request timeout (>10s)';
+          lastError = `Request timeout (>${TIMEOUT / 1000}s)`;
         } else {
           lastError = error.message;
         }
       }
       if (attempt < 3) {
         console.log(`   ⏳ Retry ${attempt} failed for ${game.bannerImageUrl}, retrying...`);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
       }
     }
     const errorMsg = `❌ ${game.name} (${game.username}/${game.slug}) - ${lastError}: ${game.bannerImageUrl}`;
@@ -91,7 +94,7 @@ async function main() {
       const batch = games.slice(i, i + batchSize);
       await Promise.all(batch.map(validateBannerUrl));
       if (i + batchSize < games.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, TIMEOUT));
       }
     }
     console.log(`\n📋 Validation Summary:`);
