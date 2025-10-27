@@ -71,7 +71,7 @@ async function main() {
         }
       } catch (error) {
         if (error.name === 'AbortError') {
-          lastError = 'Request timeout (>10s)';
+          lastError = `Request timeout (>${TIMEOUT / 1000}s)`;
         } else {
           lastError = error.message;
         }
@@ -94,7 +94,7 @@ async function main() {
       const batch = games.slice(i, i + batchSize);
       await Promise.all(batch.map(validateBannerUrl));
       if (i + batchSize < games.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, TIMEOUT));
       }
     }
     console.log(`\n📋 Validation Summary:`);
