@@ -19,6 +19,7 @@ export function useUserData() {
         setUsername(doc.data()?.username);
       });
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUsername(null);
     }
 
