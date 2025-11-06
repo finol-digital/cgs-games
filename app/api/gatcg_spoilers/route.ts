@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const url = new URL('https://alpha.silvie.gg/api/spoilers?set=28,29');
+  const silvieHost = 'https://silvie.gg';
+  const url = new URL(`${silvieHost}/api/spoilers?set=33,32,31`);
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   const responseJson = await response.json();
@@ -27,12 +28,11 @@ export async function GET() {
     });
     dataContainer.data[i].uuid = '' + responseJson.spoilers[i].id;
     dataContainer.data[i].name = responseJson.spoilers[i].card_name;
-    dataContainer.data[i].card_image_url =
-      'https://alpha.silvie.gg' + responseJson.spoilers[i].card_image_url;
+    dataContainer.data[i].card_image_url = silvieHost + responseJson.spoilers[i].card_image_url;
     if (responseJson.spoilers[i].back_card && responseJson.spoilers[i].back_card.card_name) {
       dataContainer.data[i].back_card_name = responseJson.spoilers[i].back_card.card_name;
       dataContainer.data[i].back_card_image_url =
-        'https://alpha.silvie.gg' + responseJson.spoilers[i].back_card.card_image_url;
+        silvieHost + responseJson.spoilers[i].back_card.card_image_url;
     }
   }
   console.log(dataContainer);
