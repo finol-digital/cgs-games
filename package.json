@@ -21,7 +21,7 @@
     "lodash.debounce": "^4.0.8",
     "lodash.snakecase": "^4.1.1",
     "lucide-react": "^0.556.0",
-    "next": "^16.0.10",
+    "next": "^16.1.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-firebase-hooks": "^5.1.1",
