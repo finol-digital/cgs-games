@@ -7,15 +7,17 @@ import GamesDeck from './gamesDeck';
 export default function BrowseGames({ games }: { games: Game[] }) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredGames = games.filter((game) => {
-    if (!searchQuery.trim()) return true;
+  // Normalize the search query once
+  const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    const query = searchQuery.toLowerCase();
+  const filteredGames = games.filter((game) => {
+    if (!normalizedQuery) return true;
+
     return (
-      (game.name && game.name.toLowerCase().includes(query)) ||
-      (game.username && game.username.toLowerCase().includes(query)) ||
-      (game.slug && game.slug.toLowerCase().includes(query)) ||
-      (game.copyright && game.copyright.toLowerCase().includes(query))
+      (game.name && game.name.toLowerCase().includes(normalizedQuery)) ||
+      (game.username && game.username.toLowerCase().includes(normalizedQuery)) ||
+      (game.slug && game.slug.toLowerCase().includes(normalizedQuery)) ||
+      (game.copyright && game.copyright.toLowerCase().includes(normalizedQuery))
     );
   });
 
@@ -50,10 +52,10 @@ export default function BrowseGames({ games }: { games: Game[] }) {
           </svg>
         </div>
 
-        {searchQuery && (
+        {searchQuery.trim() && (
           <p className="mt-2 text-center text-slate-400">
             {resultCount} {resultCount === 1 ? 'game' : 'games'} found matching &quot;
-            {searchQuery}&quot;
+            {normalizedQuery}&quot;
           </p>
         )}
       </div>
