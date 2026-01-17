@@ -1,5 +1,5 @@
 import Footer from '@/components/footer';
-import GamesDeck from '@/components/gamesDeck';
+import BrowseGames from '@/components/browseGames';
 import { getAllGames } from '@/lib/firebase/firestore';
 import { Metadata } from 'next';
 
@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'CGS Games Browser',
-  description: 'Browse CGS games.',
+  description: 'Browse and search Card Game Simulator (CGS) games.',
   openGraph: {
     title: 'CGS Games Browser',
-    description: 'Browse CGS games.',
+    description: 'Browse and search Card Game Simulator (CGS) games.',
   },
 };
 
@@ -20,7 +20,7 @@ export default async function Page() {
     <>
       <main className="main-content">
         <h1 className="text-center text-4xl font-bold my-4">CGS Games Browser</h1>
-        <GamesDeck games={allGames} />
+        <BrowseGames games={allGames} />
       </main>
       <Footer />
     </>
