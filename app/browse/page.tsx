@@ -10,6 +10,7 @@ export default function Page() {
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -18,6 +19,7 @@ export default function Page() {
         setAllGames(games);
       } catch (error) {
         console.error('Error fetching games:', error);
+        setError('Failed to load games. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -49,6 +51,7 @@ export default function Page() {
             <input
               type="text"
               placeholder="Search games by name, creator, or keywords..."
+              aria-label="Search games"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-3 pl-10 text-white bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
@@ -79,6 +82,10 @@ export default function Page() {
         {isLoading ? (
           <div className="text-center py-8">
             <p className="text-slate-400">Loading games...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-500">{error}</p>
           </div>
         ) : (
           <GamesDeck games={filteredGames} />

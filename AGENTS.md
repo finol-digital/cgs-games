@@ -73,7 +73,7 @@ firebase emulators:start
 ### Import Organization
 
 ```typescript
-// 1. React/Next.js imports
+// 1. Directives and React/Next.js imports
 'use client';
 import React from 'react';
 import Link from 'next/link';
@@ -91,7 +91,7 @@ import { Card, CardAction } from './ui/card';
 
 ### Component Structure
 
-- **File naming**: PascalCase for components (e.g., `gameCard.tsx`)
+- **File naming**: camelCase for components (e.g., `gameCard.tsx`)
 - **Export pattern**: Default export for components
 - **Props interface**: Define inline or above component
 - **State management**: Use React hooks (`useState`, `useContext`, etc.)
@@ -126,7 +126,7 @@ import { Card, CardAction } from './ui/card';
 
 ### File Naming & Structure
 
-- **Components**: PascalCase (e.g., `gameCard.tsx`, `userMenu.tsx`)
+- **Components**: camelCase (e.g., `gameCard.tsx`, `userMenu.tsx`)
 - **Utilities**: camelCase (e.g., `utils.ts`, `hooks.ts`)
 - **Pages**: `page.tsx` (App Router convention)
 - **API routes**: `route.ts` in `app/api/` directories
