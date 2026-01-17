@@ -17,8 +17,8 @@ export default function Page() {
       try {
         const games = await getAllGames();
         setAllGames(games);
-      } catch (error) {
-        console.error('Error fetching games:', error);
+      } catch (err) {
+        console.error('Error fetching games:', err);
         setError('Failed to load games. Please try again later.');
       } finally {
         setIsLoading(false);
@@ -53,8 +53,11 @@ export default function Page() {
               placeholder="Search games by name, creator, or keywords..."
               aria-label="Search games"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                if (!isLoading) setSearchQuery(e.target.value);
+              }}
               className="w-full px-4 py-3 pl-10 text-white bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+              disabled={isLoading}
             />
             <svg
               className="absolute left-3 top-3.5 h-5 w-5 text-slate-400"
@@ -71,7 +74,7 @@ export default function Page() {
             </svg>
           </div>
 
-          {searchQuery && (
+          {searchQuery && !isLoading && (
             <p className="mt-2 text-center text-slate-400">
               {resultCount} {resultCount === 1 ? 'game' : 'games'} found matching &quot;
               {searchQuery}&quot;
