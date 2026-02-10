@@ -16,7 +16,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "firebase": "^12.8.0",
-    "firebase-admin": "^13.2.0",
+    "firebase-admin": "^13.6.1",
     "firebase-functions": "^7.0.5",
     "lodash.debounce": "^4.0.8",
     "lodash.snakecase": "^4.1.1",
