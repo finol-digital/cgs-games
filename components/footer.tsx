@@ -6,7 +6,7 @@ export default function Footer({ copyrightNotice }: { copyrightNotice?: string }
   }
   return (
     <footer>
-      <p className="h-10 text-center">
+      <p className="py-2 text-center">
         <i>{copyrightNotice}</i>
       </p>
       <div className="bg-[var(--color-gold)] h-48">
