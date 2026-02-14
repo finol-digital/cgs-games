@@ -2,13 +2,19 @@
 
 import AutoUpdateUrl from '@/components/autoUpdateUrl';
 import Game from '@/lib/game';
-import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import CgsDeepLink from './cgsDeepLink';
 
-export default function AlternativeAccordion({ game, cgsgg }: { game: Game; cgsgg: string }) {
+export default function AlternativeAccordion({ game }: { game: Game }) {
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1">
+        <AccordionTrigger>Use Native Client</AccordionTrigger>
+        <AccordionContent className="flex flex-col gap-4 text-balance">
+          <CgsDeepLink game={game} />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="item-2">
         <AccordionTrigger>Use Steam</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
           <h4 className="text-xl font-semibold">1. Install CGS</h4>
@@ -26,17 +32,6 @@ export default function AlternativeAccordion({ game, cgsgg }: { game: Game; cgsg
             <li>Click the Import button and select &quot;Download from Web&quot;</li>
             <li>Paste the AutoUpdateUrl and Submit Download</li>
           </ol>
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="item-2">
-        <AccordionTrigger>Use Web Browser</AccordionTrigger>
-        <AccordionContent className="flex flex-col gap-4 text-balance">
-          <p>
-            You can also play {game.name} in your browser at{' '}
-            <Link href={`${cgsgg}`} target="_blank">
-              cgs.gg
-            </Link>
-          </p>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
