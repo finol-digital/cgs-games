@@ -21,7 +21,7 @@ export default async function Page(props: { params: Promise<{ username: string; 
         >
           Play {game.name} Now
         </Link>
-        <h2 className="text-xl font-semibold mt-8 mb-2 my-4 text-center">Alternatively:</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-2 text-center">Alternatively:</h2>
         <AlternativeAccordion game={game} />
       </main>
     </>
