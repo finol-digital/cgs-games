@@ -62,8 +62,8 @@ body {
   overflow: hidden;
   display: block;
   position: relative;
-  padding-bottom: 120px;
-  /* height of the footer */
+  padding-bottom: 192px;
+  /* height of the footer (h-48 = 192px) */
 }
 
 .main-content {
@@ -79,8 +79,8 @@ footer {
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 120px;
-  /* padding-bottom of the main-container */
+  height: 192px;
+  /* h-48 = 192px, matching padding-bottom of the main-container */
 }
 
 /* Links */
