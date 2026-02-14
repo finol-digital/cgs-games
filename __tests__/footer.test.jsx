@@ -37,8 +37,8 @@ describe('Footer', () => {
   it('uses flexible padding instead of fixed height for gold footer section', () => {
     const { container } = render(<Footer />);
     const goldDiv = container.querySelector('.bg-\\[var\\(--color-gold\\)\\]');
-    // Verify it uses padding (py-8 pb-4) instead of fixed height (h-48)
-    expect(goldDiv).toHaveClass('py-8');
+    // Verify it uses padding (pt-8 pb-4) instead of fixed height (h-48)
+    expect(goldDiv).toHaveClass('pt-8');
     expect(goldDiv).toHaveClass('pb-4');
     expect(goldDiv).not.toHaveClass('h-48');
   });
