@@ -9,7 +9,7 @@ export default function AlternativeAccordion({ game }: { game: Game }) {
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1">
-        <AccordionTrigger>Use Native Client</AccordionTrigger>
+        <AccordionTrigger>Get the App</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
           <CgsDeepLink game={game} />
         </AccordionContent>
