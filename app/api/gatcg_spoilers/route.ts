@@ -39,10 +39,10 @@ export async function GET() {
         silvieHost + responseJson.spoilers[i].back_card.card_image_url;
     }
     if (responseJson.spoilers[i].card_type) {
-      dataContainer.data[i].types = [responseJson.spoilers[i].card_type];
+      dataContainer.data[i].types = [responseJson.spoilers[i].card_type.toUpperCase()];
     }
     if (responseJson.spoilers[i].element_name) {
-      dataContainer.data[i].element = responseJson.spoilers[i].element_name;
+      dataContainer.data[i].element = responseJson.spoilers[i].element_name.toUpperCase();
     }
   }
   console.log(dataContainer);
