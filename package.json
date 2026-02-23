@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --config eslint.config.mjs",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "patch-package"
   },
   "dependencies": {
-    "@ducanh2912/next-pwa": "^10.2.9",
     "@radix-ui/react-accordion": "^1.2.12",
     "@types/node": "25.2.2",
     "class-variance-authority": "^0.7.1",
@@ -22,6 +22,7 @@
     "lodash.snakecase": "^4.1.1",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",
+    "patch-package": "^8.0.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-firebase-hooks": "^5.1.1",
@@ -30,7 +31,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "^9.38.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/dom": "^10.4.1",
@@ -41,7 +42,7 @@
     "@types/lodash.snakecase": "^4.1.9",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "eslint": "^9.39.2",
+    "eslint": "^9.39.3",
     "eslint-config-next": "^16.1.6",
     "eslint-config-prettier": "^10.1.8",
     "eslint-formatter-compact": "^9.0.1",
@@ -59,6 +60,7 @@
   "overrides": {
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "diff": "8.0.3"
+    "diff": "8.0.3",
+    "minimatch": "^10.2.1"
   }
 }
