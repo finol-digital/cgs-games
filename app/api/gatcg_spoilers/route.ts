@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const silvieHost = 'https://silvie.gg';
-  const url = new URL(`${silvieHost}/api/spoilers?set=33,32,31`);
+  const url = new URL(`${silvieHost}/api/spoilers?set=34,35,36,37,38`);
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   const responseJson = await response.json();
@@ -14,6 +14,8 @@ export async function GET() {
       card_image_url: string;
       back_card_name: string;
       back_card_image_url: string;
+      types: string[];
+      element: string;
     }[];
   } = {
     data: [],
@@ -25,6 +27,8 @@ export async function GET() {
       card_image_url: '',
       back_card_name: '',
       back_card_image_url: '',
+      types: [],
+      element: '',
     });
     dataContainer.data[i].uuid = '' + responseJson.spoilers[i].id;
     dataContainer.data[i].name = responseJson.spoilers[i].card_name;
@@ -33,6 +37,14 @@ export async function GET() {
       dataContainer.data[i].back_card_name = responseJson.spoilers[i].back_card.card_name;
       dataContainer.data[i].back_card_image_url =
         silvieHost + responseJson.spoilers[i].back_card.card_image_url;
+    }
+    const cardType = responseJson.spoilers[i].card_type;
+    if (typeof cardType === 'string') {
+      dataContainer.data[i].types = [cardType.toUpperCase()];
+    }
+    const elementName = responseJson.spoilers[i].element_name;
+    if (typeof elementName === 'string') {
+      dataContainer.data[i].element = elementName.toUpperCase();
     }
   }
   console.log(dataContainer);
