@@ -38,11 +38,13 @@ export async function GET() {
       dataContainer.data[i].back_card_image_url =
         silvieHost + responseJson.spoilers[i].back_card.card_image_url;
     }
-    if (responseJson.spoilers[i].card_type) {
-      dataContainer.data[i].types = [responseJson.spoilers[i].card_type.toUpperCase()];
+    const cardType = responseJson.spoilers[i].card_type;
+    if (typeof cardType === 'string') {
+      dataContainer.data[i].types = [cardType.toUpperCase()];
     }
-    if (responseJson.spoilers[i].element_name) {
-      dataContainer.data[i].element = responseJson.spoilers[i].element_name.toUpperCase();
+    const elementName = responseJson.spoilers[i].element_name;
+    if (typeof elementName === 'string') {
+      dataContainer.data[i].element = elementName.toUpperCase();
     }
   }
   console.log(dataContainer);
