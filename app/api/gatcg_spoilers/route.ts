@@ -32,11 +32,13 @@ export async function GET() {
     });
     dataContainer.data[i].uuid = '' + responseJson.spoilers[i].id;
     dataContainer.data[i].name = responseJson.spoilers[i].card_name;
-    dataContainer.data[i].card_image_url = silvieHost + responseJson.spoilers[i].card_image_url;
+    dataContainer.data[i].card_image_url =
+      silvieHost + responseJson.spoilers[i].card_image_url.replace('/img/', '/api/images/');
     if (responseJson.spoilers[i].back_card && responseJson.spoilers[i].back_card.card_name) {
       dataContainer.data[i].back_card_name = responseJson.spoilers[i].back_card.card_name;
       dataContainer.data[i].back_card_image_url =
-        silvieHost + responseJson.spoilers[i].back_card.card_image_url;
+        silvieHost +
+        responseJson.spoilers[i].back_card.card_image_url.replace('/img/', '/api/images/');
     }
     const cardType = responseJson.spoilers[i].card_type;
     if (typeof cardType === 'string') {
