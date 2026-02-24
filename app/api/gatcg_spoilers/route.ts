@@ -1,8 +1,23 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const data = await getData(request);
+  console.log(data);
+  return new NextResponse(JSON.stringify(data), {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+async function getData(request: Request) {
   const silvieHost = 'https://silvie.gg';
-  const url = new URL(`${silvieHost}/api/spoilers?set=34,35,36,37,38`);
+  const requestUrl = new URL(request.url);
+  const setParam = requestUrl.searchParams.get('set') ?? '34,35,36,37,38';
+  const url = new URL(`${silvieHost}/api/spoilers?set=${setParam}`);
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   const responseJson = await response.json();
@@ -16,6 +31,7 @@ export async function GET() {
       back_card_image_url: string;
       types: string[];
       element: string;
+      effect_raw: string;
     }[];
   } = {
     data: [],
@@ -29,6 +45,7 @@ export async function GET() {
       back_card_image_url: '',
       types: [],
       element: '',
+      effect_raw: '',
     });
     dataContainer.data[i].uuid = '' + responseJson.spoilers[i].id;
     dataContainer.data[i].name = responseJson.spoilers[i].card_name;
@@ -49,13 +66,5 @@ export async function GET() {
       dataContainer.data[i].element = elementName.toUpperCase();
     }
   }
-  console.log(dataContainer);
-  return new NextResponse(JSON.stringify(dataContainer), {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+  return dataContainer;
 }
