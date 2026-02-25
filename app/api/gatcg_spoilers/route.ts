@@ -181,7 +181,9 @@ async function createOcrScheduler() {
   const workers = await Promise.all(
     Array.from({ length: NUM_OCR_WORKERS }, () => createWorker('eng')),
   );
-  workers.forEach((w) => scheduler.addWorker(w));
+  for (const w of workers) {
+    scheduler.addWorker(w);
+  }
   return scheduler;
 }
 
