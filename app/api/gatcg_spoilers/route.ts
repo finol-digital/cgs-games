@@ -20,6 +20,9 @@ const responseCache = new Map<string, { json: string; timestamp: number }>();
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const setParam = requestUrl.searchParams.get('set') ?? '34,35,36,37,38';
+  if (!/^\d+(,\d+)*$/.test(setParam)) {
+    return NextResponse.json({ error: 'Invalid set parameter' }, { status: 400 });
+  }
   const noCache = requestUrl.searchParams.get('nocache') === '1';
 
   const corsHeaders: Record<string, string> = {
