@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createScheduler, createWorker } from 'tesseract.js';
 import sharp from 'sharp';
+import { getCachedOcrResult, setCachedOcrResult } from '@/lib/firebase/admin';
 
 const SILVIE_GG_HOST = 'https://silvie.gg';
 const NUM_OCR_WORKERS = 4;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 // Approximate text box region on Grand Archive TCG cards (as percentage of card dimensions)
 const TEXT_BOX = {
   topPct: 0.585,
@@ -12,17 +14,49 @@ const TEXT_BOX = {
   heightPct: 0.3,
 };
 
+// In-memory response cache keyed by `set` query param
+const responseCache = new Map<string, { json: string; timestamp: number }>();
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const setParam = requestUrl.searchParams.get('set') ?? '34,35,36,37,38';
+  const noCache = requestUrl.searchParams.get('nocache') === '1';
+
+  const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  // Check in-memory cache (skip if nocache requested)
+  if (!noCache) {
+    const cached = responseCache.get(setParam);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      console.log(`In-memory cache hit for set=${setParam}`);
+      return new NextResponse(cached.json, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
+        },
+      });
+    }
+  }
+
   const data = await getData(setParam);
+  const json = JSON.stringify(data);
   console.log(data);
-  return new NextResponse(JSON.stringify(data), {
+
+  // Store in in-memory cache
+  responseCache.set(setParam, { json, timestamp: Date.now() });
+
+  return new NextResponse(json, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': noCache ? 'no-store' : 'public, s-maxage=86400, stale-while-revalidate=3600',
     },
   });
 }
@@ -34,34 +68,30 @@ async function getData(setParam: string) {
   const responseJson = await response.json();
   console.log(responseJson);
 
-  const scheduler = await createOcrScheduler();
+  interface CardEntry {
+    uuid: string;
+    name: string;
+    card_image_url: string;
+    back_card_name: string;
+    back_card_image_url: string;
+    types: string[];
+    element: string;
+    effect_raw: string;
+  }
 
-  const dataContainer: {
-    data: {
-      uuid: string;
-      name: string;
-      card_image_url: string;
-      back_card_name: string;
-      back_card_image_url: string;
-      types: string[];
-      element: string;
-      effect_raw: string;
-    }[];
-  } = {
-    data: [],
-  };
+  const dataContainer: { data: CardEntry[] } = { data: [] };
 
   for (let i = 0; i < responseJson.spoilers.length; i++) {
     const spoiler = responseJson.spoilers[i];
     const cardImageUrl = SILVIE_GG_HOST + spoiler.card_image_url.replace('/img/', '/api/images/');
 
-    const entry = {
+    const entry: CardEntry = {
       uuid: '' + spoiler.id,
       name: spoiler.card_name as string,
       card_image_url: cardImageUrl,
       back_card_name: '',
       back_card_image_url: '',
-      types: [] as string[],
+      types: [],
       element: '',
       effect_raw: '',
     };
@@ -85,17 +115,49 @@ async function getData(setParam: string) {
     dataContainer.data.push(entry);
   }
 
-  // OCR all card images in parallel using the scheduler
-  try {
-    const ocrPromises = dataContainer.data.map((entry) =>
-      extractCardText(entry.card_image_url, scheduler),
-    );
-    const ocrResults = await Promise.all(ocrPromises);
-    ocrResults.forEach((text, i) => {
-      dataContainer.data[i].effect_raw = text;
-    });
-  } finally {
-    await scheduler.terminate();
+  // Check Firestore cache for each card's OCR result
+  const cacheResults = await Promise.all(
+    dataContainer.data.map((entry) => getCachedOcrResult(entry.uuid, entry.card_image_url)),
+  );
+
+  // Separate cached vs uncached entries
+  const uncachedIndices: number[] = [];
+  cacheResults.forEach((cachedText, i) => {
+    if (cachedText !== null) {
+      dataContainer.data[i].effect_raw = cachedText;
+    } else {
+      uncachedIndices.push(i);
+    }
+  });
+
+  console.log(
+    `OCR cache: ${dataContainer.data.length - uncachedIndices.length} hits, ${
+      uncachedIndices.length
+    } misses`,
+  );
+
+  // Only run OCR for uncached cards
+  if (uncachedIndices.length > 0) {
+    const scheduler = await createOcrScheduler();
+    try {
+      const ocrPromises = uncachedIndices.map((i) =>
+        extractCardText(dataContainer.data[i].card_image_url, scheduler),
+      );
+      const ocrResults = await Promise.all(ocrPromises);
+      await Promise.all(
+        ocrResults.map((text, j) => {
+          const i = uncachedIndices[j];
+          dataContainer.data[i].effect_raw = text;
+          return setCachedOcrResult(
+            dataContainer.data[i].uuid,
+            dataContainer.data[i].card_image_url,
+            text,
+          );
+        }),
+      );
+    } finally {
+      await scheduler.terminate();
+    }
   }
 
   return dataContainer;
