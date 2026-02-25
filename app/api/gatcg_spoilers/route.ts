@@ -59,8 +59,10 @@ export async function GET(request: Request) {
   }
   const json = JSON.stringify(data);
 
-  // Store in in-memory cache
-  responseCache.set(setParam, { json, timestamp: Date.now() });
+  // Store in in-memory cache unless nocache is requested
+  if (!noCache) {
+    responseCache.set(setParam, { json, timestamp: Date.now() });
+  }
 
   return new NextResponse(json, {
     status: 200,
