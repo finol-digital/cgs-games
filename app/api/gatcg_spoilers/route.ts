@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createScheduler, createWorker } from 'tesseract.js';
 import sharp from 'sharp';
 
+const SILVIE_GG_HOST = 'https://silvie.gg';
+const NUM_OCR_WORKERS = 4;
 // Approximate text box region on Grand Archive TCG cards (as percentage of card dimensions)
 const TEXT_BOX = {
   topPct: 0.585,
@@ -10,7 +12,94 @@ const TEXT_BOX = {
   heightPct: 0.3,
 };
 
-const NUM_OCR_WORKERS = 4;
+export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const setParam = requestUrl.searchParams.get('set') ?? '34,35,36,37,38';
+  const data = await getData(setParam);
+  console.log(data);
+  return new NextResponse(JSON.stringify(data), {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+async function getData(setParam: string) {
+  const url = new URL(`${SILVIE_GG_HOST}/api/spoilers?set=${setParam}`);
+  console.log('Request /api/gatcg_spoilers GET ' + url);
+  const response = await fetch(url);
+  const responseJson = await response.json();
+  console.log(responseJson);
+
+  const scheduler = await createOcrScheduler();
+
+  const dataContainer: {
+    data: {
+      uuid: string;
+      name: string;
+      card_image_url: string;
+      back_card_name: string;
+      back_card_image_url: string;
+      types: string[];
+      element: string;
+      effect_raw: string;
+    }[];
+  } = {
+    data: [],
+  };
+
+  for (let i = 0; i < responseJson.spoilers.length; i++) {
+    const spoiler = responseJson.spoilers[i];
+    const cardImageUrl = SILVIE_GG_HOST + spoiler.card_image_url.replace('/img/', '/api/images/');
+
+    const entry = {
+      uuid: '' + spoiler.id,
+      name: spoiler.card_name as string,
+      card_image_url: cardImageUrl,
+      back_card_name: '',
+      back_card_image_url: '',
+      types: [] as string[],
+      element: '',
+      effect_raw: '',
+    };
+
+    if (spoiler.back_card && spoiler.back_card.card_name) {
+      entry.back_card_name = spoiler.back_card.card_name;
+      entry.back_card_image_url =
+        SILVIE_GG_HOST + spoiler.back_card.card_image_url.replace('/img/', '/api/images/');
+    }
+
+    const cardType = spoiler.card_type;
+    if (typeof cardType === 'string') {
+      entry.types = [cardType.toUpperCase()];
+    }
+
+    const elementName = spoiler.element_name;
+    if (typeof elementName === 'string') {
+      entry.element = elementName.toUpperCase();
+    }
+
+    dataContainer.data.push(entry);
+  }
+
+  // OCR all card images in parallel using the scheduler
+  try {
+    const ocrPromises = dataContainer.data.map((entry) =>
+      extractCardText(entry.card_image_url, scheduler),
+    );
+    const ocrResults = await Promise.all(ocrPromises);
+    ocrResults.forEach((text, i) => {
+      dataContainer.data[i].effect_raw = text;
+    });
+  } finally {
+    await scheduler.terminate();
+  }
+
+  return dataContainer;
+}
 
 async function createOcrScheduler() {
   const scheduler = createScheduler();
@@ -57,94 +146,4 @@ async function extractCardText(
     console.error(`OCR failed for ${imageUrl}:`, error);
     return '';
   }
-}
-
-export async function GET(request: Request) {
-  const data = await getData(request);
-  console.log(data);
-  return new NextResponse(JSON.stringify(data), {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
-}
-
-async function getData(request: Request) {
-  const silvieHost = 'https://silvie.gg';
-  const requestUrl = new URL(request.url);
-  const setParam = requestUrl.searchParams.get('set') ?? '34,35,36,37,38';
-  const url = new URL(`${silvieHost}/api/spoilers?set=${setParam}`);
-  console.log('Request /api/gatcg_spoilers GET ' + url);
-  const response = await fetch(url);
-  const responseJson = await response.json();
-  console.log(responseJson);
-
-  const scheduler = await createOcrScheduler();
-
-  const dataContainer: {
-    data: {
-      uuid: string;
-      name: string;
-      card_image_url: string;
-      back_card_name: string;
-      back_card_image_url: string;
-      types: string[];
-      element: string;
-      effect_raw: string;
-    }[];
-  } = {
-    data: [],
-  };
-
-  for (let i = 0; i < responseJson.spoilers.length; i++) {
-    const spoiler = responseJson.spoilers[i];
-    const cardImageUrl = silvieHost + spoiler.card_image_url.replace('/img/', '/api/images/');
-
-    const entry = {
-      uuid: '' + spoiler.id,
-      name: spoiler.card_name as string,
-      card_image_url: cardImageUrl,
-      back_card_name: '',
-      back_card_image_url: '',
-      types: [] as string[],
-      element: '',
-      effect_raw: '',
-    };
-
-    if (spoiler.back_card && spoiler.back_card.card_name) {
-      entry.back_card_name = spoiler.back_card.card_name;
-      entry.back_card_image_url =
-        silvieHost + spoiler.back_card.card_image_url.replace('/img/', '/api/images/');
-    }
-
-    const cardType = spoiler.card_type;
-    if (typeof cardType === 'string') {
-      entry.types = [cardType.toUpperCase()];
-    }
-
-    const elementName = spoiler.element_name;
-    if (typeof elementName === 'string') {
-      entry.element = elementName.toUpperCase();
-    }
-
-    dataContainer.data.push(entry);
-  }
-
-  // OCR all card images in parallel using the scheduler
-  try {
-    const ocrPromises = dataContainer.data.map((entry) =>
-      extractCardText(entry.card_image_url, scheduler),
-    );
-    const ocrResults = await Promise.all(ocrPromises);
-    ocrResults.forEach((text, i) => {
-      dataContainer.data[i].effect_raw = text;
-    });
-  } finally {
-    await scheduler.terminate();
-  }
-
-  return dataContainer;
 }
