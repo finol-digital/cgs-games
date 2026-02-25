@@ -214,6 +214,7 @@ async function getData(setParam: string) {
           ocrResults.map((text, idx) => {
             const i = batchIndices[idx];
             dataContainer.data[i].effect_raw = text;
+            if (!text) return; // Don't cache empty/failed OCR results
             return setCachedOcrResult(
               dataContainer.data[i].uuid,
               dataContainer.data[i].card_image_url,
