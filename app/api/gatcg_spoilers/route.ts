@@ -15,22 +15,8 @@ const TEXT_BOX = {
   heightPct: 0.3,
 };
 
-// Allowed set IDs - restricts to known valid Grand Archive TCG sets
-// This prevents arbitrary values that could cause excessive API calls
-const ALLOWED_SETS = new Set([
-  '34',
-  '35',
-  '36',
-  '37',
-  '38',
-  '39',
-  '40',
-  '41',
-  '42',
-  '43',
-  '44',
-  '45',
-]);
+// Maximum number of sets that can be requested at once
+const MAX_SETS = 10;
 
 // Rate limiting configuration
 const RATE_LIMIT = {
@@ -48,12 +34,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Invalid set parameter' }, { status: 400 });
   }
 
-  // Validate that all requested sets are in the allowed list
+  // Validate number of sets requested (limit to MAX_SETS)
   const requestedSets = setParam.split(',');
-  const invalidSets = requestedSets.filter((set) => !ALLOWED_SETS.has(set));
-  if (invalidSets.length > 0) {
+  if (requestedSets.length > MAX_SETS) {
     return NextResponse.json(
-      { error: `Invalid set values: ${invalidSets.join(', ')}` },
+      { error: `Too many sets requested. Maximum is ${MAX_SETS} sets.` },
       { status: 400 },
     );
   }
