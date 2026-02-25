@@ -76,8 +76,10 @@ async function getData(setParam: string) {
   const url = new URL(`${SILVIE_GG_HOST}/api/spoilers?set=${setParam}`);
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Silvie.gg API returned ${response.status}: ${response.statusText}`);
+  }
   const responseJson = await response.json();
-  console.log(responseJson);
 
   interface CardEntry {
     uuid: string;
