@@ -47,9 +47,17 @@ export async function GET(request: Request) {
     }
   }
 
-  const data = await getData(setParam);
+  let data;
+  try {
+    data = await getData(setParam);
+  } catch (error) {
+    console.error('Failed to fetch GATCG spoilers:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch spoiler data' },
+      { status: 502, headers: corsHeaders },
+    );
+  }
   const json = JSON.stringify(data);
-  console.log(data);
 
   // Store in in-memory cache
   responseCache.set(setParam, { json, timestamp: Date.now() });
