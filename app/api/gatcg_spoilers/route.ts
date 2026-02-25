@@ -155,21 +155,28 @@ async function getData(setParam: string) {
   if (uncachedIndices.length > 0) {
     const scheduler = await createOcrScheduler();
     try {
-      const ocrPromises = uncachedIndices.map((i) =>
-        extractCardText(dataContainer.data[i].card_image_url, scheduler),
-      );
-      const ocrResults = await Promise.all(ocrPromises);
-      await Promise.all(
-        ocrResults.map((text, j) => {
-          const i = uncachedIndices[j];
-          dataContainer.data[i].effect_raw = text;
-          return setCachedOcrResult(
-            dataContainer.data[i].uuid,
-            dataContainer.data[i].card_image_url,
-            text,
-          );
-        }),
-      );
+      // Process uncached cards in batches to avoid excessive concurrency
+      for (let start = 0; start < uncachedIndices.length; start += NUM_OCR_WORKERS) {
+        const batchIndices = uncachedIndices.slice(start, start + NUM_OCR_WORKERS);
+
+        const ocrResults = await Promise.all(
+          batchIndices.map((i) =>
+            extractCardText(dataContainer.data[i].card_image_url, scheduler),
+          ),
+        );
+
+        await Promise.all(
+          ocrResults.map((text, idx) => {
+            const i = batchIndices[idx];
+            dataContainer.data[i].effect_raw = text;
+            return setCachedOcrResult(
+              dataContainer.data[i].uuid,
+              dataContainer.data[i].card_image_url,
+              text,
+            );
+          }),
+        );
+      }
     } finally {
       await scheduler.terminate();
     }
