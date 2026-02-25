@@ -130,21 +130,6 @@ export function getClientIp(request: Request): string {
   }
 
   // Common platform headers (these are typically set by the host, not the client)
-  const vercelIp = headers.get('x-vercel-ip');
-  if (vercelIp) {
-    candidates.push(vercelIp);
-  }
-
-  const cfConnectingIp = headers.get('cf-connecting-ip');
-  if (cfConnectingIp) {
-    candidates.push(cfConnectingIp);
-  }
-
-  const realIp = headers.get('x-real-ip');
-  if (realIp) {
-    candidates.push(realIp);
-  }
-
   const forwardedFor = headers.get('x-forwarded-for');
   if (forwardedFor) {
     // x-forwarded-for can contain multiple IPs, take the first one
@@ -152,6 +137,21 @@ export function getClientIp(request: Request): string {
     if (first) {
       candidates.push(first);
     }
+  }
+
+  const realIp = headers.get('x-real-ip');
+  if (realIp) {
+    candidates.push(realIp);
+  }
+
+  const cfConnectingIp = headers.get('cf-connecting-ip');
+  if (cfConnectingIp) {
+    candidates.push(cfConnectingIp);
+  }
+
+  const vercelIp = headers.get('x-vercel-ip');
+  if (vercelIp) {
+    candidates.push(vercelIp);
   }
 
   for (const candidate of candidates) {
