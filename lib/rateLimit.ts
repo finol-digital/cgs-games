@@ -83,7 +83,7 @@ export function getClientIp(request: Request): string {
   if (forwardedFor) {
     // x-forwarded-for can contain multiple IPs, take the first one
     const ips = forwardedFor.split(',');
-    return ips[ips.length - 1].trim();
+    return ips[0].trim();
   }
 
   const realIp = headers.get('x-real-ip');

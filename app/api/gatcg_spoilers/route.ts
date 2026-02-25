@@ -91,7 +91,7 @@ export async function GET(request: Request) {
     }
   }
 
-  let data;
+  let data: Awaited<ReturnType<typeof getData>>;
   try {
     data = await getData(setParam);
   } catch (error) {
