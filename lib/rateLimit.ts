@@ -74,30 +74,93 @@ export function checkRateLimit(key: string, config: RateLimitConfig): RateLimitR
 }
 
 /**
- * Extract client IP from request headers
- * Supports various proxy headers commonly used in production
+ * Basic sanitization and validation for IP address strings.
+ * - Trims whitespace
+ * - Strips optional port (e.g. "1.2.3.4:1234" or "[::1]:1234")
+ * - Ensures the result looks like an IPv4 or IPv6 literal
+ */
+function sanitizeIp(ip: string | null): string | null {
+  if (!ip) {
+    return null;
+  }
+
+  const trimmed = ip.trim();
+  if (!trimmed || trimmed.length > 45) {
+    // 45 chars is enough for the longest IPv6 literal
+    return null;
+  }
+
+  // Strip port if present
+  let withoutPort = trimmed;
+  // [::1]:3000 -> ::1
+  const ipv6PortMatch = /^\[([^\]]+)\](?::\d+)?$/.exec(withoutPort);
+  if (ipv6PortMatch) {
+    withoutPort = ipv6PortMatch[1];
+  } else {
+    // 192.0.2.1:3000 -> 192.0.2.1
+    const ipv4PortMatch = /^([^:]+)(?::\d+)$/.exec(withoutPort);
+    if (ipv4PortMatch) {
+      withoutPort = ipv4PortMatch[1];
+    }
+  }
+
+  const ipv4Regex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+  const ipv6Regex = /^[0-9a-fA-F:]+$/;
+
+  if (ipv4Regex.test(withoutPort) || ipv6Regex.test(withoutPort)) {
+    return withoutPort;
+  }
+
+  return null;
+}
+
+/**
+ * Extract client IP from the request.
+ * Prefers platform-provided values (e.g. NextRequest.ip) and
+ * falls back to common proxy headers, with basic sanitization.
  */
 export function getClientIp(request: Request): string {
   const headers = request.headers;
+  const candidates: string[] = [];
 
-  // Check common proxy headers in order of preference
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, take the first one
-    const ips = forwardedFor.split(',');
-    return ips[0].trim();
+  // Prefer Next.js / platform-provided IP if available
+  const maybeIp = (request as any)?.ip;
+  if (typeof maybeIp === 'string') {
+    candidates.push(maybeIp);
   }
 
-  const realIp = headers.get('x-real-ip');
-  if (realIp) {
-    return realIp;
+  // Common platform headers (these are typically set by the host, not the client)
+  const vercelIp = headers.get('x-vercel-ip');
+  if (vercelIp) {
+    candidates.push(vercelIp);
   }
 
   const cfConnectingIp = headers.get('cf-connecting-ip');
   if (cfConnectingIp) {
-    return cfConnectingIp;
+    candidates.push(cfConnectingIp);
   }
 
-  // Fallback to 'unknown' if no IP found
+  const realIp = headers.get('x-real-ip');
+  if (realIp) {
+    candidates.push(realIp);
+  }
+
+  const forwardedFor = headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    // x-forwarded-for can contain multiple IPs, take the first one
+    const first = forwardedFor.split(',')[0]?.trim();
+    if (first) {
+      candidates.push(first);
+    }
+  }
+
+  for (const candidate of candidates) {
+    const sanitized = sanitizeIp(candidate);
+    if (sanitized) {
+      return sanitized;
+    }
+  }
+
+  // Fallback to 'unknown' if no valid IP found
   return 'unknown';
 }
