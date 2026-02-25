@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 const SILVIE_GG_HOST = 'https://silvie.gg';
 const NUM_OCR_WORKERS = 4;
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 // Approximate text box region on Grand Archive TCG cards (as percentage of card dimensions)
 const TEXT_BOX = {
   topPct: 0.585,
@@ -15,17 +15,11 @@ const TEXT_BOX = {
   heightPct: 0.3,
 };
 
-// Maximum number of sets that can be requested at once
-const MAX_SETS = 10;
-
 // Rate limiting configuration
 const RATE_LIMIT = {
   maxRequests: 10, // Max requests per window
   windowMs: 60 * 1000, // 1 minute window
 };
-
-// In-memory response cache keyed by `set` query param
-const responseCache = new Map<string, { json: string; timestamp: number }>();
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -43,19 +37,6 @@ export async function OPTIONS() {
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
-  const setParam = requestUrl.searchParams.get('set') ?? '34,35,36,37,38';
-  if (!/^\d+(,\d+)*$/.test(setParam)) {
-    return NextResponse.json({ error: 'Invalid set parameter' }, { status: 400 });
-  }
-
-  // Validate number of sets requested (limit to MAX_SETS)
-  const requestedSets = setParam.split(',');
-  if (requestedSets.length > MAX_SETS) {
-    return NextResponse.json(
-      { error: `Too many sets requested. Maximum is ${MAX_SETS} sets.` },
-      { status: 400 },
-    );
-  }
 
   const noCache = requestUrl.searchParams.get('nocache') === '1';
 
@@ -80,28 +61,9 @@ export async function GET(request: Request) {
     );
   }
 
-  // Check in-memory cache (skip if nocache requested)
-  if (!noCache) {
-    const cached = responseCache.get(setParam);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      console.log(`In-memory cache hit for set=${setParam}`);
-      return new NextResponse(cached.json, {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
-          'X-RateLimit-Limit': RATE_LIMIT.maxRequests.toString(),
-          'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
-        },
-      });
-    }
-  }
-
   let data: Awaited<ReturnType<typeof getData>>;
   try {
-    data = await getData(setParam);
+    data = await getData(noCache);
   } catch (error) {
     console.error('Failed to fetch GATCG spoilers:', error);
     return NextResponse.json(
@@ -110,11 +72,6 @@ export async function GET(request: Request) {
     );
   }
   const json = JSON.stringify(data);
-
-  // Store in in-memory cache unless nocache is requested
-  if (!noCache) {
-    responseCache.set(setParam, { json, timestamp: Date.now() });
-  }
 
   return new NextResponse(json, {
     status: 200,
@@ -129,8 +86,8 @@ export async function GET(request: Request) {
   });
 }
 
-async function getData(setParam: string) {
-  const url = new URL(`${SILVIE_GG_HOST}/api/spoilers?set=${setParam}`);
+async function getData(nocache = false) {
+  const url = new URL(`${SILVIE_GG_HOST}/api/spoilers?current=true}`);
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   if (!response.ok) {
@@ -153,7 +110,7 @@ async function getData(setParam: string) {
 
   for (let i = 0; i < responseJson.spoilers.length; i++) {
     const spoiler = responseJson.spoilers[i];
-    const cardImageUrl = SILVIE_GG_HOST + spoiler.card_image_url.replace('/img/', '/api/images/');
+    const cardImageUrl = SILVIE_GG_HOST + spoiler.card_image_url;
 
     const entry: CardEntry = {
       uuid: '' + spoiler.id,
@@ -168,8 +125,7 @@ async function getData(setParam: string) {
 
     if (spoiler.back_card && spoiler.back_card.card_name) {
       entry.back_card_name = spoiler.back_card.card_name;
-      entry.back_card_image_url =
-        SILVIE_GG_HOST + spoiler.back_card.card_image_url.replace('/img/', '/api/images/');
+      entry.back_card_image_url = SILVIE_GG_HOST + spoiler.back_card.card_image_url;
     }
 
     const cardType = spoiler.card_type;
@@ -193,7 +149,7 @@ async function getData(setParam: string) {
   // Separate cached vs uncached entries
   const uncachedIndices: number[] = [];
   cacheResults.forEach((cachedText, i) => {
-    if (cachedText !== null) {
+    if (!nocache && cachedText !== null) {
       dataContainer.data[i].effect_raw = cachedText;
     } else {
       uncachedIndices.push(i);
