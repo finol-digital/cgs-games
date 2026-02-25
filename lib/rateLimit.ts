@@ -37,7 +37,9 @@ export function checkRateLimit(key: string, config: RateLimitConfig): RateLimitR
         keysToDelete.push(k);
       }
     });
-    keysToDelete.forEach((k) => requestCounts.delete(k));
+    for (const k of keysToDelete) {
+      requestCounts.delete(k);
+    }
   }
 
   if (!store || store.resetAt < now) {
