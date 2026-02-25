@@ -27,6 +27,20 @@ const RATE_LIMIT = {
 // In-memory response cache keyed by `set` query param
 const responseCache = new Map<string, { json: string; timestamp: number }>();
 
+const corsHeaders: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const setParam = requestUrl.searchParams.get('set') ?? '34,35,36,37,38';
@@ -44,12 +58,6 @@ export async function GET(request: Request) {
   }
 
   const noCache = requestUrl.searchParams.get('nocache') === '1';
-
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  };
 
   // Apply rate limiting
   const clientIp = getClientIp(request);
