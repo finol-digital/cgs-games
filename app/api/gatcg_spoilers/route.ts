@@ -87,7 +87,7 @@ export async function GET(request: Request) {
 }
 
 async function getData(nocache = false) {
-  const url = new URL(`${SILVIE_GG_HOST}/api/spoilers?current=true}`);
+  const url = new URL(`${SILVIE_GG_HOST}/api/spoilers?current=true`);
   console.log('Request /api/gatcg_spoilers GET ' + url);
   const response = await fetch(url);
   if (!response.ok) {
