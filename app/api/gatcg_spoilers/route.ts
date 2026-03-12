@@ -110,12 +110,11 @@ async function getData(nocache = false) {
 
   for (let i = 0; i < responseJson.spoilers.length; i++) {
     const spoiler = responseJson.spoilers[i];
-    const cardImageUrl = SILVIE_GG_HOST + spoiler.card_image_url;
 
     const entry: CardEntry = {
       uuid: '' + spoiler.id,
       name: spoiler.card_name as string,
-      card_image_url: cardImageUrl,
+      card_image_url: spoiler.card_image_url,
       back_card_name: '',
       back_card_image_url: '',
       types: [],
@@ -125,7 +124,7 @@ async function getData(nocache = false) {
 
     if (spoiler.back_card && spoiler.back_card.card_name) {
       entry.back_card_name = spoiler.back_card.card_name;
-      entry.back_card_image_url = SILVIE_GG_HOST + spoiler.back_card.card_image_url;
+      entry.back_card_image_url = spoiler.back_card.card_image_url;
     }
 
     const cardType = spoiler.card_type;
