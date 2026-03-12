@@ -1,0 +1,20 @@
+diff --git a/node_modules/eslint-config-next/dist/parser.js b/node_modules/eslint-config-next/dist/parser.js
+index a3ef445..24cb3c8 100644
+--- a/node_modules/eslint-config-next/dist/parser.js
++++ b/node_modules/eslint-config-next/dist/parser.js
+@@ -3,7 +3,14 @@ var _eslintparser = require("next/dist/compiled/babel/eslint-parser");
+ var _packagejson = require("../package.json");
+ var parser = {
+     parse: _eslintparser.parse,
+-    parseForESLint: _eslintparser.parseForESLint,
++    parseForESLint: function(code, options) {
++        var result = _eslintparser.parseForESLint(code, options);
++        // ESLint 10 requires scopeManager.addGlobals() which the bundled babel
++        // parser's scope manager does not implement. Remove it so ESLint falls
++        // back to its own eslint-scope analysis.
++        delete result.scopeManager;
++        return result;
++    },
+     meta: {
+         name: 'eslint-config-next/parser',
+         version: _packagejson.version
