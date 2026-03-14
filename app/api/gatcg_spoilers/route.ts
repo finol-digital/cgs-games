@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { NextResponse } from 'next/server';
 import { createScheduler, createWorker } from 'tesseract.js';
 import sharp from 'sharp';
@@ -61,9 +63,9 @@ export async function GET(request: Request) {
     );
   }
 
-  let data: Awaited<ReturnType<typeof getData>>;
+  let json: string;
   try {
-    data = await getData(noCache);
+    json = noCache ? JSON.stringify(await getData(noCache)) : await getLocalSpoilersJson();
   } catch (error) {
     console.error('Failed to fetch GATCG spoilers:', error);
     return NextResponse.json(
@@ -71,7 +73,6 @@ export async function GET(request: Request) {
       { status: 502, headers: corsHeaders },
     );
   }
-  const json = JSON.stringify(data);
 
   return new NextResponse(json, {
     status: 200,
@@ -84,6 +85,11 @@ export async function GET(request: Request) {
       'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
     },
   });
+}
+
+async function getLocalSpoilersJson() {
+  const filePath = path.join(process.cwd(), 'app', 'api', 'gatcg_spoilers', 'gatcg_spoilers.json');
+  return readFile(filePath, 'utf-8');
 }
 
 async function getData(nocache = false) {
