@@ -63,6 +63,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "diff": "8.0.3",
-    "minimatch": "^10.2.1"
+    "minimatch": "^10.2.1",
+    "teeny-request": "^10.1.2"
   }
 }
