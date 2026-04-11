@@ -1,4 +1,4 @@
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -68,6 +68,20 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     if (gameData.username !== userData.username) {
       return corsResponse('Forbidden - You can only delete your own games', 403);
+    }
+
+    // If the game was uploaded via zip, clean up Firebase Storage files
+    if (gameData.storageBasePath) {
+      try {
+        const bucket = adminStorage.bucket();
+        const [files] = await bucket.getFiles({ prefix: gameData.storageBasePath + '/' });
+        if (files.length > 0) {
+          await Promise.all(files.map((file) => file.delete()));
+        }
+      } catch (storageError) {
+        console.error('Error deleting Storage files:', storageError);
+        // Continue with Firestore deletion even if Storage cleanup fails
+      }
     }
 
     await gameRef.delete();
