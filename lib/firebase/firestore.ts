@@ -29,11 +29,26 @@ export async function getGames(limit: number) {
 }
 
 export async function getGame(username: string, slug: string) {
+  const encodedSlug = encodeURI(slug);
   const gamesUsernameQuery = query(collection(db, 'games'), where('username', '==', username));
-  const results = await getDocs(
+
+  const encodedResults = await getDocs(
+    query(
+      gamesUsernameQuery,
+      where('slug', '==', encodedSlug),
+      orderBy('uploadedAt', 'desc'),
+      limit(1),
+    ),
+  );
+  const encodedMatch = encodedResults.docs.map((doc) => game(doc))?.at(0);
+  if (encodedMatch) return encodedMatch;
+
+  if (encodedSlug === slug) return undefined;
+
+  const rawResults = await getDocs(
     query(gamesUsernameQuery, where('slug', '==', slug), orderBy('uploadedAt', 'desc'), limit(1)),
   );
-  return results.docs.map((doc) => game(doc))?.at(0);
+  return rawResults.docs.map((doc) => game(doc))?.at(0);
 }
 
 function game(doc: QueryDocumentSnapshot) {
