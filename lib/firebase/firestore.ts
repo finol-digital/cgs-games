@@ -57,7 +57,6 @@ export async function getGames(limit: number) {
 export async function getGame(username: string, slug: string) {
   const encodedSlug = encodeURIComponent(slug);
   const gamesUsernameQuery = query(collection(db, 'games'), where('username', '==', username));
-  let encodedLookupError: unknown;
 
   try {
     const encodedResults = await getDocs(
@@ -76,11 +75,10 @@ export async function getGame(username: string, slug: string) {
       `Failed to fetch game by encoded slug "${encodedSlug}" for username "${username}".`,
       error,
     );
-    encodedLookupError = error;
+    throw error;
   }
 
   if (encodedSlug === slug) {
-    if (encodedLookupError) throw encodedLookupError;
     return undefined;
   }
 
