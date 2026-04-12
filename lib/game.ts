@@ -7,4 +7,5 @@ export default interface Game {
   autoUpdateUrl: string;
   copyright: string;
   uploadedAt: Date;
+  storageBasePath?: string;
 }
