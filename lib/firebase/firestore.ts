@@ -11,29 +11,13 @@ import {
   where,
 } from 'firebase/firestore';
 
-export async function getAllGames() {
-  const gamesQuery = query(collection(db, 'games'));
-  const results = await getLatestDocs(gamesQuery, 100);
-  return results.docs.map((doc) => game(doc));
-}
-export async function getGamesFor(username: string) {
-  const gamesUsernameQuery = query(collection(db, 'games'), where('username', '==', username));
-  const results = await getLatestDocs(gamesUsernameQuery, 100);
-  return results.docs.map((doc) => game(doc));
-}
-
-export async function getGames(limit: number) {
-  const gamesQuery = query(collection(db, 'games'));
-  const results = await getLatestDocs(gamesQuery, limit);
-  return results.docs.map((doc) => game(doc));
-}
-
-export async function getGame(username: string, slug: string) {
-  const gamesUsernameQuery = query(collection(db, 'games'), where('username', '==', username));
-  const results = await getDocs(
-    query(gamesUsernameQuery, where('slug', '==', slug), orderBy('uploadedAt', 'desc'), limit(1)),
-  );
-  return results.docs.map((doc) => game(doc))?.at(0);
+async function getLatestDocs(unfilteredQuery: Query, count: number, context: string) {
+  try {
+    return await getDocs(query(unfilteredQuery, orderBy('uploadedAt', 'desc'), limit(count)));
+  } catch (error) {
+    console.error(`Failed to fetch latest documents for ${context} (count: ${count}).`, error);
+    throw error;
+  }
 }
 
 function game(doc: QueryDocumentSnapshot) {
@@ -49,8 +33,65 @@ function game(doc: QueryDocumentSnapshot) {
   };
 }
 
-async function getLatestDocs(unfilteredQuery: Query, count: number) {
-  return getDocs(query(unfilteredQuery, orderBy('uploadedAt', 'desc'), limit(count)));
+export async function getAllGames() {
+  const gamesQuery = query(collection(db, 'games'));
+  const results = await getLatestDocs(gamesQuery, 100, 'getAllGames');
+  return results.docs.map((doc) => game(doc));
+}
+export async function getGamesFor(username: string) {
+  const gamesUsernameQuery = query(collection(db, 'games'), where('username', '==', username));
+  const results = await getLatestDocs(
+    gamesUsernameQuery,
+    100,
+    `getGamesFor (username: ${username})`,
+  );
+  return results.docs.map((doc) => game(doc));
+}
+
+export async function getGames(limit: number) {
+  const gamesQuery = query(collection(db, 'games'));
+  const results = await getLatestDocs(gamesQuery, limit, `getGames (limit: ${limit})`);
+  return results.docs.map((doc) => game(doc));
+}
+
+export async function getGame(username: string, slug: string) {
+  const encodedSlug = encodeURIComponent(slug);
+  const gamesUsernameQuery = query(collection(db, 'games'), where('username', '==', username));
+
+  try {
+    const encodedResults = await getDocs(
+      query(
+        gamesUsernameQuery,
+        where('slug', '==', encodedSlug),
+        orderBy('uploadedAt', 'desc'),
+        limit(1),
+      ),
+    );
+    const encodedDoc = encodedResults.docs[0];
+    const encodedMatch = encodedDoc ? game(encodedDoc) : undefined;
+    if (encodedMatch) return encodedMatch;
+  } catch (error) {
+    console.error(
+      `Failed to fetch game by encoded slug "${encodedSlug}" for username "${username}".`,
+      error,
+    );
+    throw error;
+  }
+
+  if (encodedSlug === slug) {
+    return undefined;
+  }
+
+  try {
+    const rawResults = await getDocs(
+      query(gamesUsernameQuery, where('slug', '==', slug), orderBy('uploadedAt', 'desc'), limit(1)),
+    );
+    const rawDoc = rawResults.docs[0];
+    return rawDoc ? game(rawDoc) : undefined;
+  } catch (error) {
+    console.error(`Failed to fetch game by raw slug "${slug}" for username "${username}".`, error);
+    throw error;
+  }
 }
 
 export function userDoc(uid: string) {
