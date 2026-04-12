@@ -68,7 +68,8 @@ export async function getGame(username: string, slug: string) {
         limit(1),
       ),
     );
-    const encodedMatch = encodedResults.docs.map((doc) => game(doc))?.at(0);
+    const encodedDoc = encodedResults.docs[0];
+    const encodedMatch = encodedDoc ? game(encodedDoc) : undefined;
     if (encodedMatch) return encodedMatch;
   } catch (error) {
     console.error(
@@ -87,7 +88,8 @@ export async function getGame(username: string, slug: string) {
     const rawResults = await getDocs(
       query(gamesUsernameQuery, where('slug', '==', slug), orderBy('uploadedAt', 'desc'), limit(1)),
     );
-    return rawResults.docs.map((doc) => game(doc))?.at(0);
+    const rawDoc = rawResults.docs[0];
+    return rawDoc ? game(rawDoc) : undefined;
   } catch (error) {
     console.error(`Failed to fetch game by raw slug "${slug}" for username "${username}".`, error);
     throw error;
