@@ -1,6 +1,6 @@
 import React from 'react';
 import Footer from '@/components/footer';
-import { getGame } from '@/lib/firebase/firestore';
+import { adminGetGame } from '@/lib/firebase/admin';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -8,7 +8,7 @@ export async function generateMetadata(props: {
   params: Promise<{ username: string; slug: string }>;
 }): Promise<Metadata> {
   const params = await props.params;
-  const game = await getGame(params.username, params.slug);
+  const game = await adminGetGame(params.username, params.slug);
   if (!game) return notFound();
   return {
     title: game.name + ' | CGS Games',
@@ -31,7 +31,7 @@ export default async function GameLayout(props: {
 }) {
   const { children } = props;
   const params = await props.params;
-  const game = await getGame(params.username, params.slug);
+  const game = await adminGetGame(params.username, params.slug);
   if (!game) return notFound();
   const copyrightNotice =
     game && game.name && game.copyright

@@ -1,11 +1,10 @@
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
-import { getAllGames } from '@/lib/firebase/firestore';
+import { adminAuth, adminDb, adminGetAllGames } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const allGames = await getAllGames();
+  const allGames = await adminGetAllGames();
   return new NextResponse(JSON.stringify(allGames), {
     status: 200,
     headers: {

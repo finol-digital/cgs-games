@@ -1,6 +1,6 @@
 import Footer from '@/components/footer';
 import BrowseGames from '@/components/browseGames';
-import { getAllGames } from '@/lib/firebase/firestore';
+import { adminGetAllGames } from '@/lib/firebase/admin';
 import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const allGames = await getAllGames();
+  const allGames = await adminGetAllGames();
   return (
     <>
       <main className="main-content">
