@@ -1,12 +1,12 @@
 import Footer from '@/components/footer';
 import GamesDeck from '@/components/gamesDeck';
-import { getGames } from '@/lib/firebase/firestore';
+import { adminGetGames } from '@/lib/firebase/admin';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Page() {
-  const latestGames = await getGames(2);
+  const latestGames = await adminGetGames(2);
   return (
     <>
       <main className="main-content">
