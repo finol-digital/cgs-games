@@ -1,6 +1,6 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, QueryDocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 const apps = getApps();
@@ -19,6 +19,69 @@ if (!apps.length) {
 export const adminAuth = getAuth();
 export const adminDb = getFirestore();
 export const adminStorage = getStorage();
+
+import Game from '@/lib/game';
+
+function gameFromDoc(doc: QueryDocumentSnapshot): Game {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    username: data.username,
+    slug: data.slug,
+    name: data.name,
+    bannerImageUrl: data.bannerImageUrl,
+    autoUpdateUrl: data.autoUpdateUrl,
+    copyright: data.copyright,
+    uploadedAt: data.uploadedAt.toDate(),
+  };
+}
+
+export async function adminGetAllGames(): Promise<Game[]> {
+  const snapshot = await adminDb.collection('games').orderBy('uploadedAt', 'desc').limit(100).get();
+  return snapshot.docs.map(gameFromDoc);
+}
+
+export async function adminGetGamesFor(username: string): Promise<Game[]> {
+  const snapshot = await adminDb
+    .collection('games')
+    .where('username', '==', username)
+    .orderBy('uploadedAt', 'desc')
+    .limit(100)
+    .get();
+  return snapshot.docs.map(gameFromDoc);
+}
+
+export async function adminGetGames(count: number): Promise<Game[]> {
+  const snapshot = await adminDb
+    .collection('games')
+    .orderBy('uploadedAt', 'desc')
+    .limit(count)
+    .get();
+  return snapshot.docs.map(gameFromDoc);
+}
+
+export async function adminGetGame(username: string, slug: string): Promise<Game | undefined> {
+  const encodedSlug = encodeURIComponent(slug);
+  const encodedSnapshot = await adminDb
+    .collection('games')
+    .where('username', '==', username)
+    .where('slug', '==', encodedSlug)
+    .orderBy('uploadedAt', 'desc')
+    .limit(1)
+    .get();
+  if (!encodedSnapshot.empty) return gameFromDoc(encodedSnapshot.docs[0]);
+
+  if (encodedSlug === slug) return undefined;
+
+  const rawSnapshot = await adminDb
+    .collection('games')
+    .where('username', '==', username)
+    .where('slug', '==', slug)
+    .orderBy('uploadedAt', 'desc')
+    .limit(1)
+    .get();
+  return rawSnapshot.empty ? undefined : gameFromDoc(rawSnapshot.docs[0]);
+}
 
 const OCR_CACHE_COLLECTION = 'gatcg_ocr_cache';
 const OCR_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours

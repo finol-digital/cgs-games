@@ -1,12 +1,12 @@
 import AlternativeAccordion from '@/components/alternativeAccordion';
 import Banner from '@/components/banner';
-import { getGame } from '@/lib/firebase/firestore';
+import { adminGetGame } from '@/lib/firebase/admin';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 export default async function Page(props: { params: Promise<{ username: string; slug: string }> }) {
   const params = await props.params;
-  const game = await getGame(params.username, params.slug);
+  const game = await adminGetGame(params.username, params.slug);
   if (!game) return notFound();
   const cgsgg = 'https://cgs.gg/main?url=' + encodeURIComponent(game.autoUpdateUrl);
   return (
