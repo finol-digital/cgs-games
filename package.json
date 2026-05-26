@@ -24,7 +24,7 @@
     "lucide-react": "^1.14.0",
     "next": "^16.2.4",
     "patch-package": "^8.0.1",
-    "react": "^19.2.3",
+    "react": "^19.2.6",
     "react-dom": "^19.2.5",
     "react-firebase-hooks": "^5.1.1",
     "react-hot-toast": "^2.6.0",
@@ -44,7 +44,7 @@
     "@types/jest": "^30.0.0",
     "@types/lodash.debounce": "^4.0.9",
     "@types/lodash.snakecase": "^4.1.9",
-    "@types/react": "19.2.14",
+    "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "eslint": "^10.4.0",
     "eslint-config-next": "^16.2.3",
@@ -62,7 +62,7 @@
     "webpack": "^5.106.2"
   },
   "overrides": {
-    "@types/react": "19.2.14",
+    "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "diff": "8.0.3",
     "minimatch": "^10.2.1",
