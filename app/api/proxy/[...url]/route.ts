@@ -4,10 +4,11 @@ const stripTrailingSlash = (str: string) => {
   return str.endsWith('/') ? str.slice(0, -1) : str;
 };
 
-export async function GET(request: NextRequest, context: { params: Promise<{ url: string[] }> }) {
-  const [host, ...path] = [...(await context.params).url];
-  let uri = stripTrailingSlash('https://' + host + '/' + path.join('/'));
-  if (request.nextUrl.searchParams) {
+export async function GET(request: NextRequest) {
+  const proxyPrefix = '/api/proxy/';
+  const rawPath = new URL(request.url).pathname.substring(proxyPrefix.length);
+  let uri = stripTrailingSlash('https://' + rawPath);
+  if (request.nextUrl.searchParams.size > 0) {
     uri = uri + '?' + request.nextUrl.searchParams.toString();
   }
   const url = new URL(uri);
@@ -31,9 +32,10 @@ async function streamToString(stream: any) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export async function POST(request: Request, context: { params: Promise<{ url: string[] }> }) {
-  const [host, ...path] = [...(await context.params).url];
-  let uri = stripTrailingSlash('https://' + host + '/' + path.join('/'));
+export async function POST(request: Request) {
+  const proxyPrefix = '/api/proxy/';
+  const rawPath = new URL(request.url).pathname.substring(proxyPrefix.length);
+  let uri = stripTrailingSlash('https://' + rawPath);
   const url = new URL(uri);
   const requestJson = await streamToString(request.body);
   console.log('Request /api/proxy POST ' + url) + ' ' + requestJson;
