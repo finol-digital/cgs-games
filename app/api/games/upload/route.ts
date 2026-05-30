@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     // Authenticate via Firebase ID token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Upload attempt missing Authorization header');
       return NextResponse.json(
         { error: 'Missing or invalid Authorization header' },
         { status: 401 },
@@ -30,15 +31,19 @@ export async function POST(request: Request) {
 
     const idToken = authHeader.split('Bearer ')[1];
     const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const uid = decodedToken?.uid;
+    console.info('Upload request authenticated', { uid });
 
     // Get the username from the user's document in Firestore
-    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+    const userDoc = await adminDb.collection('users').doc(uid).get();
     if (!userDoc.exists) {
+      console.error('User document not found for uid', { uid });
       return NextResponse.json({ error: 'User document not found' }, { status: 404 });
     }
 
     const username = userDoc.data()?.username;
     if (!username) {
+      console.error('Username missing on user document', { uid });
       return NextResponse.json({ error: 'Username not found in user document' }, { status: 400 });
     }
 
@@ -47,24 +52,34 @@ export async function POST(request: Request) {
     const file = formData.get('file');
 
     if (!file || !(file instanceof File)) {
+      console.error('No file field in multipart form');
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
     if (file.size > MAX_FILE_SIZE) {
+      console.error('Uploaded file exceeds size limit', { uid, username, size: file.size });
       return NextResponse.json({ error: 'File exceeds maximum size of 100MB' }, { status: 413 });
     }
 
     if (!file.name.endsWith('.cgs.zip')) {
+      console.error('Uploaded file has wrong extension', { name: file.name });
       return NextResponse.json({ error: 'Only .cgs.zip files are accepted' }, { status: 400 });
     }
+
+    console.info('Processing upload', { uid, username, filename: file.name, size: file.size });
 
     // Extract zip contents in memory
     const arrayBuffer = await file.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
+    // Count entries for diagnostics
+    let entryCount = 0;
+    zip.forEach(() => (entryCount += 1));
+    console.info('Zip loaded', { entryCount });
 
     // Locate cgs.json
     const located = locateCgsJson(zip);
     if (!located) {
+      console.error('Failed to locate cgs.json in uploaded zip', { filename: file.name });
       return NextResponse.json({ error: 'Invalid .cgs.zip: missing cgs.json' }, { status: 400 });
     }
 
@@ -74,18 +89,23 @@ export async function POST(request: Request) {
     let cgsJson: CgsJson;
     try {
       const cgsJsonContent = await cgsJsonFile.async('string');
+      // Log a shortened preview to help debug formatting issues
+      console.info('cgs.json preview', { preview: cgsJsonContent.slice(0, 500) });
       const parsed = JSON.parse(cgsJsonContent);
       const validationError = validateCgsJson(parsed);
       if (validationError) {
+        console.error('cgs.json validation failed', { validationError });
         return NextResponse.json({ error: validationError }, { status: 400 });
       }
       cgsJson = parsed as CgsJson;
-    } catch {
+    } catch (err: unknown) {
+      console.error('Failed to parse or validate cgs.json', { err });
       return NextResponse.json({ error: 'Invalid cgs.json: not valid JSON' }, { status: 400 });
     }
 
     // Generate slug from game name
     const slug = encodeURI(snakecase(cgsJson.name));
+    console.info('Generated slug', { uid, username, slug, gameName: cgsJson.name });
 
     // Check for duplicate game
     const existingGames = await adminDb
@@ -95,6 +115,7 @@ export async function POST(request: Request) {
       .get();
 
     if (!existingGames.empty) {
+      console.error('Duplicate game detected for user', { uid, username, slug });
       return NextResponse.json(
         {
           error: `You already have a game named "${cgsJson.name}". Delete it first or choose a different name.`,
@@ -109,15 +130,20 @@ export async function POST(request: Request) {
     const bucketName = bucket.name;
 
     // Rewrite URLs in cgs.json before uploading
-    cgsJson = rewriteCgsJsonUrls(
-      cgsJson,
-      storageBasePath,
-      bucketName,
-      username,
-      slug,
-      zip,
-      gameRoot,
-    );
+    try {
+      cgsJson = rewriteCgsJsonUrls(
+        cgsJson,
+        storageBasePath,
+        bucketName,
+        username,
+        slug,
+        zip,
+        gameRoot,
+      );
+    } catch (err: unknown) {
+      console.error('rewriteCgsJsonUrls failed', { err });
+      throw err;
+    }
 
     // Collect all files to upload
     const uploadPromises: Promise<void>[] = [];
@@ -142,13 +168,26 @@ export async function POST(request: Request) {
       const ext = getFileExtension(gameRelativePath);
       const contentType = CONTENT_TYPE_MAP[ext] || 'application/octet-stream';
 
-      const uploadPromise = zipEntry.async('nodebuffer').then(async (buffer) => {
-        const fileRef = bucket.file(storagePath);
-        await fileRef.save(buffer, {
-          metadata: { contentType },
-          public: true,
+      const uploadPromise = zipEntry
+        .async('nodebuffer')
+        .then(async (buffer) => {
+          const fileRef = bucket.file(storagePath);
+          try {
+            await fileRef.save(buffer, {
+              metadata: { contentType },
+              public: true,
+            });
+            console.info('Uploaded file to storage', { storagePath, contentType });
+          } catch (err: unknown) {
+            console.error('Failed to upload file to storage', { storagePath, err });
+            throw err;
+          }
+        })
+        .catch((err) => {
+          // Ensure individual file errors are logged with context
+          console.error('Upload promise rejected for entry', { relativePath, storagePath, err });
+          throw err;
         });
-      });
 
       uploadPromises.push(uploadPromise);
     });
@@ -157,14 +196,26 @@ export async function POST(request: Request) {
     const cgsJsonBuffer = Buffer.from(JSON.stringify(cgsJson, null, 2), 'utf-8');
     const cgsJsonStoragePath = `${storageBasePath}/cgs.json`;
     uploadPromises.push(
-      bucket.file(cgsJsonStoragePath).save(cgsJsonBuffer, {
-        metadata: { contentType: 'application/json' },
-        public: true,
-      }),
+      bucket
+        .file(cgsJsonStoragePath)
+        .save(cgsJsonBuffer, {
+          metadata: { contentType: 'application/json' },
+          public: true,
+        })
+        .then(() => console.info('Uploaded rewritten cgs.json', { cgsJsonStoragePath }))
+        .catch((err) => {
+          console.error('Failed to upload rewritten cgs.json', { cgsJsonStoragePath, err });
+          throw err;
+        }),
     );
 
     // Execute all uploads in parallel
-    await Promise.all(uploadPromises);
+    try {
+      await Promise.all(uploadPromises);
+    } catch (err: unknown) {
+      console.error('One or more uploads failed', { err });
+      throw err;
+    }
 
     // Create Firestore game document
     const autoUpdateUrl = getPublicUrl(bucketName, cgsJsonStoragePath);
@@ -186,14 +237,24 @@ export async function POST(request: Request) {
       storageBasePath,
     };
 
-    await adminDb.collection('games').add(game);
+    try {
+      await adminDb.collection('games').add(game);
+      console.info('Game document created', { username, slug, storageBasePath });
+    } catch (err: unknown) {
+      console.error('Failed to create game document in Firestore', { username, slug, err });
+      throw err;
+    }
 
     return NextResponse.json({
       success: true,
       slug,
     });
   } catch (error: unknown) {
-    console.error('Error uploading game zip:', error);
+    // Provide as much context as we have available without leaking tokens
+    console.error('Error uploading game zip:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     const message = error instanceof Error ? error.message : 'Failed to process game upload';
     return NextResponse.json({ error: message }, { status: 500 });
   }
