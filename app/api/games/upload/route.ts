@@ -18,6 +18,11 @@ import { NextResponse } from 'next/server';
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 export async function POST(request: Request) {
+  console.log('Received game upload request', {
+    method: request.method,
+    url: request.url,
+    headers: Object.fromEntries(request.headers.entries()),
+  });
   try {
     // Authenticate via Firebase ID token
     const authHeader = request.headers.get('Authorization');
@@ -32,7 +37,7 @@ export async function POST(request: Request) {
     const idToken = authHeader.split('Bearer ')[1];
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken?.uid;
-    console.info('Upload request authenticated', { uid });
+    console.log('Upload request authenticated', { uid });
 
     // Get the username from the user's document in Firestore
     const userDoc = await adminDb.collection('users').doc(uid).get();
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only .cgs.zip files are accepted' }, { status: 400 });
     }
 
-    console.info('Processing upload', { uid, username, filename: file.name, size: file.size });
+    console.log('Processing upload', { uid, username, filename: file.name, size: file.size });
 
     // Extract zip contents in memory
     const arrayBuffer = await file.arrayBuffer();
@@ -74,7 +79,7 @@ export async function POST(request: Request) {
     // Count entries for diagnostics
     let entryCount = 0;
     zip.forEach(() => (entryCount += 1));
-    console.info('Zip loaded', { entryCount });
+    console.log('Zip loaded', { entryCount });
 
     // Locate cgs.json
     const located = locateCgsJson(zip);
@@ -90,7 +95,7 @@ export async function POST(request: Request) {
     try {
       const cgsJsonContent = await cgsJsonFile.async('string');
       // Log a shortened preview to help debug formatting issues
-      console.info('cgs.json preview', { preview: cgsJsonContent.slice(0, 500) });
+      console.log('cgs.json preview', { preview: cgsJsonContent.slice(0, 500) });
       const parsed = JSON.parse(cgsJsonContent);
       const validationError = validateCgsJson(parsed);
       if (validationError) {
@@ -105,7 +110,7 @@ export async function POST(request: Request) {
 
     // Generate slug from game name
     const slug = encodeURI(snakecase(cgsJson.name));
-    console.info('Generated slug', { uid, username, slug, gameName: cgsJson.name });
+    console.log('Generated slug', { uid, username, slug, gameName: cgsJson.name });
 
     // Check for duplicate game
     const existingGames = await adminDb
@@ -177,7 +182,7 @@ export async function POST(request: Request) {
               metadata: { contentType },
               public: true,
             });
-            console.info('Uploaded file to storage', { storagePath, contentType });
+            console.log('Uploaded file to storage', { storagePath, contentType });
           } catch (err: unknown) {
             console.error('Failed to upload file to storage', { storagePath, err });
             throw err;
@@ -202,7 +207,7 @@ export async function POST(request: Request) {
           metadata: { contentType: 'application/json' },
           public: true,
         })
-        .then(() => console.info('Uploaded rewritten cgs.json', { cgsJsonStoragePath }))
+        .then(() => console.log('Uploaded rewritten cgs.json', { cgsJsonStoragePath }))
         .catch((err) => {
           console.error('Failed to upload rewritten cgs.json', { cgsJsonStoragePath, err });
           throw err;
@@ -239,7 +244,7 @@ export async function POST(request: Request) {
 
     try {
       await adminDb.collection('games').add(game);
-      console.info('Game document created', { username, slug, storageBasePath });
+      console.log('Game document created', { username, slug, storageBasePath });
     } catch (err: unknown) {
       console.error('Failed to create game document in Firestore', { username, slug, err });
       throw err;
@@ -255,7 +260,6 @@ export async function POST(request: Request) {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
-    const message = error instanceof Error ? error.message : 'Failed to process game upload';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process game upload' }, { status: 500 });
   }
 }
