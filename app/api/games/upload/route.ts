@@ -23,8 +23,8 @@ export async function POST(request: Request) {
     url: request.url,
     headers: Object.fromEntries(
       Array.from(request.headers.entries()).filter(
-        ([key]) => key.toLowerCase() !== 'authorization'
-      )
+        ([key]) => key.toLowerCase() !== 'authorization',
+      ),
     ),
   });
   try {
