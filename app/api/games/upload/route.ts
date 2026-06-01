@@ -21,7 +21,11 @@ export async function POST(request: Request) {
   console.log('Received game upload request', {
     method: request.method,
     url: request.url,
-    headers: Object.fromEntries(request.headers.entries()),
+    headers: Object.fromEntries(
+      Array.from(request.headers.entries()).filter(
+        ([key]) => key.toLowerCase() !== 'authorization'
+      )
+    ),
   });
   try {
     // Authenticate via Firebase ID token
