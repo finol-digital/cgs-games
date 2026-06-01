@@ -10,12 +10,15 @@ if (!apps.length) {
     const hasProjectId = !!process.env.FIREBASE_PROJECT_ID;
     const hasClientEmail = !!process.env.FIREBASE_CLIENT_EMAIL;
     const hasPrivateKey = !!process.env.FIREBASE_PRIVATE_KEY;
-    const privateKeyLen = process.env.FIREBASE_PRIVATE_KEY?.length || 0;
+    const hasProjectId = !!process.env.FIREBASE_PROJECT_ID;
+    const hasClientEmail = !!process.env.FIREBASE_CLIENT_EMAIL;
+    const hasPrivateKey = !!process.env.FIREBASE_PRIVATE_KEY;
     console.info('Initializing Firebase admin app', {
       hasProjectId,
       hasClientEmail,
       hasPrivateKey,
-      privateKeyLen: hasPrivateKey ? privateKeyLen : 0,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    });
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
 
