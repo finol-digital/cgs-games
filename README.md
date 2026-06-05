@@ -22,6 +22,10 @@ Built with Next.js and Firebase.
 
 **Emulate**: `firebase emulators:start`
 
+## Uploads
+
+`.cgs.zip` uploads support files up to 100 MB. The browser stages zip files directly in Firebase Storage under `staged-uploads/{uid}/...`, then the upload API processes the staged object and publishes game assets under `games/{uid}/{slug}/...`.
+
 ## Deployment
 
 Firebase App Hosting will automatically deploy changes to the main branch.

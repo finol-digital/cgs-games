@@ -2,8 +2,9 @@
 
 import React, { useContext, useRef, useState } from 'react';
 import { UserContext } from '@/lib/context';
-import { auth } from '@/lib/firebase/firebase';
+import { auth, storage } from '@/lib/firebase/firebase';
 import { getIdToken } from 'firebase/auth';
+import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import SignInButton from './signInButton';
 import UsernameForm from './usernameForm';
@@ -28,6 +29,12 @@ function isValidHttpsUrl(string: string) {
 type UploadMode = 'url' | 'zip';
 
 const MAX_ZIP_SIZE = 100 * 1024 * 1024; // 100MB
+
+function createUploadId() {
+  return (
+    globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+}
 
 function GameUploadForm() {
   const [mode, setMode] = useState<UploadMode>('url');
@@ -148,11 +155,15 @@ function ZipUploadForm() {
   const { username } = useContext(UserContext);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError('');
+    setUploadProgress(null);
+    setProcessing(false);
     const file = e.target.files?.[0];
     if (!file) {
       setSelectedFile(null);
@@ -197,27 +208,56 @@ function ZipUploadForm() {
       }
 
       const idToken = await getIdToken(currentUser);
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+      const uploadId = createUploadId();
+      const stagedPath = `staged-uploads/${currentUser.uid}/${uploadId}.cgs.zip`;
+      const stagedFileRef = ref(storage, stagedPath);
+      const uploadTask = uploadBytesResumable(stagedFileRef, selectedFile, {
+        contentType: selectedFile.type || 'application/zip',
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            setUploadProgress(progress);
+          },
+          reject,
+          resolve,
+        );
+      });
+
+      setProcessing(true);
 
       const response = await fetch('/api/games/upload', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}`,
         },
-        body: formData,
+        body: JSON.stringify({
+          stagedPath,
+          originalFilename: selectedFile.name,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        try {
+          await deleteObject(stagedFileRef);
+        } catch {
+          // The API also attempts cleanup after processing staged uploads.
+        }
         throw new Error(data.error || 'Failed to upload game');
       }
 
       setLoading(false);
+      setProcessing(false);
       router.push(`/${username}/${data.slug}`);
     } catch (err: unknown) {
       setLoading(false);
+      setProcessing(false);
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
@@ -245,9 +285,13 @@ function ZipUploadForm() {
       {error && <p className="text-danger">{error}</p>}
       {!error && <p />}
       {loading ? (
-        <p className="text-gray-400">
-          Uploading and processing game files... This may take a moment.
-        </p>
+        <div className="text-gray-400">
+          {processing ? (
+            <p>Processing game files... This may take a moment.</p>
+          ) : (
+            <p>Uploading game zip... {uploadProgress ?? 0}%</p>
+          )}
+        </div>
       ) : (
         <button type="submit" disabled={!selectedFile}>
           Upload .cgs.zip to CGS Games
