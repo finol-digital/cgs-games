@@ -61,7 +61,13 @@ async function authenticateUploadRequest(
   }
 
   const idToken = authHeader.split('Bearer ')[1];
-  const decodedToken = await adminAuth.verifyIdToken(idToken);
+  let decodedToken;
+  try {
+    decodedToken = await adminAuth.verifyIdToken(idToken);
+  } catch (err) {
+    console.error('Token verification failed', { error: err instanceof Error ? err.message : err });
+    return jsonError('Invalid or expired token', 401);
+  }
   const uid = decodedToken?.uid;
   console.log('Upload request authenticated', { uid });
 
