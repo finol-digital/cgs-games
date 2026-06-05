@@ -105,10 +105,12 @@ export function locateCgsJson(
   });
 
   if (topLevelEntries.size === 1) {
-    const singleDir = [...topLevelEntries][0];
-    const nestedFile = zip.file(`${singleDir}/cgs.json`);
-    if (nestedFile) {
-      return { cgsJsonFile: nestedFile, gameRoot: singleDir };
+    const singleDir = topLevelEntries.values().next().value;
+    if (singleDir !== undefined) {
+      const nestedFile = zip.file(`${singleDir}/cgs.json`);
+      if (nestedFile) {
+        return { cgsJsonFile: nestedFile, gameRoot: singleDir };
+      }
     }
   }
 
