@@ -113,14 +113,12 @@ Think freely. When insights crystallize, you might offer:
 If the user mentions a change or you detect one is relevant:
 
 1. **Read existing artifacts for context**
-
    - `openspec/changes/<name>/proposal.md`
    - `openspec/changes/<name>/design.md`
    - `openspec/changes/<name>/tasks.md`
    - etc.
 
 2. **Reference them naturally in conversation**
-
    - "Your design mentions using Redis, but we just realized SQLite fits better..."
    - "The proposal scopes this to premium users, but we're now thinking everyone..."
 
@@ -136,7 +134,6 @@ If the user mentions a change or you detect one is relevant:
    | Assumption invalidated     | Relevant artifact            |
 
    Example offers:
-
    - "That's a design decision. Capture it in design.md?"
    - "This is a new requirement. Add it to specs?"
    - "This changes scope. Update the proposal?"

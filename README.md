@@ -10,7 +10,7 @@ Built with Next.js and Firebase.
 
 **Audit**: `npm audit fix`
 
-**Format**: `prettier --config .prettierrc.json --ignore-path .gitignore --write .`
+**Format**: `npm run format`
 
 **Lint**: `npm run lint`
 
