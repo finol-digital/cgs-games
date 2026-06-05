@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --config eslint.config.mjs",
+    "format": "prettier --config .prettierrc.json --ignore-path .gitignore --write .",
     "test": "jest",
     "postinstall": "patch-package"
   },
