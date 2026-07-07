@@ -70,30 +70,30 @@ describe('UploadGameForm', () => {
 
   it('should show both upload mode tabs when user is authenticated with username', () => {
     renderWithUser({ uid: 'test-uid' }, 'testuser');
-    expect(screen.getByText('Enter AutoUpdate URL')).toBeInTheDocument();
     expect(screen.getByText('Upload .cgs.zip File')).toBeInTheDocument();
+    expect(screen.getByText('Enter AutoUpdate URL')).toBeInTheDocument();
   });
 
-  it('should default to URL mode', () => {
+  it('should default to ZIP mode', () => {
     renderWithUser({ uid: 'test-uid' }, 'testuser');
-    expect(screen.getByLabelText(/Enter CGS AutoUpdate Url/i)).toBeInTheDocument();
-  });
-
-  it('should switch to zip upload mode when tab is clicked', async () => {
-    renderWithUser({ uid: 'test-uid' }, 'testuser');
-    const user = userEvent.setup();
-
-    await user.click(screen.getByText('Upload .cgs.zip File'));
     expect(screen.getByLabelText(/Upload .cgs.zip file/i)).toBeInTheDocument();
   });
 
-  it('should switch back to URL mode when tab is clicked', async () => {
+  it('should switch to URL mode when tab is clicked', async () => {
     renderWithUser({ uid: 'test-uid' }, 'testuser');
     const user = userEvent.setup();
 
-    await user.click(screen.getByText('Upload .cgs.zip File'));
     await user.click(screen.getByText('Enter AutoUpdate URL'));
     expect(screen.getByLabelText(/Enter CGS AutoUpdate Url/i)).toBeInTheDocument();
+  });
+
+  it('should switch back to ZIP mode when tab is clicked', async () => {
+    renderWithUser({ uid: 'test-uid' }, 'testuser');
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText('Enter AutoUpdate URL'));
+    await user.click(screen.getByText('Upload .cgs.zip File'));
+    expect(screen.getByLabelText(/Upload .cgs.zip file/i)).toBeInTheDocument();
   });
 
   it('should upload zip files to Storage before requesting server processing', async () => {

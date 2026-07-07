@@ -37,22 +37,11 @@ function createUploadId() {
 }
 
 function GameUploadForm() {
-  const [mode, setMode] = useState<UploadMode>('url');
+  const [mode, setMode] = useState<UploadMode>('zip');
 
   return (
     <section>
       <div className="mb-4 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('url')}
-          className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-            mode === 'url'
-              ? 'bg-blue-600 text-white'
-              : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
-          }`}
-        >
-          Enter AutoUpdate URL
-        </button>
         <button
           type="button"
           onClick={() => setMode('zip')}
@@ -63,6 +52,17 @@ function GameUploadForm() {
           }`}
         >
           Upload .cgs.zip File
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('url')}
+          className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+            mode === 'url'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+          }`}
+        >
+          Enter AutoUpdate URL
         </button>
       </div>
       {mode === 'url' ? <AutoUpdateUrlForm /> : <ZipUploadForm />}
