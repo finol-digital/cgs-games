@@ -28,8 +28,8 @@ export default function Page() {
           .
         </p>
         <p>
-          You can upload your game by either providing a CGS AutoUpdate Url or by directly uploading
-          a .cgs.zip file exported from CGS:
+          You can upload your game by either uploading a .cgs.zip file exported from CGS or by
+          providing a CGS AutoUpdate Url:
         </p>
         <UploadGameForm />
       </main>
