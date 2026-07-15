@@ -49,7 +49,8 @@ export async function POST(request: Request) {
     const response = await fetch(autoUpdateUrl);
     const cardGameSpecification: {
       name: string;
-      bannerImageUrl: string;
+      bannerImageUrl?: string;
+      cardBackImageUrl?: string;
       copyright: string;
     } = await response.json();
 
@@ -58,7 +59,9 @@ export async function POST(request: Request) {
       username: username,
       slug: slug,
       name: cardGameSpecification.name,
-      bannerImageUrl: cardGameSpecification.bannerImageUrl,
+      // Fall back to the card back image when the game has no banner image
+      bannerImageUrl:
+        cardGameSpecification.bannerImageUrl || cardGameSpecification.cardBackImageUrl || '',
       autoUpdateUrl: autoUpdateUrl,
       copyright: cardGameSpecification.copyright ? cardGameSpecification.copyright : username,
       uploadedAt: FieldValue.serverTimestamp(),
