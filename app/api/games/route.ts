@@ -61,13 +61,21 @@ export async function POST(request: Request) {
       name: cardGameSpecification.name,
       // Fall back to the card back image when the game has no banner image
       bannerImageUrl:
-        cardGameSpecification.bannerImageUrl || cardGameSpecification.cardBackImageUrl || '',
+        cardGameSpecification.bannerImageUrl || cardGameSpecification.cardBackImageUrl,
       autoUpdateUrl: autoUpdateUrl,
       copyright: cardGameSpecification.copyright ? cardGameSpecification.copyright : username,
       uploadedAt: FieldValue.serverTimestamp(),
     };
 
-    const isValidUrl = new URL(game.bannerImageUrl).protocol === 'https:';
+    if (!game.bannerImageUrl) {
+      return NextResponse.json({ error: 'Missing bannerImageUrl!' }, { status: 400 });
+    }
+    let isValidUrl: boolean;
+    try {
+      isValidUrl = new URL(game.bannerImageUrl).protocol === 'https:';
+    } catch {
+      isValidUrl = false;
+    }
     if (!isValidUrl) {
       return NextResponse.json({ error: 'Invalid bannerImageUrl!' }, { status: 400 });
     }
