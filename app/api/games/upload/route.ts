@@ -308,9 +308,10 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
   const bannerExt = cgsJson.bannerImageFileType || 'png';
   const bannerFile = `Banner.${bannerExt}`;
   const hasBanner = fileExistsInZip(zip, bannerFile, gameRoot);
+  // Fall back to the card back image when the game has no banner image
   const bannerImageUrl = hasBanner
     ? getPublicUrl(bucketName, `${storageBasePath}/${bannerFile}`)
-    : '';
+    : cgsJson.cardBackImageUrl || '';
 
   const game = {
     username,

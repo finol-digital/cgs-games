@@ -112,6 +112,11 @@ After successfully uploading all files to Storage, the server SHALL create a Fir
 - **WHEN** the zip contains a banner image
 - **THEN** the Firestore game document `bannerImageUrl` SHALL be the Firebase Storage public URL for that image
 
+#### Scenario: bannerImageUrl falls back to card back image
+
+- **WHEN** the zip does not contain a banner image but the game has a card back image
+- **THEN** the Firestore game document `bannerImageUrl` SHALL be the card back image URL (the Firebase Storage public URL when the zip contains the card back file, otherwise the `cardBackImageUrl` declared in `cgs.json`)
+
 #### Scenario: Duplicate game name handling
 
 - **WHEN** the user already has a game with the same slug
