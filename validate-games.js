@@ -57,8 +57,7 @@ async function main() {
           ...options,
           signal: controller.signal,
           headers: { 'User-Agent': 'CGS-Games-Banner-Validator/1.0' },
-        });
-        clearTimeout(timeoutId);
+        }).finally(() => clearTimeout(timeoutId));
         if (response.ok) {
           return { response };
         }
