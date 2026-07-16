@@ -139,7 +139,10 @@ async function main() {
 
   async function validateGame(game) {
     console.log(`🔗 Checking: ${gameLabel(game)}`);
-    const [bannerOk, matchOk] = await Promise.all([validateBannerUrl(game), validateCgsJsonMatch(game)]);
+    const [bannerOk, matchOk] = await Promise.all([
+      validateBannerUrl(game),
+      validateCgsJsonMatch(game),
+    ]);
     if (bannerOk && matchOk) {
       successCount++;
     }
