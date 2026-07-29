@@ -65,7 +65,7 @@ export async function GET(request: Request) {
 
   let json: string;
   try {
-    json = noCache ? JSON.stringify(await getData(noCache)) : await getLocalSpoilersJson();
+    json = JSON.stringify(await getData(noCache));
   } catch (error) {
     console.error('Failed to fetch GATCG spoilers:', error);
     return NextResponse.json(
@@ -85,11 +85,6 @@ export async function GET(request: Request) {
       'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
     },
   });
-}
-
-async function getLocalSpoilersJson() {
-  const filePath = path.join(process.cwd(), 'app', 'api', 'gatcg_spoilers', 'gatcg_spoilers.json');
-  return readFile(filePath, 'utf-8');
 }
 
 async function getData(nocache = false) {
