@@ -10,7 +10,7 @@ import { buildSpoilerData } from '@/lib/gatcgSpoilers';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /** A fully OCR'd payload is served straight from Firestore for this long. */
 const PAYLOAD_FRESH_MS = 15 * 60 * 1000;
@@ -18,6 +18,14 @@ const PAYLOAD_FRESH_MS = 15 * 60 * 1000;
 const PARTIAL_PAYLOAD_FRESH_MS = 2 * 60 * 1000;
 /** Wall-clock budget for a rebuild, kept well under the platform timeout. */
 const REBUILD_BUDGET_MS = 25 * 1000;
+/**
+ * Warm runs get a far larger budget, but still one that fits inside
+ * `maxDuration`: an unbounded run risks being killed mid-build, which would
+ * lose the assembled payload even though the per-batch OCR writes survived.
+ * Whatever a single run cannot finish is left pending, and the daily workflow
+ * retries until nothing is.
+ */
+const WARM_BUDGET_MS = 240 * 1000;
 /** Past this age a cached payload is only used as a fallback on failure. */
 const PAYLOAD_MAX_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -44,14 +52,18 @@ export async function OPTIONS() {
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
 
-  // Skip the assembled-payload cache, but still use the (cheap) OCR cache.
-  const noCache = requestUrl.searchParams.get('nocache') === '1';
-  // Cache warming: rebuild with no OCR budget, draining the whole backlog.
+  const authorized = isWarmAuthorized(request);
+
+  // Cache warming: rebuild with a much larger OCR budget to drain the backlog.
   const warm = requestUrl.searchParams.get('warm') === '1';
   // Re-run OCR from scratch; only meaningful together with warm.
   const refreshOcr = requestUrl.searchParams.get('refresh') === '1';
+  // Skip the assembled-payload cache, but still use the (cheap) OCR cache.
+  // Operators only: bypassing the payload cache forces an upstream fetch and
+  // can trigger OCR, which is exactly the load the cache exists to absorb.
+  const noCache = requestUrl.searchParams.get('nocache') === '1' && authorized;
 
-  if (warm && !isWarmAuthorized(request)) {
+  if (warm && !authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
   }
 
@@ -100,7 +112,7 @@ export async function GET(request: Request) {
 
   try {
     const result = await buildSpoilerData({
-      deadline: warm ? Number.POSITIVE_INFINITY : Date.now() + REBUILD_BUDGET_MS,
+      deadline: Date.now() + (warm ? WARM_BUDGET_MS : REBUILD_BUDGET_MS),
       refreshOcr: warm && refreshOcr,
     });
     const payload = JSON.stringify(result.data);

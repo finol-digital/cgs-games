@@ -37,16 +37,19 @@ jobs:
           attempt=1
           warmed=false
 
-          # A warm run has no OCR budget, so one attempt normally drains the
-          # whole backlog. Retries exist for the case where a large new set
-          # takes longer than a single request is allowed to run: every OCR
-          # batch is persisted as it completes, so each attempt resumes where
-          # the last one stopped.
+          # A warm run drains as much of the backlog as its budget allows, so
+          # one attempt is normally enough. Retries exist for the case where a
+          # large new set needs more than a single request: every OCR batch is
+          # persisted as it completes, so each attempt resumes where the last
+          # one stopped.
+          #
+          # Worst case is 5 x 300s + 4 x 30s sleeps = 27 minutes, which fits
+          # inside the job's timeout-minutes. Keep those two in step.
           while [ "$attempt" -le "$max_attempts" ]; do
             echo "Warm attempt $attempt of $max_attempts"
 
             status=$(curl -sS -o response.json -D headers.txt -w '%{http_code}' \
-              --max-time 900 \
+              --max-time 300 \
               -H "Authorization: Bearer $WARM_TOKEN" \
               "$ENDPOINT?warm=1") || status=000
 
@@ -103,15 +106,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          status=$(curl -sS -o /dev/null -D headers.txt -w '%{http_code}' --max-time 60 "$ENDPOINT")
-          cache_status=$(tr -d '\r' < headers.txt | awk 'tolower($1) == "x-cache:" { print $2 }' | tail -1)
-
-          echo "HTTP $status, X-Cache: ${cache_status:-none}"
+          # Keep the same fallback as the warm step: without it, pipefail aborts
+          # on a connection failure before the error message below is reached.
+          status=$(curl -sS -o /dev/null -D headers.txt -w '%{http_code}' --max-time 60 "$ENDPOINT") || status=000
 
           if [ "$status" != "200" ]; then
             echo "::error::Spoiler endpoint returned HTTP $status after warming."
             exit 1
           fi
+
+          # Only read the headers once the request is known to have succeeded.
+          cache_status=$(tr -d '\r' < headers.txt | awk 'tolower($1) == "x-cache:" { print $2 }' | tail -1)
+          echo "HTTP $status, X-Cache: ${cache_status:-none}"
 
           if [ "${cache_status:-}" != "hit" ]; then
             echo "::warning::Expected a cache hit after warming but got '${cache_status:-none}'."

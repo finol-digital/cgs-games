@@ -156,6 +156,41 @@ describe('buildSpoilerData', () => {
       );
     });
 
+    // A look-alike host starts with the expected prefix, so a substring check
+    // would accept it and we would fetch and serve an arbitrary origin.
+    it.each([
+      ['look-alike host', 'https://silvie.gg.example.com/img/spoilers/PRD/evil.jpg'],
+      ['unrelated host', 'https://example.com/img/spoilers/PRD/evil.jpg'],
+      ['protocol-relative host', '//example.com/img/spoilers/PRD/evil.jpg'],
+      ['plaintext silvie', 'http://silvie.gg/img/spoilers/PRD/evil.jpg'],
+      ['javascript url', 'javascript:alert(1)'],
+    ])('drops images from an untrusted origin (%s)', async (_label, cardImageUrl) => {
+      mockUpstream([{ id: 11, card_name: 'Evil', card_image_url: cardImageUrl } as never]);
+      getCachedOcrResultsMock.mockResolvedValue(new Map());
+
+      const result = await buildSpoilerData({ deadline: Date.now() + 60_000 });
+
+      expect(result.data.data[0].card_image_url).toBe('');
+      expect(recognizeMock).not.toHaveBeenCalled();
+    });
+
+    it('accepts subdomains of the expected host', async () => {
+      mockUpstream([
+        {
+          id: 12,
+          card_name: 'CDN Hosted',
+          card_image_url: 'https://images.silvie.gg/img/spoilers/PRD/card.jpg',
+        } as never,
+      ]);
+      getCachedOcrResultsMock.mockResolvedValue(new Map([['12', 'text']]));
+
+      const result = await buildSpoilerData();
+
+      expect(result.data.data[0].card_image_url).toBe(
+        'https://images.silvie.gg/api/images/spoilers/PRD/card.jpg',
+      );
+    });
+
     it('leaves cards with no image alone', async () => {
       mockUpstream([{ id: 10, card_name: 'Imageless', back_card: null } as never]);
       getCachedOcrResultsMock.mockResolvedValue(new Map());

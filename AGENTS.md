@@ -79,7 +79,9 @@ curl "http://localhost:3000/api/gatcg_spoilers?warm=1&refresh=1"
 ```
 
 In production `warm=1` requires `Authorization: Bearer $GATCG_WARM_TOKEN`, and
-returns 401 unless that secret is configured. Bump `OCR_VERSION` in
+returns 401 unless that secret is configured. `nocache=1` (skip the assembled
+payload cache but still use the OCR cache) needs the same authorization, and is
+ignored otherwise - bypassing the cache is exactly the load it exists to absorb. Bump `OCR_VERSION` in
 `lib/firebase/admin.ts` to invalidate cached text after changing the OCR
 pipeline; cached text is otherwise only invalidated by a change of image URL.
 

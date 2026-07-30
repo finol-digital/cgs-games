@@ -8,6 +8,7 @@ import {
 } from '@/lib/firebase/admin';
 
 const SILVIE_GG_HOST = 'https://silvie.gg';
+const SILVIE_GG_DOMAIN = 'silvie.gg';
 const MAX_OCR_WORKERS = 4;
 
 const UPSTREAM_FETCH_TIMEOUT_MS = 10_000;
@@ -78,6 +79,11 @@ interface SilvieSpoiler {
   back_card?: { card_name?: string; card_image_url?: string; card_image_slug?: string } | null;
 }
 
+/** Hosts whose images this route is willing to fetch and hand to clients. */
+function isSilvieHost(hostname: string): boolean {
+  return hostname === SILVIE_GG_DOMAIN || hostname.endsWith(`.${SILVIE_GG_DOMAIN}`);
+}
+
 /**
  * Resolve the URL a spoiler card image is actually served from.
  *
@@ -86,20 +92,36 @@ interface SilvieSpoiler {
  * served by silvie.gg's `/api/images/spoilers/...` route and 404 under `/img`.
  * The API route serves every set, so it is used for all of them.
  *
- * Paths are encoded because some set folders contain spaces (e.g. "MRC Alter").
+ * The URL is parsed rather than prefix-matched, and its host checked against
+ * the registrable domain: a look-alike such as `https://silvie.gg.example.com`
+ * starts with the expected prefix but must not be fetched or served onwards.
+ * Anything off-domain is dropped instead of passed through.
  */
 function resolveImageUrl(spoiler: { card_image_url?: string; card_image_slug?: string }): string {
   const raw = spoiler.card_image_slug ?? spoiler.card_image_url ?? '';
   if (!raw) return '';
 
-  const path = raw.startsWith(SILVIE_GG_HOST) ? raw.slice(SILVIE_GG_HOST.length) : raw;
-  if (!path.startsWith('/img/')) {
-    // Unexpected shape (absolute URL on another host, or an already-resolved
-    // path); pass it through rather than mangling it.
-    return raw.startsWith('http') ? raw : `${SILVIE_GG_HOST}${encodeURI(path)}`;
+  let url: URL;
+  try {
+    // Slugs are relative and card_image_url is absolute; resolving against the
+    // known origin handles both, and percent-encodes set folders that contain
+    // spaces (e.g. "MRC Alter").
+    url = new URL(raw, SILVIE_GG_HOST);
+  } catch {
+    console.warn(`Ignoring unparseable spoiler image URL: ${raw}`);
+    return '';
   }
 
-  return `${SILVIE_GG_HOST}${encodeURI('/api/images/' + path.slice('/img/'.length))}`;
+  if (url.protocol !== 'https:' || !isSilvieHost(url.hostname)) {
+    console.warn(`Ignoring spoiler image on unexpected origin: ${url.origin}`);
+    return '';
+  }
+
+  if (url.pathname.startsWith('/img/')) {
+    url.pathname = `/api/images/${url.pathname.slice('/img/'.length)}`;
+  }
+
+  return url.toString();
 }
 
 /**
