@@ -1,0 +1,124 @@
+name: Warm GATCG Spoiler Cache
+
+on:
+  schedule:
+    # Run daily at 11 AM UTC, ahead of peak traffic. Warming is a no-op when
+    # nothing new has been spoiled, so a daily run is cheap.
+    - cron: '0 11 * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+permissions:
+  contents: read
+
+# Never let two warm runs OCR the same cards at once.
+concurrency:
+  group: warm-gatcg-cache
+  cancel-in-progress: false
+
+jobs:
+  warm-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Warm the spoiler cache
+        env:
+          ENDPOINT: ${{ vars.GATCG_SPOILERS_URL || 'https://cgs.games/api/gatcg_spoilers' }}
+          WARM_TOKEN: ${{ secrets.GATCG_WARM_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$WARM_TOKEN" ]; then
+            echo "::error::GATCG_WARM_TOKEN is not set. Add it as a repository secret, and expose the same value to the backend via apphosting.yaml."
+            exit 1
+          fi
+
+          max_attempts=5
+          attempt=1
+          warmed=false
+
+          # A warm run drains as much of the backlog as its budget allows, so
+          # one attempt is normally enough. Retries exist for the case where a
+          # large new set needs more than a single request: every OCR batch is
+          # persisted as it completes, so each attempt resumes where the last
+          # one stopped.
+          #
+          # Worst case is 5 x 300s + 4 x 30s sleeps = 27 minutes, which fits
+          # inside the job's timeout-minutes. Keep those two in step.
+          while [ "$attempt" -le "$max_attempts" ]; do
+            echo "Warm attempt $attempt of $max_attempts"
+
+            status=$(curl -sS -o response.json -D headers.txt -w '%{http_code}' \
+              --max-time 300 \
+              -H "Authorization: Bearer $WARM_TOKEN" \
+              "$ENDPOINT?warm=1") || status=000
+
+            if [ "$status" = "401" ]; then
+              echo "::error::Warm request was rejected (401). The GATCG_WARM_TOKEN secret does not match the token configured on the backend."
+              exit 1
+            fi
+
+            if [ "$status" != "200" ]; then
+              echo "::warning::Warm request failed with HTTP $status"
+              attempt=$((attempt + 1))
+              [ "$attempt" -le "$max_attempts" ] && sleep 30
+              continue
+            fi
+
+            pending=$(tr -d '\r' < headers.txt | awk 'tolower($1) == "x-ocr-pending:" { print $2 }' | tail -1)
+            pending=${pending:-0}
+            cards=$(jq '.data | length' response.json)
+            with_text=$(jq '[.data[] | select(.effect_raw != "")] | length' response.json)
+
+            echo "Cards: $cards, with text: $with_text, awaiting OCR: $pending"
+
+            if [ "$pending" -eq 0 ]; then
+              warmed=true
+              break
+            fi
+
+            echo "$pending card(s) still awaiting OCR; running again"
+            attempt=$((attempt + 1))
+          done
+
+          if [ "$warmed" != true ] && [ "${cards:-0}" = "0" ]; then
+            echo "::error::Could not warm the cache after $max_attempts attempts."
+            exit 1
+          fi
+
+          if [ "$warmed" != true ]; then
+            echo "::warning::Cache is warm but ${pending} card(s) still lack OCR text; the next run will pick them up."
+          fi
+
+          {
+            echo "### GATCG spoiler cache warmed"
+            echo ""
+            echo "| Metric | Value |"
+            echo "| --- | --- |"
+            echo "| Cards | ${cards:-0} |"
+            echo "| With card text | ${with_text:-0} |"
+            echo "| Awaiting OCR | ${pending:-0} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify a normal request is served from cache
+        env:
+          ENDPOINT: ${{ vars.GATCG_SPOILERS_URL || 'https://cgs.games/api/gatcg_spoilers' }}
+        run: |
+          set -euo pipefail
+
+          # Keep the same fallback as the warm step: without it, pipefail aborts
+          # on a connection failure before the error message below is reached.
+          status=$(curl -sS -o /dev/null -D headers.txt -w '%{http_code}' --max-time 60 "$ENDPOINT") || status=000
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Spoiler endpoint returned HTTP $status after warming."
+            exit 1
+          fi
+
+          # Only read the headers once the request is known to have succeeded.
+          cache_status=$(tr -d '\r' < headers.txt | awk 'tolower($1) == "x-cache:" { print $2 }' | tail -1)
+          echo "HTTP $status, X-Cache: ${cache_status:-none}"
+
+          if [ "${cache_status:-}" != "hit" ]; then
+            echo "::warning::Expected a cache hit after warming but got '${cache_status:-none}'."
+          fi

@@ -9,6 +9,11 @@ service cloud.firestore {
         allow read, write: if false;
       }
 
+      // Assembled spoiler response cache: server-only via Admin SDK
+      match /gatcg_spoiler_cache/{docId} {
+        allow read, write: if false;
+      }
+
       match /games/{gameId} {
         allow read;
         allow write: if isUploadedAtNow() && isValidGame() && isValidUsernameSet();
