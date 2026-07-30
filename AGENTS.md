@@ -60,6 +60,35 @@ firebase emulators:start
 # Auto-deployment via Firebase App Hosting
 ```
 
+### GATCG Spoiler Cache
+
+`/api/gatcg_spoilers` OCRs card images, which is far too slow to do inside a
+request. Firestore holds two caches: per-card OCR text (`gatcg_ocr_cache`) and
+the fully assembled response (`gatcg_spoiler_cache/current`). A normal request
+is a single document read; a rebuild is bounded by a wall-clock budget and
+defers any OCR that doesn't fit to the next request.
+
+```bash
+# Warm the cache with no OCR budget (drains the whole backlog).
+# Run against a dev server, which writes to the Firestore in .env:
+npm run dev
+curl "http://localhost:3000/api/gatcg_spoilers?warm=1"
+
+# Re-OCR every card from scratch, ignoring cached text:
+curl "http://localhost:3000/api/gatcg_spoilers?warm=1&refresh=1"
+```
+
+In production `warm=1` requires `Authorization: Bearer $GATCG_WARM_TOKEN`, and
+returns 401 unless that secret is configured. Bump `OCR_VERSION` in
+`lib/firebase/admin.ts` to invalidate cached text after changing the OCR
+pipeline; cached text is otherwise only invalidated by a change of image URL.
+
+Note that silvie.gg's API reports card images under `/img/spoilers/...`, but
+that path only has static files for older sets - the set currently being
+spoiled 404s there and is served solely by `/api/images/spoilers/...`.
+`resolveImageUrl` in `lib/gatcgSpoilers.ts` rewrites every image onto the API
+route, which serves all sets.
+
 ## Code Style Guidelines
 
 ### TypeScript & React Patterns

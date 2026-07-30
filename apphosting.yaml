@@ -39,3 +39,9 @@ env:
     secret: firebaseClientEmail
   - variable: FIREBASE_PRIVATE_KEY
     secret: firebasePrivateKey
+  # Shared secret authorizing /api/gatcg_spoilers?warm=1, used by the
+  # "Warm GATCG Spoiler Cache" workflow. Must match the repository secret
+  # GATCG_WARM_TOKEN. Create it with:
+  #   firebase apphosting:secrets:set gatcgWarmToken
+  - variable: GATCG_WARM_TOKEN
+    secret: gatcgWarmToken
