@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
   return new NextResponse(response.body, {
     status: 200,
     headers: {
+      'Content-Type':
+        response.headers.get('content-type') ?? 'application/octet-stream',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
