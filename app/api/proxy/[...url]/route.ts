@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
   console.log('Request /api/proxy GET ' + url);
   const response = await fetch(url);
   return new NextResponse(response.body, {
-    status: 200,
+    status: response.status,
     headers: {
+      'Content-Type': response.headers.get('content-type') ?? 'application/octet-stream',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
