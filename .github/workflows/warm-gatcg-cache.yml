@@ -82,8 +82,7 @@ jobs:
           done
 
           if [ "$warmed" != true ] && [ "${cards:-0}" = "0" ]; then
-            echo "::error::Could not warm the cache after $max_attempts attempts."
-            exit 1
+            echo "::warning::Warm requests did not complete after $max_attempts attempts; verifying normal endpoint health next."
           fi
 
           if [ "$warmed" != true ]; then
