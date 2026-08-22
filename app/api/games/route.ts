@@ -1,4 +1,5 @@
 import { adminAuth, adminDb, adminGetAllGames } from '@/lib/firebase/admin';
+import { DEFAULT_CARD_BACK_PATH, resolveBannerImageUrl } from '@/lib/bannerFallback';
 import { FieldValue } from 'firebase-admin/firestore';
 import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
@@ -59,20 +60,21 @@ export async function POST(request: Request) {
       username: username,
       slug: slug,
       name: cardGameSpecification.name,
-      // Fall back to the card back image when the game has no banner image
-      bannerImageUrl:
-        cardGameSpecification.bannerImageUrl || cardGameSpecification.cardBackImageUrl,
+      // Fall back to the game card back, then the CGS default card back.
+      bannerImageUrl: resolveBannerImageUrl({
+        bannerImageUrl: cardGameSpecification.bannerImageUrl,
+        cardBackImageUrl: cardGameSpecification.cardBackImageUrl,
+      }),
       autoUpdateUrl: autoUpdateUrl,
       copyright: cardGameSpecification.copyright ? cardGameSpecification.copyright : username,
       uploadedAt: FieldValue.serverTimestamp(),
     };
 
-    if (!game.bannerImageUrl) {
-      return NextResponse.json({ error: 'Missing bannerImageUrl!' }, { status: 400 });
-    }
     let isValidUrl: boolean;
     try {
-      isValidUrl = new URL(game.bannerImageUrl).protocol === 'https:';
+      isValidUrl =
+        game.bannerImageUrl === DEFAULT_CARD_BACK_PATH ||
+        new URL(game.bannerImageUrl).protocol === 'https:';
     } catch {
       isValidUrl = false;
     }

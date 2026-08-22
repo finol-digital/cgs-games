@@ -7,6 +7,7 @@
 
 const TIMEOUT = 30000; // 30 seconds
 const RETRY_DELAY = 1000; // 1 second
+const DEFAULT_CARD_BACK_PATH = '/CardBack.png';
 
 async function main() {
   console.log('🔍 Fetching games from https://cgs.games/api/games...');
@@ -118,15 +119,10 @@ async function main() {
       console.log(errorMsg);
       return false;
     }
-    // The database bannerImageUrl falls back to the card back image when the
-    // cgs.json has no banner image, so apply the same fallback here.
-    const expectedBannerImageUrl = cgsJson.bannerImageUrl || cgsJson.cardBackImageUrl;
-    if (!expectedBannerImageUrl) {
-      const errorMsg = `❌ ${gameLabel(game)} - cgs.json has no bannerImageUrl or cardBackImageUrl: ${game.autoUpdateUrl}`;
-      failures.push(errorMsg);
-      console.log(errorMsg);
-      return false;
-    }
+    // The database bannerImageUrl falls back to the game card back and then
+    // to the CGS default card back when cgs.json has no banner image.
+    const expectedBannerImageUrl =
+      cgsJson.bannerImageUrl || cgsJson.cardBackImageUrl || DEFAULT_CARD_BACK_PATH;
     if (game.bannerImageUrl !== expectedBannerImageUrl) {
       const errorMsg = `❌ ${gameLabel(game)} - bannerImageUrl mismatch: database has "${game.bannerImageUrl}" but cgs.json has "${expectedBannerImageUrl}"`;
       failures.push(errorMsg);
