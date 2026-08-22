@@ -10,11 +10,11 @@ import {
   validateCgsJson,
 } from '@/lib/cgsZipUtils';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
+import { resolveBannerImageUrl } from '@/lib/bannerFallback';
 import { FieldValue } from 'firebase-admin/firestore';
 import JSZip from 'jszip';
 import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
-
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const STAGED_UPLOAD_PREFIX = 'staged-uploads';
 
@@ -308,10 +308,10 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
   const bannerExt = cgsJson.bannerImageFileType || 'png';
   const bannerFile = `Banner.${bannerExt}`;
   const hasBanner = fileExistsInZip(zip, bannerFile, gameRoot);
-  // Fall back to the card back image when the game has no banner image
+  // Fall back to the game card back, then the CGS default card back.
   const bannerImageUrl = hasBanner
     ? getPublicUrl(bucketName, `${storageBasePath}/${bannerFile}`)
-    : cgsJson.cardBackImageUrl || '';
+    : resolveBannerImageUrl({ cardBackImageUrl: cgsJson.cardBackImageUrl });
 
   const game = {
     username,
