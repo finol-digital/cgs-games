@@ -8,6 +8,17 @@
 const TIMEOUT = 30000; // 30 seconds
 const RETRY_DELAY = 1000; // 1 second
 const DEFAULT_CARD_BACK_PATH = '/CardBack.png';
+const CGS_ORIGIN = 'https://cgs.games';
+
+function resolveBannerUrl(url) {
+  if (typeof url !== 'string' || url.length === 0) {
+    return url;
+  }
+  if (url.startsWith('/') && !url.startsWith('//')) {
+    return `${CGS_ORIGIN}${url}`;
+  }
+  return url;
+}
 
 async function main() {
   console.log('🔍 Fetching games from https://cgs.games/api/games...');
@@ -85,7 +96,8 @@ async function main() {
       console.log(error);
       return false;
     }
-    const { error } = await fetchWithRetry(game.bannerImageUrl, { method: 'HEAD' });
+    const resolvedBannerUrl = resolveBannerUrl(game.bannerImageUrl);
+    const { error } = await fetchWithRetry(resolvedBannerUrl, { method: 'HEAD' });
     if (error) {
       const errorMsg = `❌ ${gameLabel(game)} - ${error}: ${game.bannerImageUrl}`;
       failures.push(errorMsg);
