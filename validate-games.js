@@ -14,7 +14,7 @@ function resolveBannerUrl(url) {
   if (typeof url !== 'string' || url.length === 0) {
     return url;
   }
-  if (url.startsWith('/')) {
+  if (url.startsWith('/') && !url.startsWith('//')) {
     return `${CGS_ORIGIN}${url}`;
   }
   return url;
