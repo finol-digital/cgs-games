@@ -86,7 +86,7 @@ jobs:
           fi
 
           if [ "$warmed" != true ]; then
-            echo "::warning::Cache is warm but ${pending} card(s) still lack OCR text; the next run will pick them up."
+            echo "::warning::Cache is warm but ${pending:-0} card(s) still lack OCR text; the next run will pick them up."
           fi
 
           {
