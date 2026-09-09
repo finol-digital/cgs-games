@@ -235,7 +235,11 @@ async function runOcr(entries: CardEntry[], needsOcr: number[], deadline: number
   }
 
   const workerCount = Math.min(MAX_OCR_WORKERS, needsOcr.length);
-  const scheduler = await createOcrScheduler(workerCount);
+  const scheduler = await createOcrScheduler(workerCount, deadline);
+  if (!scheduler) {
+    console.log(`Skipping OCR of ${needsOcr.length} card(s): worker startup timed out`);
+    return 0;
+  }
   let ocrRan = 0;
 
   try {
@@ -275,9 +279,25 @@ async function runOcr(entries: CardEntry[], needsOcr: number[], deadline: number
   return ocrRan;
 }
 
-async function createOcrScheduler(workerCount: number) {
+async function createOcrScheduler(workerCount: number, deadline: number) {
   const scheduler = createScheduler();
-  const workers = await Promise.all(Array.from({ length: workerCount }, () => createWorker('eng')));
+  const remaining = deadline - Date.now() - WRITE_RESERVE_MS;
+  if (remaining <= 0) return null;
+
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const workers = await Promise.race([
+    Promise.all(Array.from({ length: workerCount }, () => createWorker('eng'))),
+    new Promise<null>((resolve) => {
+      timeoutHandle = setTimeout(() => resolve(null), remaining);
+    }),
+  ]);
+  if (timeoutHandle) clearTimeout(timeoutHandle);
+
+  if (!workers) {
+    await scheduler.terminate();
+    return null;
+  }
+
   for (const w of workers) {
     scheduler.addWorker(w);
   }
