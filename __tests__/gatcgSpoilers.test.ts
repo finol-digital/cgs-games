@@ -1,5 +1,6 @@
 import { buildSpoilerData } from '@/lib/gatcgSpoilers';
 import { getCachedOcrResults, setCachedOcrResults } from '@/lib/firebase/admin';
+import { createWorker } from 'tesseract.js';
 
 jest.mock('@/lib/firebase/admin', () => ({
   getCachedOcrResults: jest.fn(),
@@ -31,6 +32,7 @@ jest.mock('sharp', () =>
 
 const getCachedOcrResultsMock = getCachedOcrResults as jest.Mock;
 const setCachedOcrResultsMock = setCachedOcrResults as jest.Mock;
+const createWorkerMock = createWorker as jest.Mock;
 
 const spoiler = (id: number, name: string) => ({
   id,
@@ -246,6 +248,61 @@ describe('buildSpoilerData', () => {
     expect(recognizeMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ cardCount: 2, ocrHits: 0, ocrRan: 0, ocrPending: 2 });
     expect(result.data.data.every((entry) => entry.effect_raw === '')).toBe(true);
+  });
+
+  it('terminates workers that resolve after startup times out', async () => {
+    jest.useFakeTimers();
+    const lateWorker = { terminate: jest.fn(async () => undefined) };
+    let resolveLateWorker = (worker: typeof lateWorker) => {
+      void worker;
+    };
+    try {
+      jest.setSystemTime(new Date('2026-09-10T00:00:00.000Z'));
+      mockUpstream([spoiler(1, 'One'), spoiler(2, 'Two')]);
+      getCachedOcrResultsMock.mockResolvedValue(new Map());
+      const earlyWorker = { terminate: jest.fn(async () => undefined) };
+
+      createWorkerMock
+        .mockImplementationOnce(async () => earlyWorker)
+        .mockImplementationOnce(
+          () =>
+            new Promise<typeof lateWorker>((resolve) => {
+              resolveLateWorker = resolve;
+            }),
+        );
+
+      const resultPromise = buildSpoilerData({ deadline: Date.now() + 30_000 });
+      await jest.advanceTimersByTimeAsync(0);
+      expect(createWorkerMock).toHaveBeenCalledTimes(2);
+      await jest.advanceTimersByTimeAsync(28_000);
+
+      const result = await resultPromise;
+      expect(result).toMatchObject({ ocrRan: 0, ocrPending: 2 });
+      expect(earlyWorker.terminate).toHaveBeenCalledTimes(1);
+      expect(lateWorker.terminate).not.toHaveBeenCalled();
+
+      resolveLateWorker(lateWorker);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(lateWorker.terminate).toHaveBeenCalledTimes(1);
+    } finally {
+      resolveLateWorker(lateWorker);
+      await jest.advanceTimersByTimeAsync(0);
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not create a startup timeout for unbounded deadlines', async () => {
+    mockUpstream([spoiler(1, 'One')]);
+    getCachedOcrResultsMock.mockResolvedValue(new Map());
+    const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
+
+    const result = await buildSpoilerData({ refreshOcr: true });
+
+    expect(result).toMatchObject({ ocrRan: 1, ocrPending: 0 });
+    expect(setTimeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), Number.POSITIVE_INFINITY);
+    setTimeoutSpy.mockRestore();
   });
 
   it('caches failed OCR so it is not retried on every request', async () => {

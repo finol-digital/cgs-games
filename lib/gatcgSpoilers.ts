@@ -235,7 +235,11 @@ async function runOcr(entries: CardEntry[], needsOcr: number[], deadline: number
   }
 
   const workerCount = Math.min(MAX_OCR_WORKERS, needsOcr.length);
-  const scheduler = await createOcrScheduler(workerCount);
+  const scheduler = await createOcrScheduler(workerCount, deadline);
+  if (!scheduler) {
+    console.log(`Skipping OCR of ${needsOcr.length} card(s): worker startup timed out`);
+    return 0;
+  }
   let ocrRan = 0;
 
   try {
@@ -275,9 +279,52 @@ async function runOcr(entries: CardEntry[], needsOcr: number[], deadline: number
   return ocrRan;
 }
 
-async function createOcrScheduler(workerCount: number) {
+async function createOcrScheduler(workerCount: number, deadline: number) {
+  const remaining = deadline - Date.now() - WRITE_RESERVE_MS;
+  if (Number.isFinite(remaining) && remaining <= 0) return null;
+
   const scheduler = createScheduler();
-  const workers = await Promise.all(Array.from({ length: workerCount }, () => createWorker('eng')));
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  let startupTimedOut = false;
+  const startedWorkers: Awaited<ReturnType<typeof createWorker>>[] = [];
+  const workerPromises = Array.from({ length: workerCount }, async () => {
+    const worker = await createWorker('eng');
+    if (startupTimedOut) {
+      await worker.terminate();
+    } else {
+      startedWorkers.push(worker);
+    }
+    return worker;
+  });
+  const allWorkers = Promise.all(workerPromises);
+  const stopStartedWorkers = async () => {
+    startupTimedOut = true;
+    await Promise.allSettled(startedWorkers.map((worker) => worker.terminate()));
+    void Promise.allSettled(workerPromises);
+    await scheduler.terminate();
+  };
+  let workers: Awaited<typeof allWorkers> | null;
+  try {
+    workers = Number.isFinite(remaining)
+      ? await Promise.race([
+          allWorkers,
+          new Promise<null>((resolve) => {
+            timeoutHandle = setTimeout(() => resolve(null), remaining);
+          }),
+        ])
+      : await allWorkers;
+  } catch (error) {
+    await stopStartedWorkers();
+    throw error;
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
+
+  if (!workers) {
+    await stopStartedWorkers();
+    return null;
+  }
+
   for (const w of workers) {
     scheduler.addWorker(w);
   }
