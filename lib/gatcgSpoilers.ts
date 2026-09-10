@@ -280,20 +280,37 @@ async function runOcr(entries: CardEntry[], needsOcr: number[], deadline: number
 }
 
 async function createOcrScheduler(workerCount: number, deadline: number) {
-  const scheduler = createScheduler();
   const remaining = deadline - Date.now() - WRITE_RESERVE_MS;
-  if (remaining <= 0) return null;
+  if (Number.isFinite(remaining) && remaining <= 0) return null;
 
+  const scheduler = createScheduler();
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-  const workers = await Promise.race([
-    Promise.all(Array.from({ length: workerCount }, () => createWorker('eng'))),
-    new Promise<null>((resolve) => {
-      timeoutHandle = setTimeout(() => resolve(null), remaining);
-    }),
-  ]);
+  let startupTimedOut = false;
+  const startedWorkers: Awaited<ReturnType<typeof createWorker>>[] = [];
+  const workerPromises = Array.from({ length: workerCount }, async () => {
+    const worker = await createWorker('eng');
+    if (startupTimedOut) {
+      await worker.terminate();
+    } else {
+      startedWorkers.push(worker);
+    }
+    return worker;
+  });
+  const allWorkers = Promise.all(workerPromises);
+  const workers = Number.isFinite(remaining)
+    ? await Promise.race([
+        allWorkers,
+        new Promise<null>((resolve) => {
+          timeoutHandle = setTimeout(() => resolve(null), remaining);
+        }),
+      ])
+    : await allWorkers;
   if (timeoutHandle) clearTimeout(timeoutHandle);
 
   if (!workers) {
+    startupTimedOut = true;
+    await Promise.allSettled(startedWorkers.map((worker) => worker.terminate()));
+    void Promise.allSettled(workerPromises);
     await scheduler.terminate();
     return null;
   }
