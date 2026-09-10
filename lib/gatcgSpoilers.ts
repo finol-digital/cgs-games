@@ -297,21 +297,31 @@ async function createOcrScheduler(workerCount: number, deadline: number) {
     return worker;
   });
   const allWorkers = Promise.all(workerPromises);
-  const workers = Number.isFinite(remaining)
-    ? await Promise.race([
-        allWorkers,
-        new Promise<null>((resolve) => {
-          timeoutHandle = setTimeout(() => resolve(null), remaining);
-        }),
-      ])
-    : await allWorkers;
-  if (timeoutHandle) clearTimeout(timeoutHandle);
-
-  if (!workers) {
+  const stopStartedWorkers = async () => {
     startupTimedOut = true;
     await Promise.allSettled(startedWorkers.map((worker) => worker.terminate()));
     void Promise.allSettled(workerPromises);
     await scheduler.terminate();
+  };
+  let workers: Awaited<typeof allWorkers> | null;
+  try {
+    workers = Number.isFinite(remaining)
+      ? await Promise.race([
+          allWorkers,
+          new Promise<null>((resolve) => {
+            timeoutHandle = setTimeout(() => resolve(null), remaining);
+          }),
+        ])
+      : await allWorkers;
+  } catch (error) {
+    await stopStartedWorkers();
+    throw error;
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
+
+  if (!workers) {
+    await stopStartedWorkers();
     return null;
   }
 
