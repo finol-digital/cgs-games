@@ -2,6 +2,9 @@
   "name": "cgs-games",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -9,6 +12,7 @@
     "lint": "eslint . --config eslint.config.mjs",
     "format": "prettier --config .prettierrc.json --ignore-path .gitignore --write .",
     "test": "jest",
+    "typecheck": "next typegen && tsc --noEmit",
     "postinstall": "patch-package"
   },
   "dependencies": {
