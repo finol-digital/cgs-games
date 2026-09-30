@@ -1,12 +1,13 @@
 import { getAllGames, getGame, getGames, getGamesFor, userDoc } from '@/lib/firebase/firestore';
-import { db } from '@/lib/firebase/firebase';
+import { db } from '@/lib/firebase/firestore';
 import { collection, doc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 
 jest.mock('@/lib/firebase/firebase', () => ({
-  db: { name: 'mockDb' },
+  firebaseApp: { name: 'mockApp' },
 }));
 
 jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(() => ({ name: 'mockDb' })),
   collection: jest.fn(),
   doc: jest.fn(),
   getDocs: jest.fn(),

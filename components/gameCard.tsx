@@ -19,7 +19,13 @@ import {
   CardTitle,
 } from './ui/card';
 
-export default function GameCard({ game, canDelete }: { game: Game; canDelete: boolean }) {
+interface GameCardProps {
+  game: Game;
+  canDelete: boolean;
+  priority?: boolean;
+}
+
+export default function GameCard({ game, canDelete, priority = false }: GameCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { username } = useContext(UserContext);
 
@@ -84,7 +90,13 @@ export default function GameCard({ game, canDelete }: { game: Game; canDelete: b
         </CardDescription>
       </CardHeader>
       <CardContent className="flex items-center justify-center">
-        <Banner home={`/${game.username}/${game.slug}`} img={game.bannerImageUrl} txt={game.name} />
+        <Banner
+          home={`/${game.username}/${game.slug}`}
+          img={game.bannerImageUrl}
+          txt={game.name}
+          priority={priority}
+          sizes="(max-width: 800px) calc(100vw - 88px), 712px"
+        />
       </CardContent>
       <CardFooter className="flex items-center justify-center">
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}

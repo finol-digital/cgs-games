@@ -20,7 +20,7 @@ export default function Footer({ copyrightNotice }: { copyrightNotice?: string }
             Browse
           </Link>{' '}
           |{' '}
-          <Link href="/upload" className="brownlink">
+          <Link href="/upload" prefetch={false} className="brownlink">
             Upload
           </Link>
         </p>

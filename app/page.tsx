@@ -26,8 +26,12 @@ export default async function Page() {
           >
             create
           </Link>{' '}
-          and <Link href="/upload">upload</Link> your own custom card games, or{' '}
-          <Link href="/browse">browse</Link> games uploaded by others:
+          and{' '}
+          <Link href="/upload" prefetch={false}>
+            upload
+          </Link>{' '}
+          your own custom card games, or <Link href="/browse">browse</Link> games uploaded by
+          others:
         </p>
         <GamesDeck games={latestGames} />
         <p className="text-center my-4">

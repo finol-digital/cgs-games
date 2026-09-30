@@ -21,7 +21,7 @@ export default function Header() {
             username ? (
               <UserMenu username={username} />
             ) : (
-              <Link href="/upload" className="brownlink">
+              <Link href="/upload" prefetch={false} className="brownlink">
                 Upload Username
               </Link>
             )
