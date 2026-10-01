@@ -147,4 +147,19 @@ describe('page negotiation and missing routes', () => {
       hint: expect.any(String),
     });
   });
+
+  it.each([
+    ['/api/games/upload', 'POST'],
+    ['/api/games', 'POST'],
+    ['/api/no-such-endpoint', 'GET'],
+    ['/api/games/upload', 'GET'],
+  ])(
+    'adds CORS headers to actual %s %s responses, including early errors',
+    async (path, method) => {
+      const apiRequest = request(path, 'application/json', method);
+      apiRequest.headers.set('Origin', 'https://cgs.gg');
+      const response = await proxy(apiRequest);
+      expect(response.headers.get('access-control-allow-origin')).toBe('*');
+    },
+  );
 });

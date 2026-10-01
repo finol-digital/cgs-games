@@ -33,12 +33,20 @@ async function forward(request: Request, method: 'GET' | 'POST') {
     if (!response.ok) {
       await response.body?.cancel();
       const status = response.status >= 400 ? response.status : 502;
-      return apiError('The upstream resource returned an error', status, {
-        ...corsHeaders,
-        ...(response.headers.has('retry-after')
-          ? { 'Retry-After': response.headers.get('retry-after')! }
-          : {}),
-      });
+      return apiError(
+        'The upstream resource returned an error',
+        status,
+        {
+          ...corsHeaders,
+          ...(response.headers.has('retry-after')
+            ? { 'Retry-After': response.headers.get('retry-after')! }
+            : {}),
+        },
+        {
+          code: 'UPSTREAM_ERROR',
+          hint: 'Check access to the upstream resource or try again later; authenticating to this proxy does not authenticate upstream.',
+        },
+      );
     }
     if (method === 'POST') return response;
     return new NextResponse(response.body, {

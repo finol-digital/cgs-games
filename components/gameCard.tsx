@@ -54,7 +54,14 @@ export default function GameCard({ game, canDelete, priority = false }: GameCard
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
+        let errorText = await response.text();
+        try {
+          const errorBody = JSON.parse(errorText);
+          errorText =
+            typeof errorBody?.error === 'string' ? errorBody.error : 'Failed to delete game';
+        } catch {
+          // Keep compatibility with older servers that return a plain-text error.
+        }
         throw new Error(errorText || 'Failed to delete game');
       }
 

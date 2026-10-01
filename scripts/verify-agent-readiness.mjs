@@ -20,7 +20,11 @@ async function check(
 ) {
   const response = await fetch(new URL(path, origin), {
     method,
-    headers: { Accept: accept, ...headers },
+    headers: {
+      Accept: accept,
+      ...(path.startsWith('/api') ? { Origin: 'https://cgs.gg' } : {}),
+      ...headers,
+    },
     body,
     signal: AbortSignal.timeout(60000),
     redirect,
@@ -29,6 +33,14 @@ async function check(
   assert.equal(response.status, status, `${method} ${path}: ${text.slice(0, 120)}`);
   if (type)
     assert.ok(response.headers.get('content-type')?.startsWith(type), `${path}: Content-Type`);
+  if (path.startsWith('/api')) {
+    assert.ok(
+      ['*', headers.Origin || 'https://cgs.gg'].includes(
+        response.headers.get('access-control-allow-origin'),
+      ),
+      `${path}: actual response CORS`,
+    );
+  }
   checks++;
   console.log(`PASS ${method} ${path} [${accept}] -> ${response.status}`);
   return { response, text };
@@ -136,7 +148,12 @@ for (const [path, operations] of Object.entries(spec.paths)) {
   const concrete = path
     .replace('{id}', 'agent-readiness-no-write')
     .replace('{url}', 'example.com/resource');
-  for (const method of ['get', 'post', 'delete'].filter((method) => method in operations)) {
+  if ('head' in operations) {
+    const headPath = path.includes('{url}') ? '/api/proxy/cgs.games/robots.txt' : concrete;
+    const result = await check(headPath, { method: 'HEAD' });
+    assert.equal(result.text, '');
+  }
+  for (const method of ['get', 'head', 'post', 'delete'].filter((method) => method in operations)) {
     const requestingOrigin = 'https://cgs.gg';
     const requestedHeaders = ['content-type', 'authorization'];
     const result = await check(concrete, {

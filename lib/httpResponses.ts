@@ -15,10 +15,15 @@ const errors: Record<number, [string, string]> = {
 };
 
 /** Keep the legacy error string for existing clients, with stable machine-readable fields. */
-export function apiError(message: string, status: number, headers?: Record<string, string>) {
+export function apiError(
+  message: string,
+  status: number,
+  headers?: Record<string, string>,
+  details?: { code: string; hint: string },
+) {
   const [code, hint] = errors[status] ?? errors[500];
   return NextResponse.json(
-    { error: message, code, message, hint },
+    { error: message, code: details?.code ?? code, message, hint: details?.hint ?? hint },
     {
       status,
       headers: { 'Cache-Control': 'no-store', ...Object.fromEntries(new Headers(headers)) },

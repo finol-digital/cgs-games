@@ -19,23 +19,26 @@ function missingPage(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (path === '/api' || path.startsWith('/api/')) {
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
     const methods = apiMethods(path);
-    if (!methods) return apiError('API endpoint not found', 404);
+    if (!methods) return apiError('API endpoint not found', 404, corsHeaders);
+    const responseHeaders = { ...corsHeaders, 'Access-Control-Allow-Methods': methods.join(', ') };
     if (!methods.includes(request.method)) {
-      return apiError('Method not allowed', 405, { Allow: methods.join(', ') });
+      return apiError('Method not allowed', 405, { ...responseHeaders, Allow: methods.join(', ') });
     }
     if (request.method === 'OPTIONS') {
       return new NextResponse(null, {
         status: 204,
         headers: {
           Allow: methods.join(', '),
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': methods.join(', '),
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          ...responseHeaders,
         },
       });
     }
-    return NextResponse.next();
+    return NextResponse.next({ headers: responseHeaders });
   }
   if (!['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
   if (path === '/') {

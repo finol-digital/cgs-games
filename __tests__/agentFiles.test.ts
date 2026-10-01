@@ -34,7 +34,7 @@ describe('published agent files', () => {
       const methods = apiMethods(
         route.replaceAll('{id}', 'test-id').replaceAll('{url}', 'example.com/test'),
       );
-      for (const method of methods!.filter((method) => !['HEAD', 'OPTIONS'].includes(method))) {
+      for (const method of methods!) {
         expect(spec.paths[route as keyof typeof spec.paths]).toHaveProperty(method.toLowerCase());
       }
     }

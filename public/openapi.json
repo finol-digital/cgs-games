@@ -192,6 +192,97 @@
             }
           }
         }
+      },
+      "head": {
+        "operationId": "listGamesHeaders",
+        "summary": "Read headers for list the newest games",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapigames",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD", "POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
       }
     },
     "/api/browse": {
@@ -248,6 +339,97 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "browseGamesHeaders",
+        "summary": "Read headers for legacy alias for the game catalog",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapibrowse",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
               }
             }
           }
@@ -361,6 +543,70 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapigamesid",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["DELETE"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "DELETE, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "DELETE, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
               }
             }
           }
@@ -512,6 +758,70 @@
             }
           }
         }
+      },
+      "options": {
+        "operationId": "optionsapigamesupload",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
       }
     },
     "/api/gatcg_spoilers": {
@@ -653,6 +963,162 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "getGrandArchiveSpoilersHeaders",
+        "summary": "Read headers for read cached grand archive spoiler card data",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "security": [
+          {},
+          {
+            "warmToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warm",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Operator-only cache rebuild; requires the warmToken security scheme in production."
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Re-run OCR from scratch. Only applies with warm=1."
+          },
+          {
+            "name": "nocache",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Operator-only assembled cache bypass, preserving the OCR cache. Ignored without operator authorization."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoiler cards in a data array. Pending OCR may leave effect_raw empty.",
+            "headers": {
+              "X-Cache": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["hit", "miss", "warm", "stale"]
+                },
+                "description": "Cache result."
+              },
+              "X-Ocr-Pending": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "Cards awaiting OCR."
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapigatcgspoilers",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
               }
             }
           }
@@ -801,6 +1267,100 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "proxyGetHeaders",
+        "summary": "Read headers for fetch an upstream https resource",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Upstream body and Content-Type; may be JSON, an image, or other content."
+          },
+          "400": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapiproxyurl",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD", "POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
               }
             }
           }

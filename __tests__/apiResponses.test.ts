@@ -263,4 +263,19 @@ describe('API response contract', () => {
       expect((await response.json()).code).toBe('UPSTREAM_ERROR');
     },
   );
+
+  it.each([401, 403, 404, 429, 500])(
+    'keeps upstream %i distinct from local API errors',
+    async (status) => {
+      global.fetch = jest.fn().mockResolvedValue(new Response(null, { status }));
+      const response = await proxyGet(
+        new NextRequest('https://cgs.games/api/proxy/example.com/resource'),
+      );
+      expect(response.status).toBe(status);
+      const body = await response.json();
+      expect(body.code).toBe('UPSTREAM_ERROR');
+      expect(body.hint).toContain('upstream resource');
+      expect(body.hint).not.toContain('Provide a valid Bearer token');
+    },
+  );
 });
