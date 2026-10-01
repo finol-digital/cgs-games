@@ -12,6 +12,7 @@
     "lint": "eslint . --config eslint.config.mjs",
     "format": "prettier --config .prettierrc.json --ignore-path .gitignore --write .",
     "test": "jest",
+    "verify:agents": "node scripts/verify-agent-readiness.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "postinstall": "patch-package"
   },
@@ -38,6 +39,7 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.1.0",
     "@eslint/eslintrc": "3.3.6",
     "@eslint/js": "^9.39.4",
     "@tailwindcss/postcss": "^4.3.1",

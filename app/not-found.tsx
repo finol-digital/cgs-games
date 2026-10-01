@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <>
       <main className="main-container">
-        <h2>Not Found</h2>
+        <h1>Not Found</h1>
         <p>Could not find requested resource</p>
         <Link href="/">Return Home</Link>
       </main>

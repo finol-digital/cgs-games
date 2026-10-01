@@ -1,51 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiError } from '@/lib/httpResponses';
 
-const stripTrailingSlash = (str: string) => {
-  return str.endsWith('/') ? str.slice(0, -1) : str;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-export async function GET(request: NextRequest) {
-  const proxyPrefix = '/api/proxy/';
-  const rawPath = new URL(request.url).pathname.substring(proxyPrefix.length);
-  let uri = stripTrailingSlash('https://' + rawPath);
-  if (request.nextUrl.searchParams.size > 0) {
-    uri = uri + '?' + request.nextUrl.searchParams.toString();
+async function forward(request: Request, method: 'GET' | 'POST') {
+  let url: URL;
+  try {
+    const incoming = new URL(request.url);
+    const rawPath = incoming.pathname.substring('/api/proxy/'.length).replace(/\/$/, '');
+    url = new URL('https://' + rawPath);
+    // Preserve the existing GET query forwarding and POST JSON behavior.
+    if (method === 'GET') url.search = incoming.search;
+  } catch {
+    return apiError('Invalid proxy URL', 400, corsHeaders);
   }
-  const url = new URL(uri);
-  console.log('Request /api/proxy GET ' + url);
-  const response = await fetch(url);
-  return new NextResponse(response.body, {
-    status: response.status,
-    headers: {
-      'Content-Type': response.headers.get('content-type') ?? 'application/octet-stream',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+  try {
+    const response = await fetch(
+      url,
+      method === 'POST'
+        ? {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: await request.text(),
+          }
+        : undefined,
+    );
+    if (!response.ok) {
+      await response.body?.cancel();
+      return apiError('The upstream resource returned an error', response.status, {
+        ...corsHeaders,
+        ...(response.headers.has('retry-after')
+          ? { 'Retry-After': response.headers.get('retry-after')! }
+          : {}),
+      });
+    }
+    if (method === 'POST') return response;
+    return new NextResponse(response.body, {
+      status: response.status,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': response.headers.get('content-type') ?? 'application/octet-stream',
+      },
+    });
+  } catch (error) {
+    console.error('Proxy request failed:', error);
+    return apiError('Failed to fetch the upstream resource', 502, corsHeaders);
+  }
 }
 
-async function streamToString(stream: any) {
-  const chunks = [];
-  for await (const chunk of stream) {
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks).toString('utf8');
+export async function GET(request: NextRequest) {
+  return forward(request, 'GET');
 }
 
 export async function POST(request: Request) {
-  const proxyPrefix = '/api/proxy/';
-  const rawPath = new URL(request.url).pathname.substring(proxyPrefix.length);
-  let uri = stripTrailingSlash('https://' + rawPath);
-  const url = new URL(uri);
-  const requestJson = await streamToString(request.body);
-  console.log('Request /api/proxy POST ' + url) + ' ' + requestJson;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: requestJson,
-  });
-  return response;
+  return forward(request, 'POST');
 }

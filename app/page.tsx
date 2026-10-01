@@ -2,6 +2,7 @@ import Footer from '@/components/footer';
 import GamesDeck from '@/components/gamesDeck';
 import { adminGetGames } from '@/lib/firebase/admin';
 import Link from 'next/link';
+import { homepageParagraphs } from '@/lib/siteContent';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,11 @@ export default async function Page() {
         <p className="text-center my-4">
           <Link href="/browse">Browse All Games</Link>
         </p>
+        {homepageParagraphs.map((paragraph) => (
+          <p key={paragraph} className="text-center my-2">
+            {paragraph}
+          </p>
+        ))}
       </main>
       <Footer />
     </>

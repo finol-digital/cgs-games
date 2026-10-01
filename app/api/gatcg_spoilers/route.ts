@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/httpResponses';
 
 import {
   getCachedSpoilerPayload,
@@ -64,7 +65,7 @@ export async function GET(request: Request) {
   const noCache = requestUrl.searchParams.get('nocache') === '1' && authorized;
 
   if (warm && !authorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+    return apiError('Unauthorized', 401, corsHeaders);
   }
 
   // Warm runs are authorized and deliberately long; don't rate limit them.
@@ -74,19 +75,13 @@ export async function GET(request: Request) {
 
     if (!rateLimitResult.allowed) {
       const retryAfter = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000);
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        {
-          status: 429,
-          headers: {
-            ...corsHeaders,
-            'Retry-After': retryAfter.toString(),
-            'X-RateLimit-Limit': RATE_LIMIT.maxRequests.toString(),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
-          },
-        },
-      );
+      return apiError('Too many requests. Please try again later.', 429, {
+        ...corsHeaders,
+        'Retry-After': retryAfter.toString(),
+        'X-RateLimit-Limit': RATE_LIMIT.maxRequests.toString(),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
+      });
     }
 
     rateLimitHeaders = {
@@ -145,10 +140,7 @@ export async function GET(request: Request) {
       });
     }
 
-    return NextResponse.json(
-      { error: 'Failed to fetch spoiler data' },
-      { status: 502, headers: { ...corsHeaders, ...rateLimitHeaders } },
-    );
+    return apiError('Failed to fetch spoiler data', 502, { ...corsHeaders, ...rateLimitHeaders });
   }
 }
 

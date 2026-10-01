@@ -1,6 +1,6 @@
 import Footer from '@/components/footer';
 import GamesDeck from '@/components/gamesDeck';
-import { adminGetGamesFor } from '@/lib/firebase/admin';
+import { adminCreatorExists, adminGetGamesFor } from '@/lib/firebase/admin';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -23,7 +23,7 @@ export async function generateMetadata(props: {
 export default async function Page(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
   const games = await adminGetGamesFor(params.username);
-  if (!games) return notFound();
+  if (games.length === 0 && !(await adminCreatorExists(params.username))) return notFound();
   return (
     <>
       <main className="main-content">

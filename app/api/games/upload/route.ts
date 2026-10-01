@@ -15,6 +15,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import JSZip from 'jszip';
 import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/httpResponses';
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const STAGED_UPLOAD_PREFIX = 'staged-uploads';
 
@@ -34,7 +35,7 @@ interface ProcessZipUploadInput extends AuthenticatedUser {
 }
 
 function jsonError(error: string, status: number) {
-  return NextResponse.json({ error }, { status });
+  return apiError(error, status);
 }
 
 function isStagedUploadRequest(body: unknown): body is StagedUploadRequest {
@@ -354,7 +355,12 @@ export async function POST(request: Request) {
 
     const contentType = request.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
-      const body = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return jsonError('Request body must be valid JSON', 400);
+      }
       if (!isStagedUploadRequest(body)) {
         return jsonError('Missing staged upload path', 400);
       }
@@ -363,19 +369,19 @@ export async function POST(request: Request) {
         return jsonError('Invalid staged upload request', 400);
       }
 
-      return processStagedUpload({
+      return await processStagedUpload({
         ...authenticatedUser,
         stagedPath: body.stagedPath,
         originalFilename: body.originalFilename,
       });
     }
 
-    return processMultipartUpload(request, authenticatedUser);
+    return await processMultipartUpload(request, authenticatedUser);
   } catch (error: unknown) {
     console.error('Error uploading game zip:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json({ error: 'Failed to process game upload' }, { status: 500 });
+    return jsonError('Failed to process game upload', 500);
   }
 }

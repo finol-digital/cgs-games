@@ -1,6 +1,6 @@
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/httpResponses';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 function corsResponse(message: string, status: number) {
+  if (status >= 400) return apiError(message, status, corsHeaders);
   return new NextResponse(message, {
     status,
     headers: corsHeaders,
@@ -26,8 +27,7 @@ export async function OPTIONS() {
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Get the ID token from the Authorization header
-    const headersList = await headers();
-    const authHeader = headersList.get('Authorization');
+    const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return corsResponse('Unauthorized - No token provided', 401);
     }
@@ -35,7 +35,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const idToken = authHeader.split('Bearer ')[1];
 
     // Verify the ID token
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch {
+      return corsResponse('Unauthorized - Invalid token', 401);
+    }
     if (!decodedToken) {
       return corsResponse('Unauthorized - Invalid token', 401);
     }
