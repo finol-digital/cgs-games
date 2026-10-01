@@ -10,6 +10,7 @@ jest.mock('@/lib/firebase/admin', () => ({
   adminGetGame: jest.fn(),
 }));
 
+/** Builds a page or API request without contacting a server. */
 const request = (path: string, accept = 'text/html', method = 'GET') =>
   new NextRequest('https://cgs.games' + path, { method, headers: { accept } });
 
@@ -75,6 +76,17 @@ describe('page negotiation and missing routes', () => {
     expect(response.headers.get('x-middleware-rewrite')).toBe('https://cgs.games/404');
   });
 
+  it.each(['text/html', 'text/markdown'])(
+    'returns 404 for malformed encoding with %s',
+    async (accept) => {
+      const response = await proxy(request('/%E0%A4%A', accept));
+      expect(response.status).toBe(404);
+      expect(response.headers.has('retry-after')).toBe(false);
+      expect(adminCreatorExists).not.toHaveBeenCalled();
+      expect(adminGetGame).not.toHaveBeenCalled();
+    },
+  );
+
   it('preserves existing creators, games, and static resources', async () => {
     jest.mocked(adminCreatorExists).mockResolvedValue(true);
     jest
@@ -108,9 +120,17 @@ describe('page negotiation and missing routes', () => {
     expect(response.status).toBe(405);
     expect(response.headers.get('allow')).toBe('POST, OPTIONS');
     expect((await response.json()).code).toBe('METHOD_NOT_ALLOWED');
-    const preflight = await proxy(request('/api/games/upload', '*/*', 'OPTIONS'));
+    const preflightRequest = request('/api/games/upload', '*/*', 'OPTIONS');
+    preflightRequest.headers.set('Origin', 'https://cgs.gg');
+    preflightRequest.headers.set('Access-Control-Request-Method', 'POST');
+    preflightRequest.headers.set('Access-Control-Request-Headers', 'Content-Type, Authorization');
+    const preflight = await proxy(preflightRequest);
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS');
+    expect(preflight.headers.get('access-control-allow-origin')).toBe('*');
+    expect(preflight.headers.get('access-control-allow-headers')).toBe(
+      'Content-Type, Authorization',
+    );
   });
 
   it('retains error strings, CORS and retry headers with machine-readable fields', async () => {

@@ -26,6 +26,13 @@ Built with Next.js and Firebase.
 
 `.cgs.zip` uploads support files up to 100 MB. The browser stages zip files directly in Firebase Storage under `staged-uploads/{uid}/...`, then the upload API processes the staged object and publishes game assets under `games/{uid}/{slug}/...`.
 
+URL-based imports accept public HTTPS URLs on port 443 without embedded credentials.
+Each redirect is checked again, and connections are pinned to a validated public IP
+while retaining the original hostname for TLS verification. Private, loopback,
+link-local, reserved and IPv6 transition destinations are rejected. Imports allow
+at most five redirects and a 16 MiB specification body, with a 30-second request
+deadline.
+
 ## Agent access and verification
 
 The homepage supports `Accept: text/markdown` and `Accept: text/html`, including

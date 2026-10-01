@@ -35,6 +35,7 @@ export function negotiatePage(accept: string | null): 'html' | 'markdown' | null
     const q = /^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(value) ? Number(value) : 0;
     return { type: type.trim(), q };
   });
+  /** Resolves quality using the most specific media range that matches the representation. */
   function qualityFor(type: string) {
     for (const match of [type, 'text/*', '*/*']) {
       const matches = ranges.filter((range) => range.type === match);
@@ -49,6 +50,7 @@ export function negotiatePage(accept: string | null): 'html' | 'markdown' | null
   return markdown > html ? 'markdown' : 'html';
 }
 
+/** Returns uncached UTF-8 Markdown with the negotiation header and requested status. */
 export function markdownResponse(body: string, status = 200) {
   return new NextResponse(body, {
     status,

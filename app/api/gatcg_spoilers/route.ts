@@ -42,7 +42,7 @@ const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-// Handle OPTIONS request for CORS preflight
+/** Advertises the public spoiler read method and operator authorization header. */
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -50,6 +50,7 @@ export async function OPTIONS() {
   });
 }
 
+/** Serves cached spoilers or performs an authorized, rate-limited and bounded rebuild. */
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
 
@@ -153,6 +154,7 @@ function freshnessLimitFor(cached: CachedSpoilerPayload): number {
   return cached.pendingOcrCount > 0 ? PARTIAL_PAYLOAD_FRESH_MS : PAYLOAD_FRESH_MS;
 }
 
+/** Returns serialized spoiler data with freshness, OCR progress and rate-limit headers. */
 function respond(
   payload: string,
   options: {

@@ -15,6 +15,12 @@ import {
 } from '@/lib/firebase/admin';
 import { buildSpoilerData } from '@/lib/gatcgSpoilers';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { fetchGameSpecification, UnsafeGameUrlError } from '@/lib/fetchGameSpecification';
+
+jest.mock('@/lib/fetchGameSpecification', () => ({
+  fetchGameSpecification: jest.fn(),
+  UnsafeGameUrlError: class extends Error {},
+}));
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: { verifyIdToken: jest.fn() },
@@ -35,6 +41,7 @@ const originalFetch = global.fetch;
 let errorLog: jest.SpyInstance;
 let infoLog: jest.SpyInstance;
 
+/** Builds a JSON API request with an optional bearer token. */
 const makeRequest = (path: string, body?: string, token?: string) =>
   new Request('https://cgs.games' + path, {
     method: 'POST',
@@ -44,6 +51,7 @@ const makeRequest = (path: string, body?: string, token?: string) =>
     },
     body,
   });
+/** Asserts the backwards-compatible error envelope and its HTTP status. */
 async function expectError(response: Response, status: number) {
   expect(response.status).toBe(status);
   expect(response.headers.get('content-type')).toContain('application/json');
@@ -111,22 +119,26 @@ describe('API response contract', () => {
     await expectError(await publish(request()), 404);
     documentGet.mockResolvedValueOnce({ exists: true, data: () => ({}) });
     await expectError(await publish(request()), 400);
-    global.fetch = jest.fn().mockResolvedValue(new Response('', { status: 404 }));
+    jest.mocked(fetchGameSpecification).mockResolvedValue(new Response('', { status: 404 }));
     await expectError(await publish(request()), 502);
-    global.fetch = jest
-      .fn()
+    jest
+      .mocked(fetchGameSpecification)
       .mockResolvedValue(
         Response.json({ name: 'Test', bannerImageUrl: 'http://invalid.example/image.png' }),
       );
     await expectError(await publish(request()), 400);
-    global.fetch = jest.fn().mockRejectedValue(new Error('internal secret'));
+    jest.mocked(fetchGameSpecification).mockRejectedValue(new Error('internal secret'));
     const failed = await publish(request());
     expect(await failed.clone().text()).not.toContain('internal secret');
-    await expectError(failed, 500);
+    await expectError(failed, 502);
+    jest
+      .mocked(fetchGameSpecification)
+      .mockRejectedValue(new UnsafeGameUrlError('Public HTTPS required'));
+    await expectError(await publish(request()), 400);
   });
 
   it('preserves the publish success response', async () => {
-    global.fetch = jest.fn().mockResolvedValue(Response.json({ name: 'Test Game' }));
+    jest.mocked(fetchGameSpecification).mockResolvedValue(Response.json({ name: 'Test Game' }));
     const result = await publish(
       makeRequest('/api/games', '{"autoUpdateUrl":"https://example.com/cgs.json"}', 'token'),
     );
@@ -235,4 +247,20 @@ describe('API response contract', () => {
     expect(response.headers.get('content-type')).toBe('image/png');
     expect(await response.text()).toBe('image-bytes');
   });
+
+  it.each([300, 304])(
+    'maps an upstream %i to 502 while retaining retry and CORS headers',
+    async (status) => {
+      global.fetch = jest
+        .fn()
+        .mockResolvedValue(new Response(null, { status, headers: { 'Retry-After': '60' } }));
+      const response = await proxyGet(
+        new NextRequest('https://cgs.games/api/proxy/example.com/resource'),
+      );
+      expect(response.status).toBe(502);
+      expect(response.headers.get('retry-after')).toBe('60');
+      expect(response.headers.get('access-control-allow-origin')).toBe('*');
+      expect((await response.json()).code).toBe('UPSTREAM_ERROR');
+    },
+  );
 });

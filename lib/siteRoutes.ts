@@ -1,3 +1,6 @@
+import { stat } from 'node:fs/promises';
+import { resolve, sep } from 'node:path';
+
 // Keep explicit routes ahead of the public /[username] and /[username]/[slug] routes.
 // The route inventory test checks this list against app/ and public/.
 export const staticPaths = new Set([
@@ -35,6 +38,7 @@ export async function isPublicFile(pathname: string): Promise<boolean> {
   }
 }
 
+/** Lists supported methods for a known API URL, or null for an unknown endpoint. */
 export function apiMethods(path: string): string[] | null {
   if (path === '/api/games') return ['GET', 'HEAD', 'POST', 'OPTIONS'];
   if (path === '/api/browse' || path === '/api/gatcg_spoilers') return ['GET', 'HEAD', 'OPTIONS'];
@@ -43,5 +47,3 @@ export function apiMethods(path: string): string[] | null {
   if (/^\/api\/proxy\/.+/.test(path)) return ['GET', 'HEAD', 'POST', 'OPTIONS'];
   return null;
 }
-import { stat } from 'node:fs/promises';
-import { resolve, sep } from 'node:path';

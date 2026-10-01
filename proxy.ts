@@ -3,6 +3,7 @@ import { apiError, markdownResponse, negotiatePage, notFoundMarkdown } from '@/l
 import { homepageMarkdown } from '@/lib/siteContent';
 import { apiMethods, isPublicFile, staticPaths } from '@/lib/siteRoutes';
 
+/** Returns the negotiated 404 representation before React begins streaming. */
 function missingPage(request: NextRequest) {
   if (negotiatePage(request.headers.get('accept')) === 'markdown') {
     return markdownResponse(notFoundMarkdown, 404);
@@ -14,6 +15,7 @@ function missingPage(request: NextRequest) {
   });
 }
 
+/** Negotiates agent content and checks public resources before dispatching to Next.js. */
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (path === '/api' || path.startsWith('/api/')) {
@@ -56,10 +58,16 @@ export async function proxy(request: NextRequest) {
   if (staticPaths.has(path) || (await isPublicFile(path))) return NextResponse.next();
   const segments = path.split('/').filter(Boolean);
   if (segments.length > 2 || path === '/404') return missingPage(request);
+  let decoded: string[];
+  try {
+    decoded = segments.map(decodeURIComponent);
+  } catch {
+    return missingPage(request);
+  }
   try {
     // Load server credentials only for paths that can represent a creator or game.
     const { adminGetGame, adminCreatorExists } = await import('@/lib/firebase/admin');
-    const [username, slug] = segments.map(decodeURIComponent);
+    const [username, slug] = decoded;
     const exists = slug ? await adminGetGame(username, slug) : await adminCreatorExists(username);
     return exists ? NextResponse.next() : missingPage(request);
   } catch (error) {

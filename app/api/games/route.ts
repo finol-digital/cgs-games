@@ -4,7 +4,9 @@ import { FieldValue } from 'firebase-admin/firestore';
 import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
 import { apiError } from '@/lib/httpResponses';
+import { fetchGameSpecification, UnsafeGameUrlError } from '@/lib/fetchGameSpecification';
 
+/** Lists the newest public games and returns a structured error if storage is unavailable. */
 export async function GET() {
   try {
     return NextResponse.json(await adminGetAllGames(), {
@@ -16,6 +18,7 @@ export async function GET() {
   }
 }
 
+/** Authenticates a creator and publishes metadata from a public HTTPS game specification. */
 export async function POST(request: Request) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -54,7 +57,14 @@ export async function POST(request: Request) {
       return apiError('Username not found in user document', 400);
     }
 
-    const response = await fetch(autoUpdateUrl);
+    let response;
+    try {
+      response = await fetchGameSpecification(autoUpdateUrl);
+    } catch (error) {
+      if (error instanceof UnsafeGameUrlError) return apiError(error.message, 400);
+      console.error('Failed to fetch game specification:', error);
+      return apiError('Failed to fetch the game specification', 502);
+    }
     if (!response.ok) return apiError('Failed to fetch the game specification', 502);
     const cardGameSpecification: {
       name: string;

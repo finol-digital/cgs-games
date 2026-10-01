@@ -8,6 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+/** Retains text successes and adds the shared JSON envelope to deletion errors. */
 function corsResponse(message: string, status: number) {
   if (status >= 400) return apiError(message, status, corsHeaders);
   return new NextResponse(message, {
@@ -16,7 +17,7 @@ function corsResponse(message: string, status: number) {
   });
 }
 
-// Handle OPTIONS request for CORS
+/** Advertises deletion methods and bearer-token headers for CORS preflight. */
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -24,6 +25,7 @@ export async function OPTIONS() {
   });
 }
 
+/** Verifies ownership before deleting the game and any associated uploaded assets. */
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Get the ID token from the Authorization header

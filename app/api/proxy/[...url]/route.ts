@@ -7,6 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+/** Forwards an HTTPS request, preserving successes and normalizing upstream failures. */
 async function forward(request: Request, method: 'GET' | 'POST') {
   let url: URL;
   try {
@@ -31,7 +32,8 @@ async function forward(request: Request, method: 'GET' | 'POST') {
     );
     if (!response.ok) {
       await response.body?.cancel();
-      return apiError('The upstream resource returned an error', response.status, {
+      const status = response.status >= 400 ? response.status : 502;
+      return apiError('The upstream resource returned an error', status, {
         ...corsHeaders,
         ...(response.headers.has('retry-after')
           ? { 'Retry-After': response.headers.get('retry-after')! }
@@ -52,10 +54,12 @@ async function forward(request: Request, method: 'GET' | 'POST') {
   }
 }
 
+/** Proxies a public resource with its original media type and GET query parameters. */
 export async function GET(request: NextRequest) {
   return forward(request, 'GET');
 }
 
+/** Forwards a JSON POST body and normalizes unsuccessful upstream responses. */
 export async function POST(request: Request) {
   return forward(request, 'POST');
 }

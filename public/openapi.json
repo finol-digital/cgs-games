@@ -94,7 +94,8 @@
                   "autoUpdateUrl": {
                     "type": "string",
                     "format": "uri",
-                    "description": "URL serving a CGS JSON game specification, including name and optional bannerImageUrl, cardBackImageUrl, and copyright."
+                    "description": "Public HTTPS URL on port 443 without embedded credentials, serving a CGS JSON game specification including name and optional bannerImageUrl, cardBackImageUrl, and copyright. Private or reserved destinations are rejected, including after redirects. Up to five redirects and a 16 MiB response body are accepted.",
+                    "pattern": "^https://"
                   }
                 }
               }

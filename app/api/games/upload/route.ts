@@ -34,14 +34,17 @@ interface ProcessZipUploadInput extends AuthenticatedUser {
   zipBuffer: Buffer;
 }
 
+/** Converts upload validation and processing failures to the shared JSON contract. */
 function jsonError(error: string, status: number) {
   return apiError(error, status);
 }
 
+/** Recognizes the JSON upload variant before validating its individual fields. */
 function isStagedUploadRequest(body: unknown): body is StagedUploadRequest {
   return !!body && typeof body === 'object' && 'stagedPath' in body;
 }
 
+/** Restricts staged archives to the authenticated user's storage directory. */
 function isValidStagedPath(uid: string, stagedPath: string) {
   const parts = stagedPath.split('/');
   return (
@@ -52,6 +55,7 @@ function isValidStagedPath(uid: string, stagedPath: string) {
   );
 }
 
+/** Verifies the ID token and resolves the creator profile required for publication. */
 async function authenticateUploadRequest(
   request: Request,
 ): Promise<AuthenticatedUser | NextResponse> {
@@ -87,6 +91,7 @@ async function authenticateUploadRequest(
   return { uid, username };
 }
 
+/** Downloads and processes an owned staged archive, cleaning it up after the attempt. */
 async function processStagedUpload({
   uid,
   username,
@@ -136,6 +141,7 @@ async function processStagedUpload({
   }
 }
 
+/** Validates a directly submitted archive's size and filename before processing. */
 async function processMultipartUpload(request: Request, { uid, username }: AuthenticatedUser) {
   const formData = await request.formData();
   const file = formData.get('file');
@@ -164,6 +170,7 @@ async function processMultipartUpload(request: Request, { uid, username }: Authe
   });
 }
 
+/** Validates the game archive, publishes supported assets, and creates its catalog entry. */
 async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZipUploadInput) {
   console.log('Processing upload', { uid, username, filename, size: zipBuffer.length });
 
@@ -339,6 +346,7 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
   });
 }
 
+/** Authenticates and dispatches either upload format, including asynchronous failures. */
 export async function POST(request: Request) {
   console.log('Received game upload request', {
     method: request.method,

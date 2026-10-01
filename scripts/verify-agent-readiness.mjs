@@ -5,13 +5,25 @@ import { JSDOM } from 'jsdom';
 
 const origin = process.argv[2] || 'http://localhost:3101';
 let checks = 0;
-async function check(path, { accept = '*/*', method = 'GET', status = 200, type, body } = {}) {
+/** Requests a public endpoint and asserts its status and optional media type. */
+async function check(
+  path,
+  {
+    accept = '*/*',
+    method = 'GET',
+    status = 200,
+    type,
+    body,
+    headers = {},
+    redirect = 'follow',
+  } = {},
+) {
   const response = await fetch(new URL(path, origin), {
     method,
-    headers: { Accept: accept },
+    headers: { Accept: accept, ...headers },
     body,
     signal: AbortSignal.timeout(60000),
-    redirect: 'follow',
+    redirect,
   });
   const text = await response.text();
   assert.equal(response.status, status, `${method} ${path}: ${text.slice(0, 120)}`);
@@ -51,16 +63,18 @@ for (const path of [
   '/agent-readiness-nonexistent-4a7f2/game',
   '/agent-readiness/nonexistent/deep/path',
   '/missing-agent-asset-4a7f2.png',
+  '/%E0%A4%A',
 ]) {
   const missing = await check(path, {
     accept: 'text/markdown',
     status: 404,
     type: 'text/markdown',
+    redirect: 'manual',
   });
   assert.ok(missing.text.length >= 20);
   assert.match(missing.text, /llms\.txt|sitemap\.xml/);
   assert.match(missing.response.headers.get('vary'), /accept/i);
-  await check(path, { accept: 'text/html', status: 404, type: 'text/html' });
+  await check(path, { accept: 'text/html', status: 404, type: 'text/html', redirect: 'manual' });
 }
 
 const specification = await check('/openapi.json', { type: 'application/json' });
@@ -118,12 +132,34 @@ for (const [path, method, status] of [
   if (status === 405) assert.ok(result.response.headers.get('allow'));
 }
 const spec = JSON.parse(await readFile(new URL('../public/openapi.json', import.meta.url), 'utf8'));
-for (const path of Object.keys(spec.paths)) {
+for (const [path, operations] of Object.entries(spec.paths)) {
   const concrete = path
     .replace('{id}', 'agent-readiness-no-write')
     .replace('{url}', 'example.com/resource');
-  const result = await check(concrete, { method: 'OPTIONS', status: 204 });
-  assert.ok(result.response.headers.get('access-control-allow-methods'));
+  for (const method of ['get', 'post', 'delete'].filter((method) => method in operations)) {
+    const requestingOrigin = 'https://cgs.gg';
+    const requestedHeaders = ['content-type', 'authorization'];
+    const result = await check(concrete, {
+      method: 'OPTIONS',
+      status: 204,
+      headers: {
+        Origin: requestingOrigin,
+        'Access-Control-Request-Method': method.toUpperCase(),
+        'Access-Control-Request-Headers': requestedHeaders.join(', '),
+      },
+    });
+    assert.ok(
+      ['*', requestingOrigin].includes(result.response.headers.get('access-control-allow-origin')),
+    );
+    const allowedMethods = (result.response.headers.get('access-control-allow-methods') || '')
+      .split(',')
+      .map((value) => value.trim().toUpperCase());
+    assert.ok(allowedMethods.includes(method.toUpperCase()));
+    const allowedHeaders = (result.response.headers.get('access-control-allow-headers') || '')
+      .split(',')
+      .map((value) => value.trim().toLowerCase());
+    for (const header of requestedHeaders) assert.ok(allowedHeaders.includes(header));
+  }
 }
 console.log(
   `Verified ${checks} HTTP responses; homepage contains ${contentLength} visible text characters without JavaScript.`,

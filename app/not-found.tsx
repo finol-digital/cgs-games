@@ -1,6 +1,7 @@
 import Footer from '@/components/footer';
 import Link from 'next/link';
 
+/** Displays the existing site-styled missing-resource page and home link. */
 export default function Page() {
   return (
     <>
