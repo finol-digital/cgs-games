@@ -13,6 +13,7 @@ export function onAuthStateChanged(cb: NextOrObserver<User>) {
   return _onAuthStateChanged(auth, cb);
 }
 
+/** Starts Google sign-in with popup support deferred until this user-initiated action. */
 export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   try {

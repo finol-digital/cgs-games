@@ -2,7 +2,7 @@ import { auth } from '@/lib/firebase/firebase';
 import { useEffect, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
-// Custom hook to read auth record and user profile doc
+/** Lazily subscribes to the signed-in user's profile and hides results from previous accounts. */
 export function useUserData() {
   const [user] = useAuthState(auth);
   const [profile, setProfile] = useState<{ uid: string; username: string | null } | null>(null);

@@ -25,10 +25,12 @@ interface GameCardProps {
   priority?: boolean;
 }
 
+/** Displays game metadata and a responsive banner, with deletion controls for the owner. */
 export default function GameCard({ game, canDelete, priority = false }: GameCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { username } = useContext(UserContext);
 
+  /** Confirms deletion, authenticates the API request, and refreshes the list after success. */
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent card click event
     if (!confirm('Are you sure you want to delete this game?')) return;

@@ -1,6 +1,7 @@
 import Game from '@/lib/game';
 import GameCard from './gameCard';
 
+/** Lists games in a single column and gives only the first banner eager loading priority. */
 export default function GamesDeck({
   games,
   canDelete = false,

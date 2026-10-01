@@ -15,6 +15,7 @@ import {
 
 export const db = getFirestore(firebaseApp);
 
+/** Listens for a user's username, reports null when unavailable, and returns an unsubscribe callback. */
 export function subscribeToUsername(
   uid: string,
   // eslint-disable-next-line no-unused-vars -- This parameter describes the callback's type.

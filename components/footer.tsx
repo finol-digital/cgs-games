@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+/** Displays attribution and site navigation without prefetching the upload workflow. */
 export default function Footer({ copyrightNotice }: { copyrightNotice?: string }) {
   if (!copyrightNotice) {
     copyrightNotice = 'Finol Digital LLC ©' + new Date().getFullYear();

@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
+/** Loads the two latest games for the homepage and links to browsing and uploading. */
 export default async function Page() {
   const latestGames = await adminGetGames(2);
   return (

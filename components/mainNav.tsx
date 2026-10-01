@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import cgsLogo from '@/public/cgs.png';
 
+/** Renders desktop navigation with an optimized logo and on-demand upload navigation. */
 export default function MainNav() {
   return (
     <nav className="hidden md:flex items-center">

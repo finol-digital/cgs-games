@@ -9,6 +9,7 @@ interface BannerProps {
   sizes?: string;
 }
 
+/** Renders a responsive banner, proxying HTTPS sources and prioritizing visible content on request. */
 export default function Banner({
   home = '/',
   img = '/Card-Game-Simulator.png',
@@ -16,9 +17,17 @@ export default function Banner({
   priority = false,
   sizes = '100vw',
 }: BannerProps) {
-  const imgDefault = img ?? '/Card-Game-Simulator.png';
-  const imgPath =
-    img && img.startsWith('https://') ? '/api/proxy/' + img.replace(/^https:\/\//, '') : imgDefault;
+  const imgDefault = img?.trim() || '/Card-Game-Simulator.png';
+  let imgPath = imgDefault;
+  try {
+    // Match the upload API's URL parsing, including mixed-case schemes and whitespace.
+    const url = new URL(imgDefault);
+    if (url.protocol === 'https:') {
+      imgPath = '/api/proxy/' + url.href.slice('https://'.length);
+    }
+  } catch {
+    // Local public assets are relative paths and do not need the HTTPS proxy.
+  }
   const bannerImage = (
     <Image
       className="object-contain rounded"
