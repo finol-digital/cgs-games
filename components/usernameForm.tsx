@@ -1,7 +1,7 @@
 'use client';
 
 import { UserContext } from '@/lib/context';
-import { db } from '@/lib/firebase/firebase';
+import { db } from '@/lib/firebase/firestore';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import debounce from 'lodash.debounce';
 import { useCallback, useContext, useEffect, useState } from 'react';

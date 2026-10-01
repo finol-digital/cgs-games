@@ -9,6 +9,7 @@ import MobileNav from './mobileNav';
 import SignInButton from './signInButton';
 import UserMenu from './userMenu';
 
+/** Shows navigation and account controls appropriate to the current authentication state. */
 export default function Header() {
   const { user, username } = useContext(UserContext);
   return (
@@ -21,7 +22,7 @@ export default function Header() {
             username ? (
               <UserMenu username={username} />
             ) : (
-              <Link href="/upload" className="brownlink">
+              <Link href="/upload" prefetch={false} className="brownlink">
                 Upload Username
               </Link>
             )

@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
+/** Loads the two latest games for the homepage and links to browsing and uploading. */
 export default async function Page() {
   const latestGames = await adminGetGames(2);
   return (
@@ -26,8 +27,12 @@ export default async function Page() {
           >
             create
           </Link>{' '}
-          and <Link href="/upload">upload</Link> your own custom card games, or{' '}
-          <Link href="/browse">browse</Link> games uploaded by others:
+          and{' '}
+          <Link href="/upload" prefetch={false}>
+            upload
+          </Link>{' '}
+          your own custom card games, or <Link href="/browse">browse</Link> games uploaded by
+          others:
         </p>
         <GamesDeck games={latestGames} />
         <p className="text-center my-4">

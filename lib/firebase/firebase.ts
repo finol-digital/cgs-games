@@ -1,7 +1,10 @@
 import { getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import {
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+} from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,6 +16,8 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
-export const storage = getStorage(firebaseApp);
+// Preserve existing sessions without preloading the OAuth iframe on mobile visits.
+// Popup support is supplied by signInWithGoogle only when it is needed.
+export const auth = initializeAuth(firebaseApp, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+});

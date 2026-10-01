@@ -4,6 +4,7 @@ import { adminGetGame } from '@/lib/firebase/admin';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+/** Loads a game and its play options, prioritizing its banner or returning a missing-page response. */
 export default async function Page(props: { params: Promise<{ username: string; slug: string }> }) {
   const params = await props.params;
   const game = await adminGetGame(params.username, params.slug);
@@ -11,7 +12,7 @@ export default async function Page(props: { params: Promise<{ username: string; 
   const cgsgg = 'https://cgs.gg/main?url=' + encodeURIComponent(game.autoUpdateUrl);
   return (
     <>
-      <Banner home={cgsgg} img={game.bannerImageUrl} txt={game.name} />
+      <Banner home={cgsgg} img={game.bannerImageUrl} txt={game.name} priority />
       <main className="main-content flex flex-col items-center">
         <Link
           href={cgsgg}

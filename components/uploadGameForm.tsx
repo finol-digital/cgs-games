@@ -2,7 +2,8 @@
 
 import React, { useContext, useRef, useState } from 'react';
 import { UserContext } from '@/lib/context';
-import { auth, storage } from '@/lib/firebase/firebase';
+import { auth } from '@/lib/firebase/firebase';
+import { storage } from '@/lib/firebase/storage';
 import { getIdToken } from 'firebase/auth';
 import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage';
 import { useRouter } from 'next/navigation';

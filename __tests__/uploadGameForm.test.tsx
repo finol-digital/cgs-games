@@ -6,7 +6,7 @@ import { UserContext } from '@/lib/context';
 // Mock modules before importing the component
 jest.mock('firebase/auth', () => ({
   getIdToken: jest.fn().mockResolvedValue('mock-token'),
-  getAuth: jest.fn(() => ({ currentUser: { uid: 'test-uid' } })),
+  initializeAuth: jest.fn(() => ({ currentUser: { uid: 'test-uid' } })),
   GoogleAuthProvider: jest.fn(),
 }));
 

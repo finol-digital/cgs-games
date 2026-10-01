@@ -1,15 +1,35 @@
-import { db } from '@/lib/firebase/firebase';
+import { firebaseApp } from '@/lib/firebase/firebase';
 import {
   Query,
   QueryDocumentSnapshot,
   collection,
   doc,
   getDocs,
+  getFirestore,
   limit,
   orderBy,
   query,
   where,
+  onSnapshot,
 } from 'firebase/firestore';
+
+export const db = getFirestore(firebaseApp);
+
+/** Listens for a user's username, reports null when unavailable, and returns an unsubscribe callback. */
+export function subscribeToUsername(
+  uid: string,
+  // eslint-disable-next-line no-unused-vars -- This parameter describes the callback's type.
+  onUsername: (username: string | null) => void,
+) {
+  return onSnapshot(
+    userDoc(uid),
+    (snapshot) => onUsername(snapshot.data()?.username ?? null),
+    (error) => {
+      console.error('Failed to load user profile:', error);
+      onUsername(null);
+    },
+  );
+}
 
 async function getLatestDocs(unfilteredQuery: Query, count: number, context: string) {
   try {
