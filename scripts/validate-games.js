@@ -1,7 +1,7 @@
 // Validates that all game banner image URLs are accessible,
 // and that each game's bannerImageUrl in the database matches
 // the bannerImageUrl in its cgs.json (fetched via autoUpdateUrl).
-// Usage: node validate-games.js
+// Usage: node scripts/validate-games.js
 
 // Using native fetch API available in Node.js 18+.
 
