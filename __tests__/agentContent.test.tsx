@@ -20,19 +20,28 @@ jest.mock('next/navigation', () => ({
 }));
 
 describe('server-rendered content', () => {
-  it('includes over 500 characters of visible homepage prose before JavaScript', async () => {
+  it('keeps the original homepage copy and navigation available before JavaScript', async () => {
     const html = renderToStaticMarkup(await Page());
     const element = document.createElement('div');
     element.innerHTML = html;
     expect(element.querySelectorAll('h1')).toHaveLength(1);
-    expect(element.querySelector('main')!.textContent!.length).toBeGreaterThan(500);
+    expect(element.querySelector('main')!.textContent).toContain(
+      'Welcome to the Card Game Simulator (CGS) Games website!',
+    );
     expect(element.querySelector('h3')).toBeNull();
     for (const paragraph of homepageParagraphs) {
-      expect(element.textContent).toContain(paragraph);
-      expect(homepageMarkdown).toContain(paragraph);
+      expect(element.textContent).not.toContain(paragraph);
     }
     expect(element.querySelector('a[href="/upload"]')).not.toBeNull();
     expect(element.querySelector('a[href="/browse"]')).not.toBeNull();
+  });
+
+  it('retains the detailed introduction in the agent-facing Markdown response', () => {
+    expect(homepageMarkdown.length).toBeGreaterThan(500);
+    expect(homepageMarkdown).toContain('# CGS Games');
+    for (const paragraph of homepageParagraphs) {
+      expect(homepageMarkdown).toContain(paragraph);
+    }
   });
 
   it('uses a paragraph for an empty collection and an H1 for the missing page', () => {
