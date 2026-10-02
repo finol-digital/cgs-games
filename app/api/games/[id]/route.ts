@@ -1,6 +1,6 @@
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
-import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/httpResponses';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,14 +8,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+/** Retains text successes and adds the shared JSON envelope to deletion errors. */
 function corsResponse(message: string, status: number) {
+  if (status >= 400) return apiError(message, status, corsHeaders);
   return new NextResponse(message, {
     status,
     headers: corsHeaders,
   });
 }
 
-// Handle OPTIONS request for CORS
+/** Advertises deletion methods and bearer-token headers for CORS preflight. */
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -23,11 +25,11 @@ export async function OPTIONS() {
   });
 }
 
+/** Verifies ownership before deleting the game and any associated uploaded assets. */
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Get the ID token from the Authorization header
-    const headersList = await headers();
-    const authHeader = headersList.get('Authorization');
+    const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return corsResponse('Unauthorized - No token provided', 401);
     }
@@ -35,7 +37,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const idToken = authHeader.split('Bearer ')[1];
 
     // Verify the ID token
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch {
+      return corsResponse('Unauthorized - Invalid token', 401);
+    }
     if (!decodedToken) {
       return corsResponse('Unauthorized - Invalid token', 401);
     }

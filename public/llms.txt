@@ -1,0 +1,28 @@
+# CGS Games
+
+> A community library for sharing and playing custom games with Card Game Simulator (CGS).
+
+Browse games without signing in. Publishing and deleting games require a Firebase ID token and a creator username. Only the owner may delete a game. Game copyright belongs to the credited owner.
+
+Request the homepage with `Accept: text/markdown` for Markdown or `Accept: text/html` for the browser page. Responses vary on Accept. Missing pages return HTTP 404, including a Markdown explanation when requested. API failures return JSON with `error`, `code`, `message`, and `hint` fields.
+
+## API
+
+- [OpenAPI specification](https://cgs.games/openapi.json): Methods, request bodies, authentication, responses, and errors for all API routes.
+- [Game catalog](https://cgs.games/api/games): GET returns up to 100 games, newest first. No pagination or search parameters.
+- [Legacy catalog](https://cgs.games/api/browse): GET alias for the game catalog.
+- [Grand Archive spoilers](https://cgs.games/api/gatcg_spoilers): Cached card data; respect rate limits and Retry-After. Cache maintenance parameters are for operators.
+
+## Website
+
+- [Home](https://cgs.games/): Overview and latest games; supports Markdown content negotiation.
+- [Browse games](https://cgs.games/browse): Search the game library.
+- [Upload](https://cgs.games/upload): Publish an auto-update URL or a .cgs.zip archive, up to 100 MiB.
+- [Sitemap](https://cgs.games/sitemap.xml): Public site navigation.
+- [Terms](https://cgs.games/terms): Terms of service.
+- [Privacy](https://cgs.games/privacy): Privacy policy.
+
+## Optional
+
+- [Card Game Simulator](https://www.cardgamesimulator.com): The simulator used to play these games.
+- [Create a game](https://github.com/finol-digital/Card-Game-Simulator/wiki/Crash-Course-into-Game-Development-with-CGS): Game creation guide.

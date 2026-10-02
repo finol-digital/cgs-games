@@ -15,6 +15,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import JSZip from 'jszip';
 import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
+import { apiError } from '@/lib/httpResponses';
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const STAGED_UPLOAD_PREFIX = 'staged-uploads';
 
@@ -33,14 +34,17 @@ interface ProcessZipUploadInput extends AuthenticatedUser {
   zipBuffer: Buffer;
 }
 
+/** Converts upload validation and processing failures to the shared JSON contract. */
 function jsonError(error: string, status: number) {
-  return NextResponse.json({ error }, { status });
+  return apiError(error, status);
 }
 
+/** Recognizes the JSON upload variant before validating its individual fields. */
 function isStagedUploadRequest(body: unknown): body is StagedUploadRequest {
   return !!body && typeof body === 'object' && 'stagedPath' in body;
 }
 
+/** Restricts staged archives to the authenticated user's storage directory. */
 function isValidStagedPath(uid: string, stagedPath: string) {
   const parts = stagedPath.split('/');
   return (
@@ -51,6 +55,7 @@ function isValidStagedPath(uid: string, stagedPath: string) {
   );
 }
 
+/** Verifies the ID token and resolves the creator profile required for publication. */
 async function authenticateUploadRequest(
   request: Request,
 ): Promise<AuthenticatedUser | NextResponse> {
@@ -86,6 +91,7 @@ async function authenticateUploadRequest(
   return { uid, username };
 }
 
+/** Downloads and processes an owned staged archive, cleaning it up after the attempt. */
 async function processStagedUpload({
   uid,
   username,
@@ -135,6 +141,7 @@ async function processStagedUpload({
   }
 }
 
+/** Validates a directly submitted archive's size and filename before processing. */
 async function processMultipartUpload(request: Request, { uid, username }: AuthenticatedUser) {
   const formData = await request.formData();
   const file = formData.get('file');
@@ -163,6 +170,7 @@ async function processMultipartUpload(request: Request, { uid, username }: Authe
   });
 }
 
+/** Validates the game archive, publishes supported assets, and creates its catalog entry. */
 async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZipUploadInput) {
   console.log('Processing upload', { uid, username, filename, size: zipBuffer.length });
 
@@ -338,6 +346,7 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
   });
 }
 
+/** Authenticates and dispatches either upload format, including asynchronous failures. */
 export async function POST(request: Request) {
   console.log('Received game upload request', {
     method: request.method,
@@ -354,7 +363,12 @@ export async function POST(request: Request) {
 
     const contentType = request.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
-      const body = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return jsonError('Request body must be valid JSON', 400);
+      }
       if (!isStagedUploadRequest(body)) {
         return jsonError('Missing staged upload path', 400);
       }
@@ -363,19 +377,19 @@ export async function POST(request: Request) {
         return jsonError('Invalid staged upload request', 400);
       }
 
-      return processStagedUpload({
+      return await processStagedUpload({
         ...authenticatedUser,
         stagedPath: body.stagedPath,
         originalFilename: body.originalFilename,
       });
     }
 
-    return processMultipartUpload(request, authenticatedUser);
+    return await processMultipartUpload(request, authenticatedUser);
   } catch (error: unknown) {
     console.error('Error uploading game zip:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json({ error: 'Failed to process game upload' }, { status: 500 });
+    return jsonError('Failed to process game upload', 500);
   }
 }

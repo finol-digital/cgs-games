@@ -1,0 +1,1505 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "CGS Games API",
+    "version": "1.0.0",
+    "description": "Discover community Card Game Simulator games. Public reads require no authentication. Publishing and deletion use Firebase ID tokens and a user profile with a username. API errors retain the legacy error string and add code, message, and hint. GET routes also support HEAD; OPTIONS lists allowed methods. Unknown API paths return JSON 404; unsupported methods return JSON 405 with Allow."
+  },
+  "servers": [
+    {
+      "url": "https://cgs.games"
+    }
+  ],
+  "externalDocs": {
+    "description": "Agent guide",
+    "url": "https://cgs.games/llms.txt"
+  },
+  "security": [],
+  "paths": {
+    "/api/games": {
+      "get": {
+        "operationId": "listGames",
+        "summary": "List the newest games",
+        "responses": {
+          "200": {
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "publishGame",
+        "summary": "Publish a game from its auto-update URL",
+        "security": [
+          {
+            "firebaseIdToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["autoUpdateUrl"],
+                "properties": {
+                  "autoUpdateUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Public HTTPS URL on port 443 without embedded credentials, serving a CGS JSON game specification including name and optional bannerImageUrl, cardBackImageUrl, and copyright. Private or reserved destinations are rejected, including after redirects. Up to five redirects and a 16 MiB response body are accepted.",
+                    "pattern": "^https://"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Game published successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedGame"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "listGamesHeaders",
+        "summary": "Read headers for list the newest games",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapigames",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD", "POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/browse": {
+      "get": {
+        "operationId": "browseGames",
+        "summary": "Legacy alias for the game catalog",
+        "responses": {
+          "200": {
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "browseGamesHeaders",
+        "summary": "Read headers for legacy alias for the game catalog",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapibrowse",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Firestore game document ID from the catalog, not a game slug.",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "deleteGame",
+        "summary": "Delete a game owned by the authenticated creator",
+        "security": [
+          {
+            "firebaseIdToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Game deleted. Existing success response is plain text.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Game deleted successfully"
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapigamesid",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["DELETE"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "DELETE, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "DELETE, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/upload": {
+      "post": {
+        "operationId": "uploadGame",
+        "summary": "Publish a .cgs.zip archive (maximum 100 MiB)",
+        "description": "Send a multipart file directly, or first upload the archive to Firebase Storage using an authenticated client and then submit its staged path. A staged archive is cleaned up after processing is attempted. Archives need a valid cgs.json and supported game assets.",
+        "security": [
+          {
+            "firebaseIdToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": ".cgs.zip archive, at most 104857600 bytes."
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["stagedPath", "originalFilename"],
+                "properties": {
+                  "stagedPath": {
+                    "type": "string",
+                    "pattern": "^staged-uploads/[^/]+/[A-Za-z0-9_-]+\\.cgs\\.zip$",
+                    "description": "staged-uploads/{authenticated Firebase uid}/{unique-id}.cgs.zip"
+                  },
+                  "originalFilename": {
+                    "type": "string",
+                    "pattern": "\\.cgs\\.zip$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Game published successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedGame"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapigamesupload",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gatcg_spoilers": {
+      "get": {
+        "operationId": "getGrandArchiveSpoilers",
+        "summary": "Read cached Grand Archive spoiler card data",
+        "description": "Normally reads the assembled cache. Rate limited to 10 requests per minute per client IP per running instance. Operators may use warm=1 with the separate GATCG_WARM_TOKEN Bearer secret in production; a Firebase ID token does not grant this access. Unauthorized nocache=1 is ignored. warm runs can take up to 240 seconds and are not rate limited.",
+        "parameters": [
+          {
+            "name": "warm",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Operator-only cache rebuild; requires the warmToken security scheme in production."
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Re-run OCR from scratch. Only applies with warm=1."
+          },
+          {
+            "name": "nocache",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Operator-only assembled cache bypass, preserving the OCR cache. Ignored without operator authorization."
+          }
+        ],
+        "security": [
+          {},
+          {
+            "warmToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoiler cards in a data array. Pending OCR may leave effect_raw empty.",
+            "headers": {
+              "X-Cache": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["hit", "miss", "warm", "stale"]
+                },
+                "description": "Cache result."
+              },
+              "X-Ocr-Pending": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "Cards awaiting OCR."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SpoilerCard"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "getGrandArchiveSpoilersHeaders",
+        "summary": "Read headers for read cached grand archive spoiler card data",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "security": [
+          {},
+          {
+            "warmToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "warm",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Operator-only cache rebuild; requires the warmToken security scheme in production."
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Re-run OCR from scratch. Only applies with warm=1."
+          },
+          {
+            "name": "nocache",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Operator-only assembled cache bypass, preserving the OCR cache. Ignored without operator authorization."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoiler cards in a data array. Pending OCR may leave effect_raw empty.",
+            "headers": {
+              "X-Cache": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["hit", "miss", "warm", "stale"]
+                },
+                "description": "Cache result."
+              },
+              "X-Ocr-Pending": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": "Cards awaiting OCR."
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapigatcgspoilers",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proxy/{url}": {
+      "parameters": [
+        {
+          "name": "url",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Upstream host and path without a scheme, for example example.com/assets/game.json. This catch-all path can contain slashes; always uses HTTPS. GET forwards query parameters."
+        }
+      ],
+      "get": {
+        "operationId": "proxyGet",
+        "summary": "Fetch an upstream HTTPS resource",
+        "responses": {
+          "200": {
+            "description": "Upstream body and Content-Type; may be JSON, an image, or other content.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "proxyPost",
+        "summary": "Forward a JSON body to an upstream HTTPS resource",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful upstream response, including its headers and body.",
+            "content": {
+              "*/*": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "proxyGetHeaders",
+        "summary": "Read headers for fetch an upstream https resource",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Upstream body and Content-Type; may be JSON, an image, or other content."
+          },
+          "400": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery."
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsapiproxyurl",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD", "POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "firebaseIdToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Firebase Auth ID token from the signed-in user. Requires a creator username."
+      },
+      "warmToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Operator GATCG_WARM_TOKEN secret. Only for spoiler cache maintenance; never a Firebase ID token."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error", "code", "message", "hint"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Legacy error message retained for existing clients."
+          },
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND"
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      },
+      "PublishedGame": {
+        "type": "object",
+        "required": ["success", "slug"],
+        "properties": {
+          "success": {
+            "const": true
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "Game": {
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "slug",
+          "name",
+          "bannerImageUrl",
+          "autoUpdateUrl",
+          "copyright",
+          "uploadedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL slug. Public game pages are /{username}/{slug}."
+          },
+          "name": {
+            "type": "string"
+          },
+          "bannerImageUrl": {
+            "type": "string",
+            "description": "HTTPS banner URL or site-relative fallback image path."
+          },
+          "autoUpdateUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "copyright": {
+            "type": "string"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SpoilerCard": {
+        "type": "object",
+        "required": [
+          "uuid",
+          "name",
+          "card_image_url",
+          "back_card_name",
+          "back_card_image_url",
+          "types",
+          "element",
+          "effect_raw"
+        ],
+        "properties": {
+          "uuid": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "card_image_url": {
+            "type": "string"
+          },
+          "back_card_name": {
+            "type": "string"
+          },
+          "back_card_image_url": {
+            "type": "string"
+          },
+          "element": {
+            "type": "string"
+          },
+          "effect_raw": {
+            "type": "string"
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

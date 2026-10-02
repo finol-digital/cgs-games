@@ -1,11 +1,12 @@
 import Footer from '@/components/footer';
 import GamesDeck from '@/components/gamesDeck';
-import { adminGetGamesFor } from '@/lib/firebase/admin';
+import { adminCreatorExists, adminGetGamesFor } from '@/lib/firebase/admin';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
+/** Describes a creator collection in page and social metadata. */
 export async function generateMetadata(props: {
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
@@ -20,10 +21,11 @@ export async function generateMetadata(props: {
   };
 }
 
+/** Lists a creator's games, preserving empty profiles while rejecting unknown creators. */
 export default async function Page(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
   const games = await adminGetGamesFor(params.username);
-  if (!games) return notFound();
+  if (games.length === 0 && !(await adminCreatorExists(params.username))) return notFound();
   return (
     <>
       <main className="main-content">

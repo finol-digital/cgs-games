@@ -72,6 +72,14 @@ export async function adminGetGamesFor(username: string): Promise<Game[]> {
   return snapshot.docs.map(gameFromDoc);
 }
 
+/** Preserve empty creator profiles and collections whose original user document is absent. */
+export async function adminCreatorExists(username: string): Promise<boolean> {
+  const users = await adminDb.collection('users').where('username', '==', username).limit(1).get();
+  if (!users.empty) return true;
+  const games = await adminDb.collection('games').where('username', '==', username).limit(1).get();
+  return !games.empty;
+}
+
 export async function adminGetGames(count: number): Promise<Game[]> {
   const snapshot = await adminDb
     .collection('games')

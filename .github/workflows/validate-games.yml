@@ -23,4 +23,4 @@ jobs:
           node-version: '22.x'
 
       - name: Validate game data
-        run: node validate-games.js
+        run: node scripts/validate-games.js

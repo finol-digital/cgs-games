@@ -12,6 +12,7 @@
     "lint": "eslint . --config eslint.config.mjs",
     "format": "prettier --config .prettierrc.json --ignore-path .gitignore --write .",
     "test": "jest",
+    "verify:agents": "node scripts/verify-agent-readiness.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "postinstall": "patch-package"
   },
@@ -23,6 +24,7 @@
     "firebase": "^12.19.0",
     "firebase-admin": "^14.5.0",
     "firebase-functions": "^7.3.2",
+    "ipaddr.js": "^2.5.0",
     "jszip": "^3.10.2",
     "lodash.debounce": "^4.0.8",
     "lodash.snakecase": "^4.1.1",
@@ -38,6 +40,8 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.1.0",
+    "@eslint/compat": "^2.1.1",
     "@eslint/eslintrc": "3.3.6",
     "@eslint/js": "^9.39.4",
     "@tailwindcss/postcss": "^4.3.1",
@@ -76,5 +80,12 @@
     "minimatch": "^10.2.1",
     "teeny-request": "^10.1.2",
     "uuid@<11.1.1": "^11.1.1"
+  },
+  "allowScripts": {
+    "@firebase/util@1.15.3": true,
+    "@parcel/watcher@2.6.0": true,
+    "unrs-resolver@1.12.2": true,
+    "tesseract.js": false,
+    "protobufjs@7.6.5": true
   }
 }

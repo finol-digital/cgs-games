@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
+import { fixupConfigRules } from '@eslint/compat';
 import nextConfig from 'eslint-config-next/core-web-vitals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +26,8 @@ const eslintConfig = [
     ],
   },
   js.configs.recommended,
-  ...nextConfig,
+  // Review runners may load unpatched plugins that still use the pre-ESLint-10 context API.
+  ...fixupConfigRules(nextConfig),
   {
     rules: {
       '@next/next/no-img-element': 'off',

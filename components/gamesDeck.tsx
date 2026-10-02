@@ -11,7 +11,7 @@ export default function GamesDeck({
 }) {
   const isEmpty = games.length == 0;
   if (isEmpty) {
-    return <h3 className="text-center">No games found.</h3>;
+    return <p className="text-center">No games found.</p>;
   }
   return (
     <div className="ml-5 mr-5 gap-2 grid grid-cols-1">
