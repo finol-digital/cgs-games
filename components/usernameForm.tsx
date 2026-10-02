@@ -4,7 +4,7 @@ import { UserContext } from '@/lib/context';
 import { db } from '@/lib/firebase/firestore';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import debounce from 'lodash.debounce';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 export default function UsernameForm() {
   const [formValue, setFormValue] = useState('');
@@ -61,18 +61,17 @@ export default function UsernameForm() {
   };
 
   // Hit the database for username match after each debounced change
-  // useCallback is required for debounce to work
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const checkUsername = useCallback(
-    debounce(async (username) => {
-      if (username.length >= 3) {
-        const ref = doc(db, `usernames/${username}`);
-        const exists = (await getDoc(ref)).exists();
-        console.log('Firestore read executed! ' + username + ' exists: ' + exists);
-        setIsValid(!exists);
-        setLoading(false);
-      }
-    }, 500),
+  const checkUsername = useMemo(
+    () =>
+      debounce(async (username: string) => {
+        if (username.length >= 3) {
+          const ref = doc(db, `usernames/${username}`);
+          const exists = (await getDoc(ref)).exists();
+          console.log('Firestore read executed! ' + username + ' exists: ' + exists);
+          setIsValid(!exists);
+          setLoading(false);
+        }
+      }, 500),
     [],
   );
 

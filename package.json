@@ -80,5 +80,12 @@
     "minimatch": "^10.2.1",
     "teeny-request": "^10.1.2",
     "uuid@<11.1.1": "^11.1.1"
+  },
+  "allowScripts": {
+    "@firebase/util@1.15.3": true,
+    "@parcel/watcher@2.6.0": true,
+    "unrs-resolver@1.12.2": true,
+    "tesseract.js": false,
+    "protobufjs@7.6.5": true
   }
 }
