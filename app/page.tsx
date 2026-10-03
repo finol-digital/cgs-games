@@ -13,10 +13,7 @@ export default async function Page() {
       <main className="main-content">
         <h1 className="text-center text-4xl font-bold my-4">CGS Games</h1>
         <p className="text-center my-2">
-          Welcome to the{' '}
-          <Link href="https://www.cardgamesimulator.com" target="_blank">
-            Card Game Simulator
-          </Link>{' '}
+          Welcome to the <Link href="https://www.cardgamesimulator.com">Card Game Simulator</Link>{' '}
           (CGS) Games website!
         </p>
         <p className="text-center my-2">
