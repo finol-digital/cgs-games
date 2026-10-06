@@ -50,3 +50,18 @@ describe('game deletion feedback', () => {
     expect(screen.getByRole('button', { name: 'Delete game' })).toBeEnabled();
   });
 });
+
+describe('game upload date', () => {
+  it('shows when the game was uploaded', () => {
+    render(
+      <UserContext.Provider value={{ user: null, username: 'creator' }}>
+        <GameCard game={game} canDelete={false} />
+      </UserContext.Provider>,
+    );
+
+    expect(screen.getByText(game.uploadedAt.toLocaleDateString())).toHaveAttribute(
+      'datetime',
+      game.uploadedAt.toISOString(),
+    );
+  });
+});

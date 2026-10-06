@@ -108,6 +108,12 @@ export default function GameCard({ game, canDelete, priority = false }: GameCard
         />
       </CardContent>
       <CardFooter className="flex items-center justify-center">
+        <p>
+          Uploaded{' '}
+          <time dateTime={game.uploadedAt.toISOString()}>
+            {game.uploadedAt.toLocaleDateString()}
+          </time>
+        </p>
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
       </CardFooter>
     </Card>
