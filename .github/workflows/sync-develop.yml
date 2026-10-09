@@ -1,0 +1,42 @@
+name: Sync develop with main
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Serialize automatic and manual runs without interrupting an active merge.
+concurrency:
+  group: sync-main-to-develop
+  cancel-in-progress: false
+
+jobs:
+  sync-develop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Merge main into develop
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Merge the latest main, including when rerunning an older workflow.
+          # The API preserves develop's commits and succeeds if already merged.
+          # GITHUB_TOKEN updates do not trigger other push workflows.
+          if ! gh api --method POST "repos/$GH_REPO/merges" \
+            -H "Accept: application/vnd.github+json" \
+            -f base=develop \
+            -f head=main \
+            -f commit_message="Merge main into develop" \
+            --silent; then
+            echo "::error::Could not merge main into develop. Check the API error above for merge conflicts, missing branches, or branch protection restrictions. Resolve the issue and rerun this workflow."
+            exit 1
+          fi
+
+          echo 'develop is up to date with main.' >> "$GITHUB_STEP_SUMMARY"
