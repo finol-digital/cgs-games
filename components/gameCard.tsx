@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';
 import Link from 'next/link';
 import { useContext, useState, useSyncExternalStore } from 'react';
+import { CalendarDays } from 'lucide-react';
 import Banner from './banner';
 
 import { UserContext } from '@/lib/context';
@@ -84,7 +85,7 @@ export default function GameCard({ game, canDelete, priority = false }: GameCard
   };
 
   return (
-    <Card className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group h-[320px] min-h-[320px]">
+    <Card className="border-none bg-slate-800 flex flex-col justify-between items-stretch relative group min-h-[320px] pb-0">
       {/* Delete button absolutely positioned in top-right */}
       {canDelete && username === game.username && (
         <CardAction className="absolute top-2 right-2 z-10">
@@ -115,11 +116,19 @@ export default function GameCard({ game, canDelete, priority = false }: GameCard
           sizes="(max-width: 800px) calc(100vw - 88px), 712px"
         />
       </CardContent>
-      <CardFooter className="flex items-center justify-center">
-        <p>
-          Uploaded <time dateTime={game.uploadedAt.toISOString()}>{uploadDate}</time>
+      <CardFooter className="flex flex-col items-start gap-2 rounded-b-xl border-t border-slate-700/60 bg-slate-900/20 pb-4 text-xs leading-5 text-slate-400 [.border-t]:pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <p className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <CalendarDays className="size-3.5" aria-hidden="true" />
+          <span>
+            Uploaded{' '}
+            <time className="text-slate-300" dateTime={game.uploadedAt.toISOString()}>
+              {uploadDate}
+            </time>
+          </span>
         </p>
-        {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
+        {game.copyright && (
+          <p className="min-w-0 break-words sm:max-w-[60%] sm:text-right">© {game.copyright}</p>
+        )}
       </CardFooter>
     </Card>
   );
