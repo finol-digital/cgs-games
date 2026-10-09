@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderToString } from 'react-dom/server.node';
 import GameCard from '@/components/gameCard';
 import { UserContext } from '@/lib/context';
 import Game from '@/lib/game';
@@ -17,7 +18,7 @@ const game: Game = {
   bannerImageUrl: '',
   autoUpdateUrl: '',
   copyright: '',
-  uploadedAt: new Date(),
+  uploadedAt: new Date('2026-10-07T00:30:00.000Z'),
 };
 const originalFetch = global.fetch;
 
@@ -52,6 +53,27 @@ describe('game deletion feedback', () => {
 });
 
 describe('game upload date', () => {
+  it('hydrates without a mismatch when the browser uses a different locale and time zone', () => {
+    const localeDate = jest.spyOn(Date.prototype, 'toLocaleDateString');
+    localeDate.mockReturnValue('10/7/2026');
+    const card = <GameCard game={game} canDelete={false} />;
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(card);
+    expect(container.querySelector('time')).toHaveTextContent('2026-10-07');
+    expect(localeDate).not.toHaveBeenCalled();
+
+    localeDate.mockReturnValue('06/10/2026');
+    const onRecoverableError = jest.fn();
+    render(card, { container, hydrate: true, onRecoverableError });
+
+    expect(container.querySelector('time')).toHaveTextContent('06/10/2026');
+    expect(container.querySelector('time')).toHaveAttribute(
+      'datetime',
+      game.uploadedAt.toISOString(),
+    );
+    expect(onRecoverableError).not.toHaveBeenCalled();
+  });
+
   it('shows when the game was uploaded', () => {
     render(
       <UserContext.Provider value={{ user: null, username: 'creator' }}>

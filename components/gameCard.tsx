@@ -5,7 +5,7 @@ import React from 'react';
 import { auth } from '@/lib/firebase/firebase';
 import Game from '@/lib/game';
 import Link from 'next/link';
-import { useContext, useState } from 'react';
+import { useContext, useState, useSyncExternalStore } from 'react';
 import Banner from './banner';
 
 import { UserContext } from '@/lib/context';
@@ -25,10 +25,18 @@ interface GameCardProps {
   priority?: boolean;
 }
 
+// Locale formatting has no subscription; React switches snapshots after hydration.
+const subscribeToLocale = () => () => {};
+
 /** Displays game metadata and a responsive banner, with deletion controls for the owner. */
 export default function GameCard({ game, canDelete, priority = false }: GameCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { username } = useContext(UserContext);
+  const uploadDate = useSyncExternalStore(
+    subscribeToLocale,
+    () => game.uploadedAt.toLocaleDateString(),
+    () => game.uploadedAt.toISOString().slice(0, 10),
+  );
 
   /** Confirms deletion, authenticates the API request, and refreshes the list after success. */
   const handleDelete = async (e: React.MouseEvent) => {
@@ -109,10 +117,7 @@ export default function GameCard({ game, canDelete, priority = false }: GameCard
       </CardContent>
       <CardFooter className="flex items-center justify-center">
         <p>
-          Uploaded{' '}
-          <time dateTime={game.uploadedAt.toISOString()}>
-            {game.uploadedAt.toLocaleDateString()}
-          </time>
+          Uploaded <time dateTime={game.uploadedAt.toISOString()}>{uploadDate}</time>
         </p>
         {game.copyright && <p className="ml-4 mr-4">Copyright of {game.copyright}</p>}
       </CardFooter>
