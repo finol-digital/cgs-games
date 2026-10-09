@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 interface BannerProps {
   home?: string;
@@ -7,6 +8,7 @@ interface BannerProps {
   txt?: string;
   priority?: boolean;
   sizes?: string;
+  className?: string;
 }
 
 /** Renders a responsive banner, proxying HTTPS sources and prioritizing visible content on request. */
@@ -16,6 +18,7 @@ export default function Banner({
   txt = 'Card Game Simulator',
   priority = false,
   sizes = '100vw',
+  className,
 }: BannerProps) {
   const imgDefault = img?.trim() || '/Card-Game-Simulator.png';
   let imgPath = imgDefault;
@@ -41,18 +44,26 @@ export default function Banner({
   );
 
   return (
-    <div className="border-none bg-slate-800 flex justify-center items-center w-full h-32">
+    <div
+      className={cn(
+        'border-none bg-slate-800 flex justify-center items-center w-full h-32',
+        className,
+      )}
+    >
       {home.startsWith('https://') ? (
         <a
           href={home}
-          className="relative flex justify-center items-center w-full h-full"
+          className="relative flex justify-center items-center w-full h-full rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d3bd7a]"
           target="_blank"
           rel="noopener noreferrer"
         >
           {bannerImage}
         </a>
       ) : (
-        <Link href={home} className="relative flex justify-center items-center w-full h-full">
+        <Link
+          href={home}
+          className="relative flex justify-center items-center w-full h-full rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d3bd7a]"
+        >
           {bannerImage}
         </Link>
       )}

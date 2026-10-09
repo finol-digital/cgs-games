@@ -14,7 +14,7 @@ export default function GamesDeck({
     return <p className="text-center">No games found.</p>;
   }
   return (
-    <div className="ml-5 mr-5 gap-2 grid grid-cols-1">
+    <div className="mx-5 grid grid-cols-1 gap-5">
       {games.map((game, index) => {
         return <GameCard game={game} key={game.id} canDelete={canDelete} priority={index === 0} />;
       })}

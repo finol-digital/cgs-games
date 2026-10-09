@@ -14,7 +14,7 @@
     "test": "jest",
     "verify:agents": "node scripts/verify-agent-readiness.mjs",
     "typecheck": "next typegen && tsc --noEmit",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package --error-on-fail"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.20",
@@ -73,6 +73,9 @@
   "overrides": {
     "@firebase/firestore": {
       "@grpc/grpc-js": "^1.14.5"
+    },
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "^4.3.2"
     },
     "@types/react": "19.2.18",
     "@types/react-dom": "19.3.0",
