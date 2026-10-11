@@ -31,7 +31,7 @@ export default async function Page() {
           your own custom card games, or <Link href="/browse">browse</Link> games uploaded by
           others:
         </p>
-        <GamesDeck games={latestGames} />
+        <GamesDeck games={latestGames} priorityCount={2} />
         <p className="text-center my-4">
           <Link href="/browse">Browse All Games</Link>
         </p>
