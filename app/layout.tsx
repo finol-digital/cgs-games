@@ -2,7 +2,16 @@ import React from 'react';
 import Header from '@/components/header';
 import UserContextProvider from '@/components/userContextProvider';
 import { Metadata, Viewport } from 'next';
+import { Noto_Sans } from 'next/font/google';
 import './globals.css';
+
+const notoSans = Noto_Sans({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-noto-sans',
+});
 
 const APP_NAME = 'CGS Games';
 const APP_DESCRIPTION = 'Share your CGS games';
@@ -42,7 +51,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={notoSans.variable}>
       <body className="dark">
         <div className="main-container">
           <UserContextProvider>

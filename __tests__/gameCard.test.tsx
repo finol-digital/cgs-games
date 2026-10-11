@@ -29,6 +29,19 @@ afterEach(() => {
 
 describe('game deletion feedback', () => {
   it.each([
+    [false, 'creator'],
+    [true, 'someone-else'],
+    [true, null],
+  ])('hides deletion when canDelete=%s and username=%s', (canDelete, username) => {
+    render(
+      <UserContext.Provider value={{ user: null, username }}>
+        <GameCard game={game} canDelete={canDelete} />
+      </UserContext.Provider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Delete game' })).not.toBeInTheDocument();
+  });
+
+  it.each([
     [
       '{"error":"You can only delete your own games","code":"FORBIDDEN","hint":"Sign in as owner"}',
       'You can only delete your own games',
@@ -48,6 +61,13 @@ describe('game deletion feedback', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Delete game' }));
     await waitFor(() => expect(alert).toHaveBeenCalledWith(expected));
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/games/game-id',
+      expect.objectContaining({
+        method: 'DELETE',
+        headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      }),
+    );
     expect(screen.getByRole('button', { name: 'Delete game' })).toBeEnabled();
   });
 });

@@ -248,6 +248,48 @@ describe('API response contract', () => {
     expect(await response.text()).toBe('image-bytes');
   });
 
+  it('caches public images for an hour and retains upstream cache restrictions', async () => {
+    const request = new NextRequest('https://cgs.games/api/proxy/example.com/banner.png');
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(new Response('image', { headers: { 'Content-Type': 'image/png' } }));
+    expect((await proxyGet(request)).headers.get('cache-control')).toBe('public, max-age=3600');
+
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response('image', {
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'private, no-store',
+          ETag: '"banner-v2"',
+          'Last-Modified': 'Sun, 11 Oct 2026 00:00:00 GMT',
+        },
+      }),
+    );
+    const response = await proxyGet(request);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('etag')).toBe('"banner-v2"');
+    expect(response.headers.get('last-modified')).toBe('Sun, 11 Oct 2026 00:00:00 GMT');
+    expect(await response.text()).toBe('image');
+  });
+
+  it.each([
+    ['application/json', '', {}],
+    ['image/png', '?alt=media&token=secret', {}],
+    ['image/png', '', { Vary: 'Cookie' }],
+    ['image/png', '', { 'Set-Cookie': 'session=value' }],
+    ['image/png', '', { Expires: 'Sun, 11 Oct 2026 00:00:00 GMT' }],
+  ])('does not invent public caching for %s %s %j', async (type, query, extraHeaders) => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response('content', { headers: { 'Content-Type': type, ...extraHeaders } }),
+      );
+    const response = await proxyGet(
+      new NextRequest('https://cgs.games/api/proxy/example.com/resource' + query),
+    );
+    expect(response.headers.has('cache-control')).toBe(false);
+  });
+
   it.each([300, 304])(
     'maps an upstream %i to 502 while retaining retry and CORS headers',
     async (status) => {
