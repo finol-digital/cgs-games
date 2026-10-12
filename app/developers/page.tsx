@@ -64,6 +64,10 @@ export default function DevelopersPage() {
           token.
         </li>
         <li>
+          <code>POST /api/cli/session</code>: verify a Firebase ID token (including revocation) and
+          return its expiry, creator profile and upload bucket. No tokens are issued.
+        </li>
+        <li>
           <code>POST /api/games/upload</code>: upload a multipart <code>file</code> (.cgs.zip, at
           most 100 MiB), or submit a JSON stagedPath and originalFilename from an authenticated
           Firebase Storage upload. See the specification for allowed paths and cleanup behavior.
@@ -153,12 +157,31 @@ export default function DevelopersPage() {
 cgs-games games
 cgs-games browse
 cgs-games games --sandbox
-cgs-games openapi`}</code>
+cgs-games openapi
+cgs-games auth login
+cgs-games auth status
+cgs-games upload --file ./my-game.cgs.zip --dry-run
+cgs-games upload --file ./my-game.cgs.zip
+cgs-games upload --url https://example.com/my-game/cgs.json
+cgs-games auth logout`}</code>
       </pre>
       <p>
         The <code>browse</code> command is an alias for <code>games</code> and accepts the same
-        options, including <code>--sandbox</code>. The CLI supports public reads only, sends
-        API-Version: 1, and exits unsuccessfully on an HTTP or network error. It reports Retry-After
+        options, including <code>--sandbox</code>. Browser login uses Google sign-in and an explicit
+        approval page. The CLI saves an origin-specific Firebase ID token in ~/.cgs-games for up to
+        one hour; sign in again after expiry. Use <code>auth login --no-browser</code> to open the
+        printed link yourself, or <code>auth login --token-stdin</code> for token input. Scripts can
+        supply <code>CGS_TOKEN</code> without saving it. Never pass tokens in command arguments.{' '}
+        <code>auth logout</code> removes the saved credential, not environment tokens or browser
+        sessions. Choose a creator username on the Upload page before publishing.
+      </p>
+      <p>
+        Uploads create real listings using the existing API and Firebase Storage permissions.
+        Archives must be nonempty .cgs.zip files up to 100 MiB. <code>--dry-run</code> checks local
+        inputs without requests; it does not validate ZIP contents or server permissions. No writes
+        are supported in the sandbox. API calls send API-Version: 1 and exit unsuccessfully on an
+        HTTP or network error. Reads time out after 30 seconds; uploads allow five minutes. Check
+        your creator page after a timeout before retrying a publication. The CLI reports Retry-After
         on 429 without automatically retrying. Use <code>--base-url http://localhost:3000</code> for
         local development. For support, visit <Link href="/contact">Contact CGS Games</Link>.
       </p>

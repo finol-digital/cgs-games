@@ -1,7 +1,7 @@
 {
   "name": "cgs-games-cli",
   "version": "1.0.0",
-  "description": "Official read-only CLI for the CGS Games Card Game Simulator community API",
+  "description": "Official CLI for browsing and uploading Card Game Simulator community games",
   "type": "module",
   "bin": {
     "cgs-games": "bin/cgs-games.mjs"

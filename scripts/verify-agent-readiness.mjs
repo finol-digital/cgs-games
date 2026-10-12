@@ -194,6 +194,10 @@ assert.equal(spoilers.response.headers.get('ratelimit-policy'), '"spoilers";q=10
 assert.equal(spoilers.response.headers.get('cache-control'), 'no-store');
 assert.ok(spoilers.response.headers.get('access-control-expose-headers').includes('RateLimit'));
 await check('/api/proxy/cgs.games/robots.txt', { type: 'text/plain' });
+const cliAuth = await check('/cli/auth', { type: 'text/html' });
+assert.match(cliAuth.text, /Authorize CGS Games CLI/);
+assert.match(cliAuth.text, /noindex/);
+assert.match(cliAuth.text, /<meta name="referrer" content="origin"/);
 
 for (const [path, method, status] of [
   ['/api/no-such-endpoint', 'GET', 404],
@@ -203,6 +207,8 @@ for (const [path, method, status] of [
   ['/api/sandbox/games', 'POST', 405],
   ['/api/games', 'POST', 401],
   ['/api/games/upload', 'POST', 401],
+  ['/api/cli/session', 'POST', 401],
+  ['/api/cli/session', 'GET', 405],
   ['/api/games/agent-readiness-no-write', 'DELETE', 401],
   ['/api/gatcg_spoilers?warm=1', 'GET', 401],
   ['/api/proxy/nonexistent-agent-readiness.invalid/resource', 'GET', 502],

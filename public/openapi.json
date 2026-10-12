@@ -2669,6 +2669,182 @@
           }
         }
       ]
+    },
+    "/api/cli/session": {
+      "parameters": [
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "verifyCliSession",
+        "summary": "Verify the current CLI sign-in",
+        "description": "Verifies a Firebase ID token including revocation and returns short-lived session metadata without issuing tokens or changing permissions. Responses are not cached. A creator username is required for publishing, but not for checking the session.",
+        "security": [
+          {
+            "firebaseIdToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified session metadata; never includes a token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CliSession"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid, expired or revoked Firebase ID token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Session information is temporarily unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "cliSessionOptions",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Returns POST and OPTIONS with CORS preflight headers for CLI session verification."
+      }
     }
   },
   "components": {
@@ -2677,7 +2853,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Firebase Auth ID token from the signed-in user. Requires a creator username."
+        "description": "Firebase Auth ID token from the signed-in user. Publishing and deletion require a creator username; session verification does not."
       },
       "warmToken": {
         "type": "http",
@@ -2832,6 +3008,28 @@
             "type": "null"
           }
         ]
+      },
+      "CliSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["uid", "username", "expiresAt", "storageBucket"],
+        "properties": {
+          "uid": {
+            "type": "string"
+          },
+          "username": {
+            "type": ["string", "null"],
+            "description": "Null until a creator username is chosen."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "storageBucket": {
+            "type": "string",
+            "description": "Firebase Storage bucket used for owned staged uploads."
+          }
+        }
       }
     }
   }
