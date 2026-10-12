@@ -8,6 +8,7 @@ export const metadata = publicPageMetadata(
   '/about',
 );
 
+/** Describes the community library, its operator, and how to participate. */
 export default function AboutPage() {
   return (
     <InformationPage title="About CGS Games">

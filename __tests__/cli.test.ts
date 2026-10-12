@@ -29,6 +29,18 @@ afterAll(async () => {
 });
 
 describe('official read-only CLI', () => {
+  it('explains how to invoke packaging when npm has not supplied its executable', async () => {
+    const env = { ...process.env };
+    delete env.npm_execpath;
+    await expect(
+      execute(process.execPath, ['scripts/pack-cli.mjs'], { env }),
+    ).rejects.toMatchObject({
+      code: 1,
+      stdout: '',
+      stderr: 'Run this script with: npm run pack:cli\n',
+    });
+  });
+
   it.each([
     ['games', [], '/api/games'],
     ['games', ['--sandbox'], '/api/sandbox/games'],

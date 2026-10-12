@@ -8,6 +8,7 @@ export const metadata = publicPageMetadata(
   '/contact',
 );
 
+/** Publishes existing support details and guidance for actionable support requests. */
 export default function ContactPage() {
   return (
     <InformationPage title="Contact CGS Games">

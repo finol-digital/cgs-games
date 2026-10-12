@@ -8,6 +8,7 @@ export const metadata = publicPageMetadata(
   '/developers',
 );
 
+/** Documents public integration contracts, authentication, sandbox reads, and the CLI. */
 export default function DevelopersPage() {
   return (
     <InformationPage title="CGS Games developer portal">

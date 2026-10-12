@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 
+/** Lists public pages, including developer and trust resources, for search discovery. */
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     ...['developers', 'about', 'contact'].map((path) => ({

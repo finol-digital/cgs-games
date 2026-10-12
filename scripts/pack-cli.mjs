@@ -3,6 +3,11 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
+if (!process.env.npm_execpath) {
+  console.error('Run this script with: npm run pack:cli');
+  process.exit(1);
+}
+
 const destination = fileURLToPath(new URL('../public/downloads', import.meta.url));
 mkdirSync(destination, { recursive: true });
 // npm supplies the actual CLI path, avoiding Windows shell quoting for file paths.
