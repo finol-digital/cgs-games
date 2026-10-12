@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const siteDescription =
   'CGS Games is the Card Game Simulator card game community. Browse, play, create, and share custom card games, and integrate with the public game catalog API.';
 
-// Contact details already published in the site's Terms and Privacy pages.
+// Mailing address published at https://www.cardgamesimulator.com/contact/.
 export const organization = {
   '@type': 'Organization',
   '@id': 'https://cgs.games/#organization',
@@ -17,10 +17,10 @@ export const organization = {
   },
   address: {
     '@type': 'PostalAddress',
-    streetAddress: '17350 State Hwy 249, Ste 220',
-    addressLocality: 'Houston',
+    streetAddress: '10601 Clarence Dr, Suite 250',
+    addressLocality: 'Frisco',
     addressRegion: 'TX',
-    postalCode: '77064',
+    postalCode: '75033',
     addressCountry: 'US',
   },
 };

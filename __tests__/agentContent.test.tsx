@@ -9,6 +9,8 @@ import { homepageParagraphs, homepageMarkdown } from '@/lib/siteContent';
 import AboutPage from '@/app/about/page';
 import ContactPage from '@/app/contact/page';
 import DevelopersPage from '@/app/developers/page';
+import PrivacyPage from '@/app/privacy/page';
+import TermsPage from '@/app/terms/page';
 import { metadata } from '@/app/page';
 
 jest.mock('@/lib/firebase/admin', () => ({
@@ -47,7 +49,13 @@ describe('server-rendered content', () => {
     );
     expect(organization.contactPoint.email).toBe('david@finoldigital.com');
     expect(organization.address['@type']).toBe('PostalAddress');
-    expect(organization.address.streetAddress).toBe('17350 State Hwy 249, Ste 220');
+    expect(organization.address).toMatchObject({
+      streetAddress: '10601 Clarence Dr, Suite 250',
+      addressLocality: 'Frisco',
+      addressRegion: 'TX',
+      postalCode: '75033',
+      addressCountry: 'US',
+    });
     expect(metadata.alternates?.canonical).toBe('/');
     expect(metadata.title).toContain('Card Game Simulator');
     expect(element.querySelector('a[href="/upload"]')).not.toBeNull();
@@ -65,6 +73,27 @@ describe('server-rendered content', () => {
       expect(element.querySelector('h3,h4,h5,h6')).toBeNull();
     },
   );
+
+  it.each([ContactPage, PrivacyPage, TermsPage])(
+    'publishes the current Card Game Simulator mailing address',
+    (Component) => {
+      const element = document.createElement('div');
+      element.innerHTML = renderToStaticMarkup(<Component />);
+      const text = element.textContent!;
+      for (const part of ['10601 Clarence Dr', 'Suite 250', 'Frisco', '75033']) {
+        expect(text).toContain(part);
+      }
+      expect(text).not.toMatch(/17350|Ste 220|Houston|77064/);
+    },
+  );
+
+  it('focuses the developer portal on CGS Games integration', () => {
+    const element = document.createElement('div');
+    element.innerHTML = renderToStaticMarkup(<DevelopersPage />);
+    expect(element.textContent).not.toMatch(/Grand\s+Archive|gatcg|spoiler/i);
+    expect(element.textContent).toContain('GET /api/games');
+    expect(element.querySelector('a[href="/openapi.json"]')).not.toBeNull();
+  });
 
   it('retains the detailed introduction in the agent-facing Markdown response', () => {
     expect(homepageMarkdown.length).toBeGreaterThan(500);

@@ -13,8 +13,8 @@ export default function DevelopersPage() {
   return (
     <InformationPage title="CGS Games developer portal">
       <p>
-        Use the CGS Games API to discover community Card Game Simulator games, retrieve cached Grand
-        Archive spoiler cards, or publish and manage games for an authenticated creator. The{' '}
+        Use the CGS Games API to discover community Card Game Simulator games or publish and manage
+        games for an authenticated creator. The{' '}
         <Link href="/openapi.json">OpenAPI 3.1 specification</Link> describes every endpoint, input,
         response, and operation ID. Agents should also read <Link href="/llms.txt">llms.txt</Link>.
       </p>
@@ -50,8 +50,7 @@ export default function DevelopersPage() {
       <p>
         Replace the example URL with your public HTTPS game specification. This request publishes a
         real listing; use it only with the creator’s authorization. Expired or invalid tokens return
-        401. Only the owner can delete a game. Spoiler cache maintenance uses a separate operator
-        secret and is not part of normal agent use.
+        401. Only the owner can delete a game.
       </p>
       <h2 id="endpoints">Endpoints</h2>
       <ul>
@@ -75,10 +74,6 @@ export default function DevelopersPage() {
         <li>
           <code>DELETE /api/games/&#123;id&#125;</code>: delete an owned game using its catalog
           document ID, not its slug. Success is plain text.
-        </li>
-        <li>
-          <code>GET /api/gatcg_spoilers</code>: cached spoiler JSON in a data array. OCR text may be
-          incomplete; observe X-Ocr-Pending and X-Cache.
         </li>
         <li>
           <code>GET /api/proxy/&#123;url&#125;</code> and{' '}
@@ -131,23 +126,19 @@ export default function DevelopersPage() {
       </p>
       <h2 id="rate-limits">Rate limits and retries</h2>
       <p>
-        Normal spoiler requests are limited to 10 per 60 seconds per client IP per running server
-        instance. Catalog reads have no configured application quota. Spoiler responses use the{' '}
+        Catalog reads have no configured application quota. Endpoints with quotas document them in
+        the <Link href="/openapi.json">OpenAPI specification</Link> and use the{' '}
         <a href="https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/">
           IETF RateLimit draft
         </a>{' '}
-        fields shown below. This is an Internet-Draft, not a finalized RFC. The legacy X-RateLimit
-        headers remain available. Quotas are hints, not a service guarantee.
+        fields RateLimit-Policy and RateLimit. This is an Internet-Draft, not a finalized RFC. The
+        legacy X-RateLimit headers remain available. Quotas are hints, not a service guarantee.
       </p>
-      <pre>
-        <code>{'RateLimit-Policy: "spoilers";q=10;w=60\nRateLimit: "spoilers";r=9;t=60'}</code>
-      </pre>
       <p>
         The r value is the remaining request count; t is seconds until reset. A 429 includes
         Retry-After in seconds: wait at least that long, then use bounded retries with backoff.
-        Per-client quota responses are not shared-cacheable; the underlying spoiler data remains
-        cached in Firestore. Authorized operator warm requests are exempt. CORS exposes version,
-        rate-limit, cache, and retry headers for browser clients.
+        Per-client quota responses are not shared-cacheable. CORS exposes version, rate-limit,
+        cache, and retry headers for browser clients.
       </p>
       <h2 id="cli">Official CGS Games CLI</h2>
       <p>
