@@ -87,6 +87,14 @@ describe('server-rendered content', () => {
     },
   );
 
+  it.each([PrivacyPage, TermsPage])('dates the mailing-address revision', (Component) => {
+    const element = document.createElement('div');
+    element.innerHTML = renderToStaticMarkup(<Component />);
+    expect(element.querySelector('[data-custom-class="subtitle"]')!.textContent).toBe(
+      'Last updated October 12, 2026',
+    );
+  });
+
   it('focuses the developer portal on CGS Games integration', () => {
     const element = document.createElement('div');
     element.innerHTML = renderToStaticMarkup(<DevelopersPage />);
