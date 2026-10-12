@@ -85,8 +85,10 @@ export default function DevelopersPage() {
           <code>POST /api/proxy/&#123;url&#125;</code>: public HTTPS resource passthrough on port
           443. Private network targets and unsafe redirects are blocked; active content is
           sandboxed. Responses are limited to 100 MiB and 30 seconds, and POST bodies to 16 MiB.
-          Responses depend on the upstream resource and may be binary. Prefer the typed catalog
-          endpoints for function calls.
+          Responses stream as bytes arrive. If a limit or connection failure occurs after headers
+          have been sent, the stream is aborted; discard partial content. Responses depend on the
+          upstream resource and may be binary. Prefer the typed catalog endpoints for function
+          calls.
         </li>
         <li>
           <code>GET /api/sandbox/games</code>: deterministic example catalog, with no database

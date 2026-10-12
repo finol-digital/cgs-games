@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { NextRequest } from 'next/server';
-import { proxy } from '@/proxy';
+import { proxy, config } from '@/proxy';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { negotiatePage, apiError } from '@/lib/httpResponses';
 import { adminCreatorExists, adminGetGame } from '@/lib/firebase/admin';
 import { staticPaths } from '@/lib/siteRoutes';
@@ -16,6 +17,14 @@ const request = (path: string, accept = 'text/html', method = 'GET') =>
   new NextRequest('https://cgs.games' + path, { method, headers: { accept } });
 
 describe('page negotiation and missing routes', () => {
+  it('bypasses middleware body cloning only for implemented streaming proxy paths', () => {
+    for (const url of ['/api/proxy/example.com/file', '/api/proxy/example.com/nested/path']) {
+      expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(false);
+    }
+    for (const url of ['/', '/api/games', '/api/proxy', '/api/proxy/']) {
+      expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(true);
+    }
+  });
   it('keeps legacy Hosting redirect-only so a deployment cannot recreate the retired server', () => {
     expect(firebaseConfig.hosting).not.toHaveProperty('source');
     expect(firebaseConfig.hosting).not.toHaveProperty('frameworksBackend');

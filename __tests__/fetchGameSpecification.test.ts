@@ -3,7 +3,7 @@ import { lookup } from 'node:dns/promises';
 import { EventEmitter } from 'node:events';
 import { get, request, RequestOptions } from 'node:https';
 import { IncomingMessage } from 'node:http';
-import { PassThrough } from 'node:stream';
+import { PassThrough, Readable } from 'node:stream';
 import {
   fetchGameSpecification,
   fetchPublicResource,
@@ -32,6 +32,112 @@ function respond(status = 200, body = '{"name":"Test Game"}', headers = {}) {
 beforeEach(() => {
   jest.resetAllMocks();
   (lookup as jest.Mock).mockResolvedValue([{ address: '93.184.216.34', family: 4 }]);
+});
+
+/** Delivers headers without ending the body, like a real streaming HTTPS peer. */
+function streamResponse(incoming: Readable, headers = {}) {
+  Object.assign(incoming, { statusCode: 200, headers });
+  (get as jest.Mock).mockImplementationOnce((options, callback) => {
+    options.signal.addEventListener('abort', () => incoming.destroy(options.signal.reason), {
+      once: true,
+    });
+    queueMicrotask(() => callback(incoming));
+    return new EventEmitter();
+  });
+}
+
+describe('bounded streaming public resources', () => {
+  it('delivers headers and initial bytes before the upstream ends', async () => {
+    const incoming = new PassThrough();
+    streamResponse(incoming, { 'content-type': 'image/png' });
+    const response = await fetchPublicResource('https://example.com/image', {
+      stream: true,
+      maxBytes: 6,
+    });
+    expect(response.headers.get('content-type')).toBe('image/png');
+    const reader = response.body!.getReader();
+    incoming.write(Buffer.from('abc'));
+    expect(Buffer.from((await reader.read()).value!).toString()).toBe('abc');
+    incoming.end('def');
+    expect(Buffer.from((await reader.read()).value!).toString()).toBe('def');
+    expect((await reader.read()).done).toBe(true);
+  });
+
+  it('aborts an unknown-length stream on overflow without forwarding the excess chunk', async () => {
+    const incoming = new PassThrough();
+    streamResponse(incoming);
+    const response = await fetchPublicResource('https://example.com/image', {
+      stream: true,
+      maxBytes: 3,
+    });
+    const reader = response.body!.getReader();
+    incoming.write(Buffer.from('abc'));
+    expect(Buffer.from((await reader.read()).value!).toString()).toBe('abc');
+    const excess = reader.read();
+    incoming.write(Buffer.from('d'));
+    await expect(excess).rejects.toThrow('exceeds');
+    expect(incoming.destroyed).toBe(true);
+  });
+
+  it('rejects an oversized declared length before returning a streaming response', async () => {
+    const incoming = new PassThrough();
+    streamResponse(incoming, { 'content-length': '4' });
+    await expect(
+      fetchPublicResource('https://example.com/image', { stream: true, maxBytes: 3 }),
+    ).rejects.toThrow('exceeds');
+    expect(incoming.destroyed).toBe(true);
+  });
+
+  it('applies backpressure and destroys the upstream when the client cancels', async () => {
+    let produced = 0;
+    const incoming = new Readable({
+      read() {
+        if (++produced > 128) this.push(null);
+        else this.push(Buffer.alloc(64 * 1024));
+      },
+    });
+    streamResponse(incoming);
+    const response = await fetchPublicResource('https://example.com/image', {
+      stream: true,
+      maxBytes: 100 * 1024 * 1024,
+    });
+    await new Promise(setImmediate);
+    expect(produced).toBeLessThan(10);
+    await response.body!.cancel();
+    await new Promise(setImmediate);
+    expect(incoming.destroyed).toBe(true);
+  });
+
+  it.each(['deadline', 'client'])('propagates %s cancellation after headers', async (reason) => {
+    const controller = new AbortController();
+    const timeout =
+      reason === 'deadline'
+        ? jest.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal)
+        : undefined;
+    try {
+      const incoming = new PassThrough();
+      streamResponse(incoming);
+      const response = await fetchPublicResource('https://example.com/image', {
+        stream: true,
+        ...(reason === 'client' ? { signal: controller.signal } : {}),
+      });
+      const reading = response.text();
+      controller.abort(new Error('cancelled by ' + reason));
+      await expect(reading).rejects.toThrow('cancelled by ' + reason);
+      expect(incoming.destroyed).toBe(true);
+    } finally {
+      timeout?.mockRestore();
+    }
+  });
+
+  it('propagates upstream connection failures after headers', async () => {
+    const incoming = new PassThrough();
+    streamResponse(incoming);
+    const response = await fetchPublicResource('https://example.com/image', { stream: true });
+    const reading = response.text();
+    incoming.destroy(new Error('upstream disconnected'));
+    await expect(reading).rejects.toThrow('upstream disconnected');
+  });
 });
 
 describe('safe game specification retrieval', () => {

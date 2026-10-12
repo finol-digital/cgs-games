@@ -2007,7 +2007,7 @@
           "schema": {
             "type": "string"
           },
-          "description": "Upstream host and path without a scheme, for example example.com/assets/game.json. This catch-all path can contain slashes; requires public HTTPS on port 443. Private IPs, embedded credentials, and unsafe redirects are rejected. GET forwards query parameters. Responses are limited to 100 MiB with a 30-second deadline; POST bodies to 16 MiB. Active content is sandboxed and upstream cookies are never forwarded."
+          "description": "Upstream host and path without a scheme, for example example.com/assets/game.json. This catch-all path can contain slashes; requires public HTTPS on port 443. Private IPs, embedded credentials, and unsafe redirects are rejected. GET forwards query parameters. Responses are limited to 100 MiB with a 30-second deadline; POST bodies to 16 MiB. Responses stream as bytes arrive. A limit or connection failure after headers aborts the stream; discard partial content. Active content is sandboxed and upstream cookies are never forwarded."
         },
         {
           "name": "API-Version",

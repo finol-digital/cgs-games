@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { apiError, markdownResponse, negotiatePage, notFoundMarkdown } from '@/lib/httpResponses';
+import { markdownResponse, negotiatePage, notFoundMarkdown } from '@/lib/httpResponses';
 import { homepageMarkdown } from '@/lib/siteContent';
-import { apiMethods, isPublicFile, staticPaths } from '@/lib/siteRoutes';
+import { isPublicFile, staticPaths } from '@/lib/siteRoutes';
+import { apiPolicy } from '@/lib/apiPolicy';
 
 /** Returns the negotiated 404 representation before React begins streaming. */
 function missingPage(request: NextRequest) {
@@ -19,37 +20,8 @@ function missingPage(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (path === '/api' || path.startsWith('/api/')) {
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, API-Version',
-      'Access-Control-Expose-Headers':
-        'API-Version, RateLimit, RateLimit-Policy, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Cache, X-Ocr-Pending, Deprecation, Sunset, Link',
-      'API-Version': '1',
-      Vary: 'API-Version',
-    };
-    const methods = apiMethods(path);
-    if (!methods) return apiError('API endpoint not found', 404, corsHeaders);
-    const responseHeaders = { ...corsHeaders, 'Access-Control-Allow-Methods': methods.join(', ') };
-    if (!methods.includes(request.method)) {
-      return apiError('Method not allowed', 405, { ...responseHeaders, Allow: methods.join(', ') });
-    }
-    if (request.method === 'OPTIONS') {
-      return new NextResponse(null, {
-        status: 204,
-        headers: {
-          Allow: methods.join(', '),
-          ...responseHeaders,
-        },
-      });
-    }
-    const version = request.headers.get('api-version');
-    if (version !== null && version !== '1') {
-      return apiError('Unsupported API version', 400, responseHeaders, {
-        code: 'UNSUPPORTED_API_VERSION',
-        hint: 'Send API-Version: 1 or omit the header. See /developers#versioning.',
-      });
-    }
-    return NextResponse.next({ headers: responseHeaders });
+    const { headers, response } = apiPolicy(request);
+    return response ?? NextResponse.next({ headers });
   }
   if (!['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
   if (path === '/') {
@@ -101,4 +73,5 @@ export async function proxy(request: NextRequest) {
   }
 }
 
-export const config = { matcher: ['/((?!_next/).*)'] };
+// Proxy routes apply apiPolicy themselves: Next's middleware clone waits for request EOF.
+export const config = { matcher: ['/((?!_next/|api/proxy/.+).*)'] };

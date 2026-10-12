@@ -7,6 +7,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 import { getSecurityRules } from 'firebase-admin/security-rules';
+import { auditStoragePrefixes } from './lib/auditStorage.mjs';
 
 // Read-only production audit. Keep identifiers and deployed rules in ignored local output.
 nextEnv.loadEnvConfig(process.cwd());
@@ -70,7 +71,11 @@ try {
       finding('extra_registry_fields', { username: doc.id, fields: Object.keys(doc.data()) });
   }
   let legacyGames = 0;
-  const gamePrefixes = new Set();
+  const { prefixes: gamePrefixes, findings: storageFindings } = auditStoragePrefixes(
+    games.docs.map((doc) => ({ id: doc.id, data: doc.data() })),
+    registry,
+  );
+  report.findings.push(...storageFindings);
   const gameNames = new Set();
   for (const doc of games.docs) {
     const data = doc.data();
@@ -79,16 +84,6 @@ try {
       finding('game_owner_unresolved', { gameId: doc.id, username: data.username ?? null });
     if (data.ownerUid === undefined) legacyGames++;
     else if (data.ownerUid !== uid) finding('game_owner_uid_mismatch', { gameId: doc.id });
-    if (data.storageBasePath) {
-      if (
-        !uid ||
-        !data.slug ||
-        data.storageBasePath !== `games/${uid}/${data.slug}` ||
-        /[/\\]/.test(data.slug)
-      )
-        finding('unsafe_storage_prefix', { gameId: doc.id, storageBasePath: data.storageBasePath });
-      gamePrefixes.add(data.storageBasePath + '/');
-    }
     const key = JSON.stringify([data.username, data.slug]);
     if (gameNames.has(key))
       finding('duplicate_game_route', { gameId: doc.id, username: data.username, slug: data.slug });

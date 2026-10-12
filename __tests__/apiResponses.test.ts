@@ -5,7 +5,13 @@ import { GET as browse } from '@/app/api/browse/route';
 import { DELETE as remove } from '@/app/api/games/[id]/route';
 import { POST as upload } from '@/app/api/games/upload/route';
 import { GET as spoilers } from '@/app/api/gatcg_spoilers/route';
-import { GET as proxyGet, POST as proxyPost } from '@/app/api/proxy/[...url]/route';
+import {
+  GET as proxyGet,
+  POST as proxyPost,
+  HEAD as proxyHead,
+  OPTIONS as proxyOptions,
+  DELETE as proxyDelete,
+} from '@/app/api/proxy/[...url]/route';
 import {
   adminAuth,
   adminDb,
@@ -101,6 +107,38 @@ afterEach(() => {
 });
 
 describe('API response contract', () => {
+  it('enforces version, method and preflight policy locally without fetching upstream', async () => {
+    const url = 'https://cgs.games/api/proxy/example.com/resource';
+    const unsupported = await proxyPost(
+      new Request(url, { method: 'POST', headers: { 'API-Version': '2' } }),
+    );
+    expect(unsupported.status).toBe(400);
+    expect((await unsupported.json()).code).toBe('UNSUPPORTED_API_VERSION');
+    const denied = proxyDelete(new Request(url, { method: 'DELETE' }));
+    expect(denied.status).toBe(405);
+    expect(denied.headers.get('allow')).toBe('GET, HEAD, POST, OPTIONS');
+    const preflight = proxyOptions(new Request(url, { method: 'OPTIONS' }));
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('access-control-allow-headers')).toContain('API-Version');
+    expect(fetchPublicResource).not.toHaveBeenCalled();
+  });
+
+  it('cancels HEAD bodies and preserves API version and upstream Vary headers', async () => {
+    const cancel = jest.fn();
+    jest.mocked(fetchPublicResource).mockResolvedValue(
+      new Response(new ReadableStream({ cancel }), {
+        headers: { 'Content-Type': 'image/png', Vary: 'Cookie' },
+      }),
+    );
+    const response = await proxyHead(
+      new Request('https://cgs.games/api/proxy/example.com/image', { method: 'HEAD' }),
+    );
+    expect(response.body).toBeNull();
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(response.headers.get('api-version')).toBe('1');
+    expect(response.headers.get('vary')).toBe('Cookie, API-Version');
+    expect(response.headers.get('access-control-expose-headers')).toContain('API-Version');
+  });
   it.each([proxyGet, proxyPost])(
     'sandboxes upstream active content without forwarding cookies',
     async (handler) => {
@@ -141,6 +179,8 @@ describe('API response contract', () => {
       body: '{}',
       accept: '*/*',
       maxBytes: 100 * 1024 * 1024,
+      stream: true,
+      signal: expect.any(AbortSignal),
     });
     expect(response.headers.get('cache-control')).toBe('no-store');
   });
