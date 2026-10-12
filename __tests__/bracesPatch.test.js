@@ -3,6 +3,29 @@
 const braces = require('braces');
 const micromatch = require('micromatch');
 const { runInNewContext } = require('node:vm');
+const path = require('node:path');
+const lockfile = require('../package-lock.json');
+
+const installedBracesPaths = Object.keys(lockfile.packages).filter((packagePath) =>
+  packagePath.endsWith('node_modules/braces'),
+);
+
+describe('braces mitigation across the dependency tree', () => {
+  it.each(installedBracesPaths)('guards the installed copy at %s', (packagePath) => {
+    const installedBraces = require(path.resolve(__dirname, '..', packagePath));
+    // Below the upstream 10,000-character limit, but deep enough to exhaust an unguarded walker.
+    const pattern = '{'.repeat(4500) + 'a,b' + '}'.repeat(4500);
+    for (const method of ['parse', 'compile', 'expand', 'stringify']) {
+      expect(() => installedBraces[method](pattern)).toThrow(/exceeds max depth/);
+    }
+    expect(installedBraces.expand('file-{1..2}.{js,ts}')).toEqual([
+      'file-1.js',
+      'file-1.ts',
+      'file-2.js',
+      'file-2.ts',
+    ]);
+  });
+});
 
 describe('braces stack-exhaustion mitigation', () => {
   it.each([
@@ -21,6 +44,14 @@ describe('braces stack-exhaustion mitigation', () => {
     let ast = { type: 'text', value: 'a' };
     for (let i = 0; i < 101; i++) ast = { type: 'brace', nodes: [ast] };
     expect(() => braces[method]({ type: 'root', nodes: [ast] })).toThrow(/exceeds max depth/);
+  });
+
+  it.each(['compile', 'expand', 'stringify'])('rejects cyclic child AST input to %s', (method) => {
+    const ast = { type: 'root', nodes: [] };
+    ast.nodes.push(ast);
+    expect(() =>
+      runInNewContext('braces[method](ast)', { braces, method, ast }, { timeout: 1000 }),
+    ).toThrow(/exceeds max depth/);
   });
 
   it('rejects cyclic parent links without hanging', () => {

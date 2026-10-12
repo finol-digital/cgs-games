@@ -8,7 +8,7 @@ Built with Next.js and Firebase.
 
 **First**: `npm install`
 
-**Audit**: `npm audit fix`
+**Audit**: `npm audit` (review findings and the mitigation notes below before changing dependencies)
 
 **Format**: `npm run format`
 
@@ -27,13 +27,16 @@ Built with Next.js and Firebase.
 `npm install` and `npm ci` apply the patches in `patches/` and fail if a patch cannot
 be applied. Do not skip the postinstall step when validating or deploying dependencies.
 
-As of October 8, 2026, `npm audit` reports seven high-severity findings, all from
+As of October 11, 2026, `npm audit` reports seven high-severity findings, all from
 the `braces` [stack-exhaustion advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
 and its dependents. There is no patched upstream release. `patches/braces+3.0.3.patch`
 backports the runtime guards from [upstream PR #72](https://github.com/micromatch/braces/pull/72)
 at commit `28d440b5dd449dbf1fe6f3506cf94ecca4d02660` (closed, unmerged): parsing and AST
 traversal are capped at 100 nesting levels, and cyclic expansion parent links are
-rejected. Regression tests cover the guard and normal glob behavior.
+rejected. Regression tests cover the guard and normal glob behavior, check every
+`braces` copy recorded in the lockfile against a 9,003-character deeply nested
+pattern, and verify that cyclic child ASTs cannot bypass the traversal limit.
+Run them with `npm test -- --runInBand __tests__/bracesPatch.test.js` after installing.
 
 The installed version remains 3.0.3, so npm still reports the advisory; this is a
 local mitigation, not a clean audit. Remove the patch after upgrading to a verified
