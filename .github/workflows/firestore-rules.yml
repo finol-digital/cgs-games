@@ -1,0 +1,27 @@
+name: Firestore rules
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+permissions:
+  contents: read
+
+jobs:
+  username-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Test isolated Firestore rules
+        run: npx --yes firebase-tools@15.33.0 emulators:exec --config firebase.rules-test.json --only firestore --project demo-cgs-username-tests "npm run test:rules"

@@ -52,3 +52,26 @@ upstream fix. Avoid `npm audit fix --force`: its suggested major downgrades of
 Firebase App Hosting will automatically deploy changes to the main branch.
 
 Simply raise and merge a PR from develop to main!
+
+### Username routes and Firestore rules
+
+New creator names must satisfy `lib/username.ts` and the matching Firestore creation
+rules. Application route prefixes and public assets are reserved in
+`lib/reservedUsernames.json`; tests require the Firestore list to match and detect
+new routes missing from the list. Existing accounts are not renamed by this policy.
+
+Run the database enforcement tests with Java 21 installed:
+
+```sh
+npx --yes firebase-tools@15.33.0 emulators:exec --config firebase.rules-test.json --only firestore --project demo-cgs-username-tests "npm run test:rules"
+```
+
+The tests use an isolated demo project and reject non-loopback emulator addresses.
+CI runs them separately from Jest. Before adding reserved names, run
+`npm run check:usernames` with the existing Firebase Admin environment configured.
+It only reads public username fields/registry names and reports collisions without
+user IDs. Resolve any existing-name collision before rolling out the new route.
+
+App Hosting deploys the web application; the updated database rules also need an
+authorized `firebase deploy --only firestore:rules --project cgs-games`. Deploy
+those rules as part of rollout so direct clients cannot bypass form validation.

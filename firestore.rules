@@ -43,9 +43,10 @@ service cloud.firestore {
       }
       
       function isValidUser(userId) {
-        let isOwner = request.auth.uid == userId;
+        let isOwner = request.auth != null && request.auth.uid == userId;
       	let username = request.resource.data.username;
-        let createdValidUsername = existsAfter(/databases/$(database)/documents/usernames/$(username));
+        let createdValidUsername = isAllowedUsername(username)
+          && getAfter(/databases/$(database)/documents/usernames/$(username)).data.uid == userId;
         
         return isOwner && createdValidUsername;
       }
@@ -56,11 +57,25 @@ service cloud.firestore {
       }
       
       function isValidUsername(username) {
-        let isOwner = request.auth.uid == request.resource.data.uid;
-        let isValidLength = username.size() >= 3 && username.size() <= 15;
+        let isOwner = request.auth != null && request.auth.uid == request.resource.data.uid;
         let isValidUserDoc = getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
         
-        return isOwner && isValidLength && isValidUserDoc;     
+        return isOwner && isAllowedUsername(username) && isValidUserDoc;
+      }
+
+      // Keep this list synchronized with lib/reservedUsernames.json (checked by tests).
+      function isAllowedUsername(username) {
+        return username is string
+          && username.matches('^[a-z0-9-][a-z0-9._-]{1,13}[a-z0-9-]$')
+          && !username.matches('.*[_.]{2}.*')
+          && !(username in [
+            '404', '_next', 'about', 'api', 'browse', 'card-game-simulator.png',
+            'cardback.png', 'cgs.png', 'cli', 'contact', 'developers', 'downloads',
+            'favicon.ico', 'google.png', 'icon-192x192.png', 'icon-256x256.png',
+            'icon-384x384.png', 'icon-512x512.png', 'llms.txt', 'manifest.json',
+            'opengraph-image.alt.txt', 'opengraph-image.png', 'openapi.json',
+            'privacy', 'robots.txt', 'sitemap.xml', 'sw.js', 'terms', 'upload'
+          ]);
       }
     }
   }

@@ -9,6 +9,8 @@ const createJestConfig = nextJest({
 const config: Parameters<typeof createJestConfig>[0] = {
   coverageProvider: 'v8',
   testEnvironment: 'jsdom',
+  // Node's emulator suite runs through test:rules against an explicitly local demo project.
+  testPathIgnorePatterns: ['/node_modules/', '\\.emulator\\.mjs$'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
