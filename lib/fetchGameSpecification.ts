@@ -1,12 +1,22 @@
 import { lookup } from 'node:dns/promises';
 import type { LookupAddress } from 'node:dns';
-import { get } from 'node:https';
+import { get, request as httpsRequest } from 'node:https';
 import { isIP } from 'node:net';
 import { checkServerIdentity } from 'node:tls';
+import { Readable, Transform, pipeline } from 'node:stream';
 import ipaddr from 'ipaddr.js';
 
 const MAX_BYTES = 16 * 1024 * 1024;
 const REDIRECTS = new Set([301, 302, 303, 307, 308]);
+
+interface PublicResourceOptions {
+  method?: 'GET' | 'POST';
+  body?: string;
+  maxBytes?: number;
+  accept?: string;
+  stream?: boolean;
+  signal?: AbortSignal;
+}
 
 /** Bounds DNS resolution by the same deadline as the subsequent HTTPS connection. */
 async function lookupBeforeDeadline(
@@ -39,7 +49,11 @@ export function isPublicAddress(address: string): boolean {
 }
 
 /** Fetches one validated destination, pinning the connection to the checked DNS result. */
-async function fetchHop(url: URL, signal: AbortSignal): Promise<Response> {
+async function fetchHop(
+  url: URL,
+  signal: AbortSignal,
+  options: PublicResourceOptions,
+): Promise<Response> {
   if (
     url.protocol !== 'https:' ||
     url.username ||
@@ -61,7 +75,10 @@ async function fetchHop(url: URL, signal: AbortSignal): Promise<Response> {
   }
   const target = addresses[0];
   return new Promise((resolve, reject) => {
-    const request = get(
+    const method = options.method ?? 'GET';
+    const maxBytes = options.maxBytes ?? MAX_BYTES;
+    const connect = method === 'POST' ? httpsRequest : get;
+    const request = connect(
       {
         // Do not resolve hostname a second time: that would allow DNS rebinding.
         hostname: target.address,
@@ -72,7 +89,13 @@ async function fetchHop(url: URL, signal: AbortSignal): Promise<Response> {
         checkServerIdentity: (_hostname, certificate) => checkServerIdentity(hostname, certificate),
         agent: false,
         signal,
-        headers: { Host: url.host, Accept: 'application/json', 'Accept-Encoding': 'identity' },
+        method,
+        headers: {
+          Host: url.host,
+          Accept: options.accept ?? 'application/json',
+          'Accept-Encoding': 'identity',
+          ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+        },
       },
       (incoming) => {
         const status = incoming.statusCode ?? 502;
@@ -82,46 +105,102 @@ async function fetchHop(url: URL, signal: AbortSignal): Promise<Response> {
           resolve(new Response(null, { status, headers: location ? { Location: location } : {} }));
           return;
         }
+        const headers = new Headers();
+        for (const [name, value] of Object.entries(incoming.headers)) {
+          if (value !== undefined) {
+            for (const item of Array.isArray(value) ? value : [value]) headers.append(name, item);
+          }
+        }
+        const limitError = () =>
+          new Error(`Upstream response exceeds ${maxBytes / (1024 * 1024)} MiB.`);
+        if (Number(headers.get('content-length')) > maxBytes) {
+          incoming.destroy();
+          reject(limitError());
+          return;
+        }
+        if (options.stream) {
+          if ([204, 205, 304].includes(status)) {
+            incoming.destroy();
+            resolve(new Response(null, { status, headers }));
+            return;
+          }
+          let size = 0;
+          const limited = new Transform({
+            highWaterMark: 64 * 1024,
+            transform(chunk: Buffer, _encoding, callback) {
+              size += chunk.length;
+              callback(size > maxBytes ? limitError() : null, size > maxBytes ? undefined : chunk);
+            },
+          });
+          // pipeline propagates upstream failures and cancellation in both directions.
+          // The web stream exposes failures to the consumer; the callback handles them here.
+          pipeline(incoming, limited, () => {});
+          resolve(
+            new Response(
+              Readable.toWeb(limited, {
+                strategy: {
+                  highWaterMark: 64 * 1024,
+                  size: (chunk: Uint8Array) => chunk.byteLength,
+                },
+              }) as ReadableStream<Uint8Array>,
+              { status, headers },
+            ),
+          );
+          return;
+        }
         const chunks: Buffer[] = [];
         let size = 0;
         incoming.on('error', reject);
         incoming.on('data', (chunk: Buffer) => {
           size += chunk.length;
-          if (size > MAX_BYTES) {
-            incoming.destroy(new Error('Game specification exceeds 16 MiB.'));
+          if (size > maxBytes) {
+            incoming.destroy(limitError());
           } else {
             chunks.push(chunk);
           }
         });
         incoming.on('end', () => {
           resolve(
-            new Response(
-              [204, 205, 304].includes(status) ? null : Uint8Array.from(Buffer.concat(chunks)),
-              { status },
-            ),
+            new Response([204, 205, 304].includes(status) ? null : Buffer.concat(chunks), {
+              status,
+              headers,
+            }),
           );
         });
       },
     );
     request.on('error', reject);
+    if (method === 'POST') request.end(options.body ?? '');
   });
 }
 
 /** Retrieves a bounded game document, revalidating every HTTPS redirect before connecting. */
-export async function fetchGameSpecification(input: string): Promise<Response> {
+export async function fetchPublicResource(
+  input: string,
+  options: PublicResourceOptions = {},
+): Promise<Response> {
   let url: URL;
   try {
     url = new URL(input);
   } catch {
     throw new UnsafeGameUrlError('The game URL must be a valid public HTTPS URL.');
   }
-  const signal = AbortSignal.timeout(30000);
+  const deadline = AbortSignal.timeout(30000);
+  const signal = options.signal ? AbortSignal.any([deadline, options.signal]) : deadline;
   for (let redirects = 0; redirects <= 5; redirects++) {
-    const response = await fetchHop(url, signal);
+    const response = await fetchHop(url, signal, options);
     if (!REDIRECTS.has(response.status)) return response;
     const location = response.headers.get('location');
     if (!location) throw new Error('Upstream redirect has no destination.');
     url = new URL(location, url);
+    if (options.method === 'POST' && [301, 302, 303].includes(response.status)) {
+      options = { ...options, method: 'GET', body: undefined };
+    }
   }
   throw new Error('Too many game specification redirects.');
+}
+
+/** Retrieves a game document using the same network boundary as the public proxy. */
+export async function fetchGameSpecification(input: string): Promise<Response> {
+  return fetchPublicResource(input);
 }

@@ -19,6 +19,22 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
+/** IETF draft-ietf-httpapi-ratelimit-headers-11 structured fields, plus legacy compatibility. */
+export function rateLimitResponseHeaders(
+  result: RateLimitResult,
+  config: RateLimitConfig,
+): Record<string, string> {
+  const resetSeconds = Math.max(0, Math.ceil((result.resetAt - Date.now()) / 1000));
+  return {
+    'RateLimit-Policy': `"spoilers";q=${config.maxRequests};w=${Math.ceil(config.windowMs / 1000)}`,
+    RateLimit: `"spoilers";r=${Math.max(0, result.remaining)};t=${resetSeconds}`,
+    'X-RateLimit-Limit': config.maxRequests.toString(),
+    'X-RateLimit-Remaining': Math.max(0, result.remaining).toString(),
+    'X-RateLimit-Reset': new Date(result.resetAt).toISOString(),
+    ...(!result.allowed ? { 'Retry-After': Math.max(1, resetSeconds).toString() } : {}),
+  };
+}
+
 /**
  * Check if a request should be rate limited
  * @param key - Unique identifier (typically IP address)

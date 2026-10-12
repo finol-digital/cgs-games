@@ -2,92 +2,101 @@
 
 import { UserContext } from '@/lib/context';
 import { db } from '@/lib/firebase/firestore';
+import { isReservedUsername, isValidUsername } from '@/lib/username';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
-import debounce from 'lodash.debounce';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
+/** Validates names before lookup and ignores results belonging to an earlier input. */
 export default function UsernameForm() {
   const [formValue, setFormValue] = useState('');
-  const [isValid, setIsValid] = useState(false);
-  const [loading, setLoading] = useState(false);
-
+  const [lookup, setLookup] = useState<{
+    username: string;
+    available: boolean;
+    failed?: boolean;
+  } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const { user, username } = useContext(UserContext);
+  const eligible = isValidUsername(formValue);
+  const loading = eligible && lookup?.username !== formValue;
+  const isValid = eligible && !loading && lookup?.available === true;
+
+  useEffect(() => {
+    if (!eligible) return;
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        const snapshot = await getDoc(doc(db, 'usernames', formValue));
+        if (active) setLookup({ username: formValue, available: !snapshot.exists() });
+      } catch {
+        if (active) setLookup({ username: formValue, available: false, failed: true });
+      }
+    }, 500);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [formValue, eligible]);
 
   const onSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-
-    // Create refs for both documents
-    const userDoc = doc(db, `users/${user?.uid}`);
-    const usernameDoc = doc(db, `usernames/${formValue}`);
-
-    // Commit both docs together as a batch write.
-    const batch = writeBatch(db);
-    batch.set(userDoc, {
-      username: formValue,
-    });
-    batch.set(usernameDoc, { uid: user?.uid });
-
-    await batch.commit();
-  };
-
-  const onChange = (e: { target: { value: string } }) => {
-    // Force form value typed in form to match correct format
-    const val = e.target.value.toLowerCase();
-    const re = /^(?=[a-zA-Z0-9._-]{3,15}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
-
-    // Only set form value if length is < 3 OR it passes regex
-    if (val.length < 3) {
-      setFormValue(val);
-      setLoading(false);
-      setIsValid(false);
-    }
-    if (
-      val === 'browse' ||
-      val === 'upload' ||
-      val === 'terms' ||
-      val === 'privacy' ||
-      val === 'api'
-    ) {
-      setFormValue(val);
-      setLoading(false);
-      setIsValid(false);
-    }
-
-    if (re.test(val)) {
-      setFormValue(val);
-      setLoading(true);
-      setIsValid(false);
+    // Recheck at submission; a disabled button alone is not an authorization boundary.
+    if (!user || username || !isValid || !isValidUsername(formValue) || saving) return;
+    setSaving(true);
+    setError('');
+    try {
+      const batch = writeBatch(db);
+      batch.set(doc(db, 'users', user.uid), { username: formValue });
+      batch.set(doc(db, 'usernames', formValue), { uid: user.uid });
+      await batch.commit();
+    } catch {
+      setLookup({ username: formValue, available: false });
+      setError('Could not save this username. It may have just been taken. Please try another.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Hit the database for username match after each debounced change
-  const checkUsername = useMemo(
-    () =>
-      debounce(async (username: string) => {
-        if (username.length >= 3) {
-          const ref = doc(db, `usernames/${username}`);
-          const exists = (await getDoc(ref)).exists();
-          console.log('Firestore read executed! ' + username + ' exists: ' + exists);
-          setIsValid(!exists);
-          setLoading(false);
-        }
-      }, 500),
-    [],
-  );
-
-  useEffect(() => {
-    checkUsername(formValue);
-  }, [formValue, checkUsername]);
+  let message = '';
+  if (formValue) {
+    if (isReservedUsername(formValue)) message = 'That username is reserved for CGS Games.';
+    else if (!eligible)
+      message =
+        'Use 3–15 lowercase letters, numbers, dots, underscores or hyphens. Dots and underscores cannot be at the ends or next to each other.';
+    else if (loading) message = 'Checking...';
+    else if (lookup?.failed) message = 'Could not check availability. Please try again.';
+    else message = isValid ? `${formValue} is available!` : 'That username is taken!';
+  }
 
   return (
     !username && (
       <section>
         <h2>Choose Username</h2>
         <form onSubmit={onSubmit}>
-          <input name="username" placeholder="myname" value={formValue} onChange={onChange} />
-          <UsernameMessage username={formValue} isValid={isValid} loading={loading} />
-          <button type="submit" className="btn-green" disabled={!isValid}>
-            Choose
+          <input
+            name="username"
+            aria-label="Username"
+            placeholder="myname"
+            value={formValue}
+            maxLength={15}
+            disabled={saving}
+            onChange={(e) => {
+              const nextValue = e.target.value.toLowerCase();
+              if (nextValue === formValue) return;
+              setFormValue(nextValue);
+              setLookup(null);
+              setError('');
+            }}
+          />
+          <p
+            className={loading || !formValue ? undefined : isValid ? 'text-success' : 'text-danger'}
+            aria-live="polite"
+          >
+            {message}
+          </p>
+          {error && <p role="alert">{error}</p>}
+          <button type="submit" className="btn-green" disabled={!isValid || saving}>
+            {saving ? 'Saving...' : 'Choose'}
           </button>
           <div>
             Username: {formValue}
@@ -100,24 +109,4 @@ export default function UsernameForm() {
       </section>
     )
   );
-}
-
-function UsernameMessage({
-  username,
-  isValid,
-  loading,
-}: {
-  username: string;
-  isValid: boolean;
-  loading: boolean;
-}) {
-  if (loading) {
-    return <p>Checking...</p>;
-  } else if (isValid) {
-    return <p className="text-success">{username} is available!</p>;
-  } else if (username && !isValid) {
-    return <p className="text-danger">That username is taken!</p>;
-  } else {
-    return <p></p>;
-  }
 }

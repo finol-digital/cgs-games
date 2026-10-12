@@ -2,66 +2,49 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Only the authenticated server APIs can publish or delete games. In particular,
+    // a client cannot replace the username or forge a Storage cleanup prefix.
+    match /games/{gameId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['username'])
+        && isAllowedUsername(request.resource.data.username)
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == userId;
+    }
+
+    match /usernames/{username} {
+      // The browser needs single-name availability checks, never a directory of accounts.
+      allow get: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid
+        && isAllowedUsername(username)
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
+    }
+
+    // Keep this list synchronized with lib/reservedUsernames.json (checked by tests).
+    function isAllowedUsername(username) {
+      return username is string
+        && username.matches('^[a-z0-9-][a-z0-9._-]{1,13}[a-z0-9-]$')
+        && !username.matches('.*[_.]{2}.*')
+        && !(username in [
+          '404', '_next', 'about', 'api', 'browse', 'card-game-simulator.png',
+          'cardback.png', 'cgs.png', 'cli', 'contact', 'developers', 'downloads',
+          'favicon.ico', 'google.png', 'icon-192x192.png', 'icon-256x256.png',
+          'icon-384x384.png', 'icon-512x512.png', 'llms.txt', 'manifest.json',
+          'opengraph-image.alt.txt', 'opengraph-image.png', 'openapi.json',
+          'privacy', 'robots.txt', 'sitemap.xml', 'sw.js', 'terms', 'upload'
+        ]);
+    }
+
+    // Caches, internal data, and all nested/unknown collections are server-only.
     match /{document=**} {
-
-      // OCR cache: server-only via Admin SDK, deny all client access
-      match /gatcg_ocr_cache/{docId} {
-        allow read, write: if false;
-      }
-
-      // Assembled spoiler response cache: server-only via Admin SDK
-      match /gatcg_spoiler_cache/{docId} {
-        allow read, write: if false;
-      }
-
-      match /games/{gameId} {
-        allow read;
-        allow write: if isUploadedAtNow() && isValidGame() && isValidUsernameSet();
-      }
-
-      function isUploadedAtNow() {
-        return request.resource.data.uploadedAt != null && request.resource.data.uploadedAt == request.time;
-      }
-      
-      function isValidGame() {
-        let hasUsernameAndSlug = request.resource.data.username != null && request.resource.data.slug != null;
-        let hasRequiredFields = request.resource.data.name != null && request.resource.data.autoUpdateUrl != null;
-        return hasUsernameAndSlug && hasRequiredFields;
-      }
-      
-      function isValidUsernameSet() {
-      	let username = request.resource.data.username;
-        let hasValidUsername = request.auth != null && username != null && get(/databases/$(database)/documents/usernames/$(username)).data.uid == request.auth.uid;
-        let isValidUser = request.auth != null && request.auth.uid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
-        
-        return hasValidUsername && isValidUser;
-      }
-
-      match /users/{userId} {
-      	allow read;
-        allow create: if isValidUser(userId);
-      }
-      
-      function isValidUser(userId) {
-        let isOwner = request.auth.uid == userId;
-      	let username = request.resource.data.username;
-        let createdValidUsername = existsAfter(/databases/$(database)/documents/usernames/$(username));
-        
-        return isOwner && createdValidUsername;
-      }
-      
-      match /usernames/{username} {
-      	allow read;
-        allow create: if isValidUsername(username);
-      }
-      
-      function isValidUsername(username) {
-        let isOwner = request.auth.uid == request.resource.data.uid;
-        let isValidLength = username.size() >= 3 && username.size() <= 15;
-        let isValidUserDoc = getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username == username;
-        
-        return isOwner && isValidLength && isValidUserDoc;     
-      }
+      allow read, write: if false;
     }
   }
 }

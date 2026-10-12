@@ -3,7 +3,12 @@
   "info": {
     "title": "CGS Games API",
     "version": "1.0.0",
-    "description": "Discover community Card Game Simulator games. Public reads require no authentication. Publishing and deletion use Firebase ID tokens and a user profile with a username. API errors retain the legacy error string and add code, message, and hint. GET routes also support HEAD; OPTIONS lists allowed methods. Unknown API paths return JSON 404; unsupported methods return JSON 405 with Allow."
+    "description": "Discover community Card Game Simulator games. Public reads require no authentication. Publishing and deletion use Firebase ID tokens and a user profile with a username. API errors retain the legacy error string and add code, message, and hint. GET routes also support HEAD; OPTIONS lists allowed methods. Unknown API paths return JSON 404; unsupported methods return JSON 405 with Allow. Select major version 1 with API-Version: 1 (also the default). Unsupported versions return 400. Breaking changes require a new major version; at least 90 days notice precedes retirement using Deprecation (RFC 9745), Sunset (RFC 8594), and a migration Link. Version 1 has no scheduled retirement. See /developers#versioning.",
+    "contact": {
+      "name": "CGS Games support",
+      "url": "https://cgs.games/contact",
+      "email": "david@finoldigital.com"
+    }
   },
   "servers": [
     {
@@ -11,8 +16,8 @@
     }
   ],
   "externalDocs": {
-    "description": "Agent guide",
-    "url": "https://cgs.games/llms.txt"
+    "description": "CGS Games developer portal: quickstart, authentication, sandbox and versioning",
+    "url": "https://cgs.games/developers"
   },
   "security": [],
   "paths": {
@@ -33,6 +38,34 @@
                   }
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "405": {
@@ -50,6 +83,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -59,6 +99,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -71,9 +120,19 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           }
-        }
+        },
+        "description": "List the newest games. See https://cgs.games/developers for integration guidance."
       },
       "post": {
         "operationId": "publishGame",
@@ -111,6 +170,15 @@
                   "$ref": "#/components/schemas/PublishedGame"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "400": {
@@ -119,6 +187,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -131,6 +208,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "404": {
@@ -139,6 +225,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -158,6 +253,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -167,6 +269,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -179,6 +290,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "default": {
@@ -189,9 +309,19 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           }
-        }
+        },
+        "description": "Publish a game from its auto-update URL. See https://cgs.games/developers for integration guidance."
       },
       "head": {
         "operationId": "listGamesHeaders",
@@ -199,7 +329,28 @@
         "description": "Same authentication, query parameters and processing as GET, without a response body.",
         "responses": {
           "200": {
-            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters."
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version; no response body.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "405": {
             "description": "Structured error. See code, message, and hint for recovery.",
@@ -209,14 +360,39 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
           "500": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "default": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           }
         }
       },
@@ -249,7 +425,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "Content-Type, Authorization"
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
           }
         ],
         "responses": {
@@ -278,12 +455,33 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "Content-Type, Authorization"
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           }
+        },
+        "description": "Discover allowed methods and CORS preflight permissions. See https://cgs.games/developers for integration guidance."
+      },
+      "parameters": [
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
         }
-      }
+      ]
     },
     "/api/browse": {
       "get": {
@@ -300,6 +498,34 @@
                   "items": {
                     "$ref": "#/components/schemas/Game"
                   }
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -319,6 +545,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -328,6 +561,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -340,9 +582,19 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           }
-        }
+        },
+        "description": "Legacy alias for the game catalog. See https://cgs.games/developers for integration guidance."
       },
       "head": {
         "operationId": "browseGamesHeaders",
@@ -350,7 +602,28 @@
         "description": "Same authentication, query parameters and processing as GET, without a response body.",
         "responses": {
           "200": {
-            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters."
+            "description": "Up to 100 games ordered by uploadedAt descending; no pagination or query filters.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version; no response body.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "405": {
             "description": "Structured error. See code, message, and hint for recovery.",
@@ -360,14 +633,39 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
           "500": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "default": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           }
         }
       },
@@ -400,7 +698,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "Content-Type, Authorization"
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
           }
         ],
         "responses": {
@@ -429,12 +728,33 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "Content-Type, Authorization"
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           }
+        },
+        "description": "Discover allowed methods and CORS preflight permissions. See https://cgs.games/developers for integration guidance."
+      },
+      "parameters": [
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
         }
-      }
+      ]
     },
     "/api/games/{id}": {
       "parameters": [
@@ -445,6 +765,17 @@
           "description": "Firestore game document ID from the catalog, not a game slug.",
           "schema": {
             "type": "string"
+          }
+        },
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
           }
         }
       ],
@@ -466,6 +797,15 @@
                 },
                 "example": "Game deleted successfully"
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "400": {
@@ -474,6 +814,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -486,6 +835,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "403": {
@@ -496,6 +854,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "404": {
@@ -504,6 +871,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -523,6 +899,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -532,6 +915,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -544,9 +936,19 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           }
-        }
+        },
+        "description": "Delete a game owned by the authenticated creator. See https://cgs.games/developers for integration guidance."
       },
       "options": {
         "operationId": "optionsapigamesid",
@@ -577,7 +979,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "Content-Type, Authorization"
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
           }
         ],
         "responses": {
@@ -606,11 +1009,19 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "Content-Type, Authorization"
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           }
-        }
+        },
+        "description": "Discover allowed methods and CORS preflight permissions. See https://cgs.games/developers for integration guidance."
       }
     },
     "/api/games/upload": {
@@ -667,6 +1078,15 @@
                   "$ref": "#/components/schemas/PublishedGame"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "400": {
@@ -675,6 +1095,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -687,6 +1116,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "404": {
@@ -695,6 +1133,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -714,6 +1161,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -723,6 +1177,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -735,6 +1198,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "500": {
@@ -745,6 +1217,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "default": {
@@ -753,6 +1234,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -788,7 +1278,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "Content-Type, Authorization"
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
           }
         ],
         "responses": {
@@ -817,12 +1308,33 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "Content-Type, Authorization"
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           }
+        },
+        "description": "Discover allowed methods and CORS preflight permissions. See https://cgs.games/developers for integration guidance."
+      },
+      "parameters": [
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
         }
-      }
+      ]
     },
     "/api/gatcg_spoilers": {
       "get": {
@@ -881,6 +1393,48 @@
                   "minimum": 0
                 },
                 "description": "Cards awaiting OCR."
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy. Present for normal rate-limited reads, not authorized warm runs.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";q=10;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance. Normal rate-limited reads only.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";r=9;t=60"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
               }
             },
             "content": {
@@ -900,12 +1454,40 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request or unsupported API version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
           "401": {
             "description": "Structured error. See code, message, and hint for recovery.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -925,6 +1507,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -939,9 +1528,52 @@
             },
             "headers": {
               "Retry-After": {
-                "description": "Seconds to wait before retrying.",
+                "description": "Wait at least this many seconds before retrying.",
                 "schema": {
-                  "type": "integer"
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy. Present for normal rate-limited reads, not authorized warm runs.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";q=10;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance. Normal rate-limited reads only.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";r=9;t=60"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               }
             }
@@ -954,6 +1586,50 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy. Present for normal rate-limited reads, not authorized warm runs.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";q=10;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance. Normal rate-limited reads only.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";r=9;t=60"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
             }
           },
           "default": {
@@ -962,6 +1638,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -1024,11 +1709,74 @@
                   "minimum": 0
                 },
                 "description": "Cards awaiting OCR."
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy. Present for normal rate-limited reads, not authorized warm runs.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";q=10;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance. Normal rate-limited reads only.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";r=9;t=60"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version; no response body.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
           "401": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "405": {
             "description": "Structured error. See code, message, and hint for recovery.",
@@ -1038,6 +1786,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -1045,18 +1800,114 @@
             "description": "Structured error. See code, message, and hint for recovery.",
             "headers": {
               "Retry-After": {
-                "description": "Seconds to wait before retrying.",
+                "description": "Wait at least this many seconds before retrying.",
                 "schema": {
-                  "type": "integer"
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy. Present for normal rate-limited reads, not authorized warm runs.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";q=10;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance. Normal rate-limited reads only.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";r=9;t=60"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               }
             }
           },
           "502": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy. Present for normal rate-limited reads, not authorized warm runs.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";q=10;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance. Normal rate-limited reads only.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"spoilers\";r=9;t=60"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
           },
           "default": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           }
         }
       },
@@ -1089,7 +1940,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "Content-Type, Authorization"
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
           }
         ],
         "responses": {
@@ -1118,12 +1970,33 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "Content-Type, Authorization"
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           }
+        },
+        "description": "Discover allowed methods and CORS preflight permissions. See https://cgs.games/developers for integration guidance."
+      },
+      "parameters": [
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
         }
-      }
+      ]
     },
     "/api/proxy/{url}": {
       "parameters": [
@@ -1134,7 +2007,18 @@
           "schema": {
             "type": "string"
           },
-          "description": "Upstream host and path without a scheme, for example example.com/assets/game.json. This catch-all path can contain slashes; always uses HTTPS. GET forwards query parameters."
+          "description": "Upstream host and path without a scheme, for example example.com/assets/game.json. This catch-all path can contain slashes; requires public HTTPS on port 443. Private IPs, embedded credentials, and unsafe redirects are rejected. GET forwards query parameters. Responses are limited to 100 MiB with a 30-second deadline; POST bodies to 16 MiB. Responses stream as bytes arrive. A limit or connection failure after headers aborts the stream; discard partial content. Active content is sandboxed and upstream cookies are never forwarded."
+        },
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
         }
       ],
       "get": {
@@ -1150,6 +2034,15 @@
                   "format": "binary"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           },
           "400": {
@@ -1158,6 +2051,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -1177,6 +2079,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -1186,6 +2095,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -1198,9 +2116,19 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           }
-        }
+        },
+        "description": "Fetch an upstream HTTPS resource. See https://cgs.games/developers for integration guidance. Upstream content is arbitrary, not a typed CGS function result; use catalog operations for structured game data."
       },
       "post": {
         "operationId": "proxyPost",
@@ -1209,7 +2137,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": {}
+              "schema": {
+                "$ref": "#/components/schemas/JsonValue"
+              }
             }
           }
         },
@@ -1218,7 +2148,20 @@
             "description": "Successful upstream response, including its headers and body.",
             "content": {
               "*/*": {
-                "schema": {}
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Opaque upstream response bytes; inspect Content-Type before decoding."
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -1228,6 +2171,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -1247,6 +2199,13 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
@@ -1256,6 +2215,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
                 }
               }
             }
@@ -1268,20 +2236,48 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
             }
           }
-        }
+        },
+        "description": "Forward a JSON body to an upstream HTTPS resource. See https://cgs.games/developers for integration guidance. Upstream content is arbitrary, not a typed CGS function result; use catalog operations for structured game data."
       },
       "head": {
         "operationId": "proxyGetHeaders",
         "summary": "Read headers for fetch an upstream https resource",
-        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "description": "Same authentication, query parameters and processing as GET, without a response body. Upstream content is arbitrary, not a typed CGS function result; use catalog operations for structured game data.",
         "responses": {
           "200": {
-            "description": "Upstream body and Content-Type; may be JSON, an image, or other content."
+            "description": "Upstream body and Content-Type; may be JSON, an image, or other content.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "400": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "405": {
             "description": "Structured error. See code, message, and hint for recovery.",
@@ -1291,14 +2287,39 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           },
           "502": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           },
           "default": {
-            "description": "Structured error. See code, message, and hint for recovery."
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
           }
         }
       },
@@ -1331,7 +2352,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "Content-Type, Authorization"
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
           }
         ],
         "responses": {
@@ -1360,11 +2382,468 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "Content-Type, Authorization"
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Discover allowed methods and CORS preflight permissions. See https://cgs.games/developers for integration guidance. Upstream content is arbitrary, not a typed CGS function result; use catalog operations for structured game data."
+      }
+    },
+    "/api/sandbox/games": {
+      "get": {
+        "operationId": "listSandboxGames",
+        "summary": "Read a deterministic sandbox catalog",
+        "responses": {
+          "200": {
+            "description": "A fixed example catalog matching the production Game schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "$ref": "#/components/schemas/Game"
+                  }
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Read-only Game fixtures, with no authentication, database access, or production mutations. Example URLs and creators do not refer to playable games. No sandbox writes are supported."
+      },
+      "head": {
+        "operationId": "listSandboxGamesHeaders",
+        "summary": "Read sandbox catalog headers",
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Headers for the fixed example catalog; no response body.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version; no response body.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
               }
             }
           }
         }
+      },
+      "options": {
+        "operationId": "optionsSandboxGames",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["GET", "HEAD"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "GET, HEAD, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Discover allowed methods and CORS preflight permissions. See https://cgs.games/developers for integration guidance."
+      },
+      "parameters": [
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
+        }
+      ]
+    },
+    "/api/cli/session": {
+      "parameters": [
+        {
+          "name": "API-Version",
+          "in": "header",
+          "required": false,
+          "description": "Major API version. Omit for version 1; any other value returns 400 UNSUPPORTED_API_VERSION. See /developers#versioning.",
+          "schema": {
+            "type": "string",
+            "enum": ["1"],
+            "default": "1"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "verifyCliSession",
+        "summary": "Verify the current CLI sign-in",
+        "description": "Verifies a Firebase ID token including revocation and returns short-lived session metadata without issuing tokens or changing permissions. Responses are not cached. A creator username is required for publishing, but not for checking the session.",
+        "security": [
+          {
+            "firebaseIdToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified session metadata; never includes a token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CliSession"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsupported API version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid, expired or revoked Firebase ID token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Session information is temporarily unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "cliSessionOptions",
+        "summary": "Discover allowed methods and CORS preflight permissions",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Origin of the requesting browser."
+          },
+          {
+            "name": "Access-Control-Request-Method",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["POST"]
+            },
+            "description": "Method requested by a browser preflight."
+          },
+          {
+            "name": "Access-Control-Request-Headers",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Content-Type, Authorization",
+            "description": "Access-Control-Request-Headers request value."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight accepted with no response body.",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string",
+                  "const": "*"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "POST, OPTIONS"
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Content-Type, Authorization, API-Version"
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Returns POST and OPTIONS with CORS preflight headers for CLI session verification."
       }
     }
   },
@@ -1374,7 +2853,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Firebase Auth ID token from the signed-in user. Requires a creator username."
+        "description": "Firebase Auth ID token from the signed-in user. Publishing and deletion require a creator username; session verification does not."
       },
       "warmToken": {
         "type": "http",
@@ -1408,7 +2887,8 @@
         "required": ["success", "slug"],
         "properties": {
           "success": {
-            "const": true
+            "const": true,
+            "type": "boolean"
           },
           "slug": {
             "type": "string"
@@ -1424,7 +2904,6 @@
           "name",
           "bannerImageUrl",
           "autoUpdateUrl",
-          "copyright",
           "uploadedAt"
         ],
         "properties": {
@@ -1450,7 +2929,8 @@
             "format": "uri"
           },
           "copyright": {
-            "type": "string"
+            "type": "string",
+            "description": "Copyright attribution, when present. Some legacy listings omit this field; do not infer ownership from its absence."
           },
           "uploadedAt": {
             "type": "string",
@@ -1497,6 +2977,57 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "JsonValue": {
+        "description": "An arbitrary JSON value forwarded unchanged to the upstream service. No CGS domain schema is implied.",
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "CliSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["uid", "username", "expiresAt", "storageBucket"],
+        "properties": {
+          "uid": {
+            "type": "string"
+          },
+          "username": {
+            "type": ["string", "null"],
+            "description": "Null until a creator username is chosen."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "storageBucket": {
+            "type": "string",
+            "description": "Firebase Storage bucket used for owned staged uploads."
           }
         }
       }

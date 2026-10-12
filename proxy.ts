@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { apiError, markdownResponse, negotiatePage, notFoundMarkdown } from '@/lib/httpResponses';
+import { markdownResponse, negotiatePage, notFoundMarkdown } from '@/lib/httpResponses';
 import { homepageMarkdown } from '@/lib/siteContent';
-import { apiMethods, isPublicFile, staticPaths } from '@/lib/siteRoutes';
+import { isPublicFile, staticPaths } from '@/lib/siteRoutes';
+import { apiPolicy } from '@/lib/apiPolicy';
 
 /** Returns the negotiated 404 representation before React begins streaming. */
 function missingPage(request: NextRequest) {
@@ -19,26 +20,8 @@ function missingPage(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (path === '/api' || path.startsWith('/api/')) {
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
-    const methods = apiMethods(path);
-    if (!methods) return apiError('API endpoint not found', 404, corsHeaders);
-    const responseHeaders = { ...corsHeaders, 'Access-Control-Allow-Methods': methods.join(', ') };
-    if (!methods.includes(request.method)) {
-      return apiError('Method not allowed', 405, { ...responseHeaders, Allow: methods.join(', ') });
-    }
-    if (request.method === 'OPTIONS') {
-      return new NextResponse(null, {
-        status: 204,
-        headers: {
-          Allow: methods.join(', '),
-          ...responseHeaders,
-        },
-      });
-    }
-    return NextResponse.next({ headers: responseHeaders });
+    const { headers, response } = apiPolicy(request);
+    return response ?? NextResponse.next({ headers });
   }
   if (!['GET', 'HEAD'].includes(request.method)) return NextResponse.next();
   if (path === '/') {
@@ -90,4 +73,5 @@ export async function proxy(request: NextRequest) {
   }
 }
 
-export const config = { matcher: ['/((?!_next/).*)'] };
+// Proxy routes apply apiPolicy themselves: Next's middleware clone waits for request EOF.
+export const config = { matcher: ['/((?!_next/|api/proxy/.+).*)'] };

@@ -1,9 +1,11 @@
 /** @jest-environment node */
 import { NextRequest } from 'next/server';
-import { proxy } from '@/proxy';
+import { proxy, config } from '@/proxy';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { negotiatePage, apiError } from '@/lib/httpResponses';
 import { adminCreatorExists, adminGetGame } from '@/lib/firebase/admin';
 import { staticPaths } from '@/lib/siteRoutes';
+import firebaseConfig from '@/firebase.json';
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminCreatorExists: jest.fn(),
@@ -15,6 +17,23 @@ const request = (path: string, accept = 'text/html', method = 'GET') =>
   new NextRequest('https://cgs.games' + path, { method, headers: { accept } });
 
 describe('page negotiation and missing routes', () => {
+  it('bypasses middleware body cloning only for implemented streaming proxy paths', () => {
+    for (const url of ['/api/proxy/example.com/file', '/api/proxy/example.com/nested/path']) {
+      expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(false);
+    }
+    for (const url of ['/', '/api/games', '/api/proxy', '/api/proxy/']) {
+      expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(true);
+    }
+  });
+  it('keeps legacy Hosting redirect-only so a deployment cannot recreate the retired server', () => {
+    expect(firebaseConfig.hosting).not.toHaveProperty('source');
+    expect(firebaseConfig.hosting).not.toHaveProperty('frameworksBackend');
+    expect(firebaseConfig.hosting).not.toHaveProperty('rewrites');
+    expect(firebaseConfig.hosting.redirects).toEqual([
+      { source: '/', destination: 'https://cgs.games/', type: 301 },
+      { source: '/:path*', destination: 'https://cgs.games/:path', type: 301 },
+    ]);
+  });
   beforeEach(() => {
     jest.resetAllMocks();
   });
@@ -129,8 +148,33 @@ describe('page negotiation and missing routes', () => {
     expect(preflight.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS');
     expect(preflight.headers.get('access-control-allow-origin')).toBe('*');
     expect(preflight.headers.get('access-control-allow-headers')).toBe(
-      'Content-Type, Authorization',
+      'Content-Type, Authorization, API-Version',
     );
+  });
+
+  it('selects version 1 by default or explicitly and rejects unknown versions before dispatch', async () => {
+    for (const value of [null, '1', '2', '']) {
+      const input = request('/api/games', 'application/json');
+      if (value !== null) input.headers.set('API-Version', value);
+      const response = await proxy(input);
+      expect(response.headers.get('api-version')).toBe('1');
+      expect(response.headers.get('vary')).toContain('API-Version');
+      expect(response.headers.get('access-control-expose-headers')).toContain('RateLimit');
+      if (value === null || value === '1')
+        expect(response.headers.get('x-middleware-next')).toBe('1');
+      else {
+        expect(response.status).toBe(400);
+        expect((await response.json()).code).toBe('UNSUPPORTED_API_VERSION');
+      }
+    }
+  });
+
+  it('allows sandbox reads and preflight but never writes', async () => {
+    expect((await proxy(request('/api/sandbox/games'))).headers.get('x-middleware-next')).toBe('1');
+    expect((await proxy(request('/api/sandbox/games', '*/*', 'POST'))).status).toBe(405);
+    expect(
+      (await proxy(request('/api/sandbox/games', '*/*', 'OPTIONS'))).headers.get('allow'),
+    ).toBe('GET, HEAD, OPTIONS');
   });
 
   it('retains error strings, CORS and retry headers with machine-readable fields', async () => {

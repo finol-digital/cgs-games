@@ -1,6 +1,12 @@
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
 import { NextResponse } from 'next/server';
 import { apiError } from '@/lib/httpResponses';
+import {
+  isOwnershipSegment,
+  ownedStoragePrefix,
+  ownsGame,
+  ownsRegisteredUsername,
+} from '@/lib/firebase/ownership';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +45,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     // Verify the ID token
     let decodedToken;
     try {
-      decodedToken = await adminAuth.verifyIdToken(idToken);
+      decodedToken = await adminAuth.verifyIdToken(idToken, true);
     } catch {
       return corsResponse('Unauthorized - Invalid token', 401);
     }
@@ -49,6 +55,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     // Await the params to get the game ID
     const { id } = await params;
+    if (!isOwnershipSegment(id)) return corsResponse('Invalid game ID', 400);
     const gameRef = adminDb.collection('games').doc(id);
     const gameDoc = await gameRef.get();
 
@@ -73,15 +80,20 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return corsResponse('User data is invalid', 400);
     }
 
-    if (gameData.username !== userData.username) {
+    if (
+      !(await ownsRegisteredUsername(decodedToken.uid, userData.username)) ||
+      !ownsGame(decodedToken.uid, userData.username, gameData)
+    ) {
       return corsResponse('Forbidden - You can only delete your own games', 403);
     }
 
     // If the game was uploaded via zip, clean up Firebase Storage files
     if (gameData.storageBasePath) {
+      const prefix = ownedStoragePrefix(decodedToken.uid, gameData);
+      if (!prefix) return corsResponse('Game storage ownership could not be verified', 403);
       try {
         const bucket = adminStorage.bucket();
-        const [files] = await bucket.getFiles({ prefix: gameData.storageBasePath + '/' });
+        const [files] = await bucket.getFiles({ prefix });
         if (files.length > 0) {
           await Promise.all(files.map((file) => file.delete()));
         }

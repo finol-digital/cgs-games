@@ -6,6 +6,12 @@ import MissingPage from '@/app/not-found';
 import GamesDeck from '@/components/gamesDeck';
 import { adminCreatorExists, adminGetGamesFor } from '@/lib/firebase/admin';
 import { homepageParagraphs, homepageMarkdown } from '@/lib/siteContent';
+import AboutPage from '@/app/about/page';
+import ContactPage from '@/app/contact/page';
+import DevelopersPage from '@/app/developers/page';
+import PrivacyPage from '@/app/privacy/page';
+import TermsPage from '@/app/terms/page';
+import { metadata } from '@/app/page';
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminGetGames: jest.fn().mockResolvedValue([]),
@@ -30,10 +36,71 @@ describe('server-rendered content', () => {
     );
     expect(element.querySelector('h3')).toBeNull();
     for (const paragraph of homepageParagraphs) {
-      expect(element.textContent).not.toContain(paragraph);
+      expect(element.querySelector('main')!.textContent).toContain(paragraph);
     }
+    expect(element.querySelector('main')!.textContent!.length).toBeGreaterThan(500);
+    expect(element.querySelector('a[href="/developers"]')).not.toBeNull();
+    const data = JSON.parse(
+      element.querySelector('script[type="application/ld+json"]')!.textContent!,
+    );
+    expect(data['@context']).toBe('https://schema.org');
+    const organization = data['@graph'].find(
+      (entry: { '@type': string }) => entry['@type'] === 'Organization',
+    );
+    expect(organization.contactPoint.email).toBe('david@finoldigital.com');
+    expect(organization.address['@type']).toBe('PostalAddress');
+    expect(organization.address).toMatchObject({
+      streetAddress: '10601 Clarence Dr, Suite 250',
+      addressLocality: 'Frisco',
+      addressRegion: 'TX',
+      postalCode: '75033',
+      addressCountry: 'US',
+    });
+    expect(metadata.alternates?.canonical).toBe('/');
+    expect(metadata.title).toContain('Card Game Simulator');
     expect(element.querySelector('a[href="/upload"]')).not.toBeNull();
     expect(element.querySelector('a[href="/browse"]')).not.toBeNull();
+  });
+
+  it.each([AboutPage, ContactPage, DevelopersPage])(
+    'renders public information without JavaScript',
+    (Component) => {
+      const element = document.createElement('div');
+      element.innerHTML = renderToStaticMarkup(<Component />);
+      expect(element.querySelectorAll('h1')).toHaveLength(1);
+      expect(element.querySelector('main')!.textContent!.length).toBeGreaterThan(500);
+      expect(element.querySelector('a[href="/developers"]')).not.toBeNull();
+      expect(element.querySelector('h3,h4,h5,h6')).toBeNull();
+    },
+  );
+
+  it.each([ContactPage, PrivacyPage, TermsPage])(
+    'publishes the current Card Game Simulator mailing address',
+    (Component) => {
+      const element = document.createElement('div');
+      element.innerHTML = renderToStaticMarkup(<Component />);
+      const text = element.textContent!;
+      for (const part of ['10601 Clarence Dr', 'Suite 250', 'Frisco', '75033']) {
+        expect(text).toContain(part);
+      }
+      expect(text).not.toMatch(/17350|Ste 220|Houston|77064/);
+    },
+  );
+
+  it.each([PrivacyPage, TermsPage])('dates the mailing-address revision', (Component) => {
+    const element = document.createElement('div');
+    element.innerHTML = renderToStaticMarkup(<Component />);
+    expect(element.querySelector('[data-custom-class="subtitle"]')!.textContent).toBe(
+      'Last updated October 12, 2026',
+    );
+  });
+
+  it('focuses the developer portal on CGS Games integration', () => {
+    const element = document.createElement('div');
+    element.innerHTML = renderToStaticMarkup(<DevelopersPage />);
+    expect(element.textContent).not.toMatch(/Grand\s+Archive|gatcg|spoiler/i);
+    expect(element.textContent).toContain('GET /api/games');
+    expect(element.querySelector('a[href="/openapi.json"]')).not.toBeNull();
   });
 
   it('retains the detailed introduction in the agent-facing Markdown response', () => {

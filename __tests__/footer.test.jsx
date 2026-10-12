@@ -32,12 +32,16 @@ describe('Footer', () => {
     expect(screen.getByText('Upload')).toBeInTheDocument();
     expect(screen.getByText('Terms')).toBeInTheDocument();
     expect(screen.getByText('Privacy')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about');
+    expect(screen.getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('link', { name: 'Developers' })).toHaveAttribute('href', '/developers');
   });
 
-  it('uses fixed height for gold footer section', () => {
+  it('fits navigation content with padding instead of reserving empty footer space', () => {
     const { container } = render(<Footer />);
     const goldDiv = container.querySelector('.bg-\\[var\\(--color-gold\\)\\]');
-    // Verify it uses fixed height (h-48)
-    expect(goldDiv).toHaveClass('h-48');
+    expect(goldDiv).toHaveClass('py-3');
+    expect(goldDiv).not.toHaveClass('h-48');
+    expect(goldDiv.querySelector('br')).toBeNull();
   });
 });

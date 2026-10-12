@@ -1,10 +1,10 @@
 {
   "hosting": {
-    "source": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "frameworksBackend": {
-      "region": "us-central1"
-    }
+    "site": "cgs-games",
+    "redirects": [
+      { "source": "/", "destination": "https://cgs.games/", "type": 301 },
+      { "source": "/:path*", "destination": "https://cgs.games/:path", "type": 301 }
+    ]
   },
   "firestore": {
     "rules": "firestore.rules",

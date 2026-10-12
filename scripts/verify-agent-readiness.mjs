@@ -52,6 +52,18 @@ assert.ok(markdown.text.length > 500);
 assert.match(markdown.text, /^# CGS Games/m);
 const html = await check('/', { accept: 'text/html', type: 'text/html' });
 const document = new JSDOM(html.text).window.document;
+assert.equal(document.documentElement.lang, 'en');
+assert.equal(document.querySelector('link[rel="canonical"]')?.href, 'https://cgs.games/');
+assert.ok(document.querySelector('meta[property="og:image"]')?.content);
+assert.equal(document.querySelector('meta[property="og:type"]')?.content, 'website');
+const identity = JSON.parse(
+  document.querySelector('script[type="application/ld+json"]').textContent,
+);
+assert.equal(identity['@context'], 'https://schema.org');
+const organization = identity['@graph'].find((entry) => entry['@type'] === 'Organization');
+assert.ok(organization.contactPoint.email);
+assert.equal(organization.address['@type'], 'PostalAddress');
+assert.ok(organization.address.streetAddress);
 document
   .querySelectorAll('script, style, template, noscript')
   .forEach((element) => element.remove());
@@ -61,14 +73,10 @@ assert.match(
   document.querySelector('main').textContent,
   /Welcome to the Card Game Simulator \(CGS\) Games website!/,
 );
-for (const href of ['/browse', '/upload']) {
+for (const href of ['/browse', '/upload', '/developers', '/llms.txt']) {
   assert.ok(document.querySelector(`main a[href="${href}"]`), `Homepage link: ${href}`);
 }
-if (contentLength < 500) {
-  console.warn(
-    `NOTE: The original homepage copy is preserved (${contentLength} characters); the 500-character HTML audit target is not met. Detailed content is available as Markdown.`,
-  );
-}
+assert.ok(contentLength >= 500, `Homepage has only ${contentLength} meaningful characters`);
 let previousHeading = 0;
 for (const heading of document.querySelectorAll('h1,h2,h3,h4,h5,h6')) {
   const level = Number(heading.tagName.slice(1));
@@ -104,6 +112,32 @@ const specification = await check('/openapi.json', { type: 'application/json' })
 await SwaggerParser.validate(JSON.parse(specification.text));
 const guide = await check('/llms.txt', { type: 'text/plain' });
 assert.match(guide.text, /^# CGS Games\r?\n\r?\n> /);
+assert.match(guide.text, /## When to use CGS Games/);
+for (const path of ['/about', '/contact', '/privacy', '/developers']) {
+  const page = await check(path, { type: 'text/html', redirect: 'manual' });
+  const pageDocument = new JSDOM(page.text).window.document;
+  pageDocument
+    .querySelectorAll('script,style,template,noscript')
+    .forEach((element) => element.remove());
+  assert.ok(
+    pageDocument.querySelector('main').textContent.trim().length >= 500,
+    `${path}: meaningful content`,
+  );
+  if (path !== '/privacy') {
+    assert.equal(
+      pageDocument.querySelector('link[rel="canonical"]').href,
+      'https://cgs.games' + path,
+    );
+  }
+}
+const cliPackage = await fetch(new URL('/downloads/cgs-games-cli-1.0.0.tgz', origin));
+assert.equal(cliPackage.status, 200);
+const cliBytes = Buffer.from(await cliPackage.arrayBuffer());
+assert.deepEqual(
+  cliBytes,
+  await readFile(new URL('../public/downloads/cgs-games-cli-1.0.0.tgz', import.meta.url)),
+);
+console.log('PASS versioned CLI package download matches the tested local artifact');
 const sitemap = await check('/sitemap.xml', { type: 'application/xml' });
 const sitemapDocument = new JSDOM(sitemap.text, { contentType: 'application/xml' }).window.document;
 assert.equal(
@@ -125,6 +159,27 @@ for (const icon of JSON.parse(manifest.text).icons) await check(icon.src, { type
 const catalog = await check('/api/games', { type: 'application/json' });
 const games = JSON.parse(catalog.text);
 assert.ok(Array.isArray(games));
+assert.equal(catalog.response.headers.get('api-version'), '1');
+const versioned = await check('/api/games', {
+  headers: { 'API-Version': '1' },
+  type: 'application/json',
+});
+assert.deepEqual(JSON.parse(versioned.text), games);
+const unsupported = await check('/api/games', {
+  headers: { 'API-Version': '2' },
+  status: 400,
+  type: 'application/json',
+});
+assert.equal(JSON.parse(unsupported.text).code, 'UNSUPPORTED_API_VERSION');
+const sandbox = await check('/api/sandbox/games', { type: 'application/json' });
+const fixtures = JSON.parse(sandbox.text);
+assert.equal(fixtures.length, 1);
+assert.equal(fixtures[0].id, 'sandbox-example');
+for (const game of [...games, ...fixtures]) {
+  for (const field of JSON.parse(specification.text).components.schemas.Game.required) {
+    assert.equal(typeof game[field], 'string', `Game field ${field}`);
+  }
+}
 const browse = await check('/api/browse', { type: 'application/json' });
 assert.deepEqual(JSON.parse(browse.text), games);
 if (games[0]) {
@@ -133,16 +188,27 @@ if (games[0]) {
     type: 'text/html',
   });
 }
-await check('/api/gatcg_spoilers', { type: 'application/json' });
+const spoilers = await check('/api/gatcg_spoilers', { type: 'application/json' });
+assert.match(spoilers.response.headers.get('ratelimit'), /^"spoilers";r=\d+;t=\d+$/);
+assert.equal(spoilers.response.headers.get('ratelimit-policy'), '"spoilers";q=10;w=60');
+assert.equal(spoilers.response.headers.get('cache-control'), 'no-store');
+assert.ok(spoilers.response.headers.get('access-control-expose-headers').includes('RateLimit'));
 await check('/api/proxy/cgs.games/robots.txt', { type: 'text/plain' });
+const cliAuth = await check('/cli/auth', { type: 'text/html' });
+assert.match(cliAuth.text, /Authorize CGS Games CLI/);
+assert.match(cliAuth.text, /noindex/);
+assert.match(cliAuth.text, /<meta name="referrer" content="origin"/);
 
 for (const [path, method, status] of [
   ['/api/no-such-endpoint', 'GET', 404],
   ['/api', 'GET', 404],
   ['/api/games', 'PUT', 405],
   ['/api/games/upload', 'GET', 405],
+  ['/api/sandbox/games', 'POST', 405],
   ['/api/games', 'POST', 401],
   ['/api/games/upload', 'POST', 401],
+  ['/api/cli/session', 'POST', 401],
+  ['/api/cli/session', 'GET', 405],
   ['/api/games/agent-readiness-no-write', 'DELETE', 401],
   ['/api/gatcg_spoilers?warm=1', 'GET', 401],
   ['/api/proxy/nonexistent-agent-readiness.invalid/resource', 'GET', 502],
@@ -166,7 +232,7 @@ for (const [path, operations] of Object.entries(spec.paths)) {
   }
   for (const method of ['get', 'head', 'post', 'delete'].filter((method) => method in operations)) {
     const requestingOrigin = 'https://cgs.gg';
-    const requestedHeaders = ['content-type', 'authorization'];
+    const requestedHeaders = ['content-type', 'authorization', 'api-version'];
     const result = await check(concrete, {
       method: 'OPTIONS',
       status: 204,
@@ -192,3 +258,22 @@ for (const [path, operations] of Object.entries(spec.paths)) {
 console.log(
   `Verified ${checks} HTTP responses; homepage contains ${contentLength} visible text characters without JavaScript.`,
 );
+
+// Exercise the real limiter only on a local instance, never by flooding the public service.
+if (['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname)) {
+  let limited;
+  for (let attempt = 0; attempt < 11; attempt++) {
+    const response = await fetch(new URL('/api/gatcg_spoilers', origin));
+    const body = await response.json();
+    assert.ok([200, 429].includes(response.status));
+    if (response.status === 429) {
+      limited = response;
+      assert.equal(body.code, 'RATE_LIMITED');
+      break;
+    }
+  }
+  assert.ok(limited, 'The local spoiler endpoint should enforce its quota');
+  assert.match(limited.headers.get('ratelimit'), /^"spoilers";r=0;t=\d+$/);
+  assert.ok(Number(limited.headers.get('retry-after')) >= 1);
+  console.log('PASS local spoiler quota: HTTP 429 with RateLimit and Retry-After');
+}

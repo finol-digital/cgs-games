@@ -16,6 +16,7 @@ import JSZip from 'jszip';
 import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
 import { apiError } from '@/lib/httpResponses';
+import { ownsRegisteredUsername } from '@/lib/firebase/ownership';
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const STAGED_UPLOAD_PREFIX = 'staged-uploads';
 
@@ -68,7 +69,7 @@ async function authenticateUploadRequest(
   const idToken = authHeader.split('Bearer ')[1];
   let decodedToken;
   try {
-    decodedToken = await adminAuth.verifyIdToken(idToken);
+    decodedToken = await adminAuth.verifyIdToken(idToken, true);
   } catch (err) {
     console.error('Token verification failed', { error: err instanceof Error ? err.message : err });
     return jsonError('Invalid or expired token', 401);
@@ -86,6 +87,9 @@ async function authenticateUploadRequest(
   if (!username) {
     console.error('Username missing on user document', { uid });
     return jsonError('Username not found in user document', 400);
+  }
+  if (!(await ownsRegisteredUsername(uid, username))) {
+    return jsonError('Username ownership could not be verified', 403);
   }
 
   return { uid, username };
@@ -200,7 +204,6 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
   let cgsJson: CgsJson;
   try {
     const cgsJsonContent = await cgsJsonFile.async('string');
-    console.log('cgs.json preview', { preview: cgsJsonContent.slice(0, 500) });
     const parsed = JSON.parse(cgsJsonContent);
     const validationError = validateCgsJson(parsed);
     if (validationError) {
@@ -214,6 +217,7 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
   }
 
   const slug = encodeURI(snakecase(cgsJson.name));
+  if (!slug) return jsonError('Game name must produce a nonempty URL slug', 400);
   console.log('Generated slug', { uid, username, slug, gameName: cgsJson.name });
 
   const existingGames = await adminDb
@@ -322,6 +326,7 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
     : resolveBannerImageUrl({ cardBackImageUrl: cgsJson.cardBackImageUrl });
 
   const game = {
+    ownerUid: uid,
     username,
     slug,
     name: cgsJson.name,
@@ -351,11 +356,7 @@ export async function POST(request: Request) {
   console.log('Received game upload request', {
     method: request.method,
     url: request.url,
-    headers: Object.fromEntries(
-      Array.from(request.headers.entries()).filter(
-        ([key]) => key.toLowerCase() !== 'authorization',
-      ),
-    ),
+    contentType: request.headers.get('content-type'),
   });
   try {
     const authenticatedUser = await authenticateUploadRequest(request);
