@@ -1,0 +1,80 @@
+/** @jest-environment node */
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { createServer, type Server } from 'node:http';
+import { type AddressInfo } from 'node:net';
+
+const execute = promisify(execFile);
+const cli = 'packages/cli/bin/cgs-games.mjs';
+let server: Server;
+let base: string;
+let status: number;
+let requests: { path: string; version: string | string[] | undefined }[];
+
+beforeAll(async () => {
+  server = createServer((request, response) => {
+    requests.push({ path: request.url!, version: request.headers['api-version'] });
+    response.writeHead(status, { 'Content-Type': 'application/json', 'Retry-After': '15' });
+    response.end(JSON.stringify({ path: request.url }));
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  base = 'http://127.0.0.1:' + (server.address() as AddressInfo).port;
+});
+beforeEach(() => {
+  status = 200;
+  requests = [];
+});
+afterAll(async () => {
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+});
+
+describe('official read-only CLI', () => {
+  it.each([
+    ['games', [], '/api/games'],
+    ['games', ['--sandbox'], '/api/sandbox/games'],
+    ['spoilers', [], '/api/gatcg_spoilers'],
+    ['openapi', [], '/openapi.json'],
+  ])('prints JSON for %s %s and selects version 1', async (command, options, path) => {
+    const result = await execute(process.execPath, [cli, command, ...options, '--base-url', base]);
+    expect(JSON.parse(result.stdout)).toEqual({ path });
+    expect(result.stderr).toBe('');
+    expect(requests).toEqual([{ path, version: '1' }]);
+  });
+
+  it('reports throttling without retrying or printing a success payload', async () => {
+    status = 429;
+    await expect(
+      execute(process.execPath, [cli, 'spoilers', '--base-url', base]),
+    ).rejects.toMatchObject({
+      code: 1,
+      stdout: '',
+      stderr: expect.stringContaining('HTTP 429; Retry-After: 15'),
+    });
+    expect(requests).toHaveLength(1);
+  });
+
+  it.each([
+    ['delete'],
+    ['games', '--unknown'],
+    ['spoilers', '--sandbox'],
+    ['games', '--base-url'],
+    ['games', '--base-url', 'http://example.com'],
+    ['games', '--base-url', 'https://user:secret@example.com'],
+    ['games', '--base-url', 'https://example.com/path'],
+    ['games', '--sandbox', '--sandbox'],
+  ])('rejects invalid arguments %j before making a request', async (...args) => {
+    await expect(execute(process.execPath, [cli, ...args])).rejects.toMatchObject({
+      code: 1,
+      stdout: '',
+    });
+    expect(requests).toHaveLength(0);
+  });
+
+  it('provides version and help without network access', async () => {
+    expect((await execute(process.execPath, [cli, '--version'])).stdout.trim()).toBe('1.0.0');
+    expect((await execute(process.execPath, [cli, '--help'])).stdout).toContain(
+      'https://cgs.games/developers',
+    );
+    expect(requests).toHaveLength(0);
+  });
+});

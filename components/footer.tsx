@@ -34,6 +34,19 @@ export default function Footer({ copyrightNotice }: { copyrightNotice?: string }
             Privacy
           </Link>
         </p>
+        <p className="text-black">
+          <Link href="/about" className="brownlink">
+            About
+          </Link>{' '}
+          |{' '}
+          <Link href="/contact" className="brownlink">
+            Contact
+          </Link>{' '}
+          |{' '}
+          <Link href="/developers" className="brownlink">
+            Developers
+          </Link>
+        </p>
         <br></br>
       </div>
     </footer>

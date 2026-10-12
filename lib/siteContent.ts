@@ -18,10 +18,14 @@ ${homepageParagraphs.join('\n\n')}
 
 ## For agents
 
+- [CGS Games developer portal and API documentation](https://cgs.games/developers)
+- [Read-only sandbox](https://cgs.games/api/sandbox/games)
 - [Agent guide](https://cgs.games/llms.txt)
 - [OpenAPI specification](https://cgs.games/openapi.json)
 - [Game catalog JSON](https://cgs.games/api/games)
 - [Sitemap](https://cgs.games/sitemap.xml)
 - [Terms](https://cgs.games/terms)
 - [Privacy](https://cgs.games/privacy)
+- [About CGS Games](https://cgs.games/about)
+- [Contact CGS Games](https://cgs.games/contact)
 `;

@@ -13,6 +13,19 @@ Request the homepage with `Accept: text/markdown` for Markdown or `Accept: text/
 - [Legacy catalog](https://cgs.games/api/browse): GET alias for the game catalog.
 - [Grand Archive spoilers](https://cgs.games/api/gatcg_spoilers): Cached card data; respect rate limits and Retry-After. Cache maintenance parameters are for operators.
 
+## When to use CGS Games
+
+- [Find a community card game](https://cgs.games/api/games): Use GET with API-Version: 1 to retrieve up to 100 recent games; filter locally by name or creator. Link to /{username}/{slug} using returned fields. Do not invent pagination or assume this is the complete historical catalog.
+- [Help a creator publish](https://cgs.games/developers#authentication): Use POST /api/games with an autoUpdateUrl, or POST /api/games/upload for an archive, only after the user authorizes publishing. Authenticate with their Firebase ID token and creator profile. DELETE /api/games/{id} removes an owned listing; get explicit permission before deletion.
+- [Read Grand Archive previews](https://cgs.games/api/gatcg_spoilers): Use a normal GET for cached spoiler cards. OCR text may be incomplete. Do not request warm, refresh, or nocache for routine reads. On 429, wait for Retry-After; use RateLimit and RateLimit-Policy to throttle.
+- [Test a catalog integration](https://cgs.games/api/sandbox/games): Deterministic, read-only fixtures with the production Game schema. No credentials or production writes. Sample URLs are not playable games.
+
+## Developers
+
+- [CGS Games developer portal and API docs](https://cgs.games/developers): Quickstart, endpoints, authentication, sandbox, CLI, and function-calling guidance. Public reads need no key; the service does not issue developer API keys.
+- [Versioning and deprecation policy](https://cgs.games/developers#versioning): API-Version: 1 is explicit or the default. Unsupported versions return 400. Breaking changes require a new major version; retirement requires at least 90 days' notice with Deprecation, Sunset, and a migration link. Version 1 has no scheduled retirement.
+- [Official CGS Games CLI](https://cgs.games/developers#cli): Install the versioned package linked here; cgs-games games, spoilers, and openapi return public JSON. npm registry publication is pending.
+
 ## Website
 
 - [Home](https://cgs.games/): Overview and latest games; supports Markdown content negotiation.
@@ -21,6 +34,8 @@ Request the homepage with `Accept: text/markdown` for Markdown or `Accept: text/
 - [Sitemap](https://cgs.games/sitemap.xml): Public site navigation.
 - [Terms](https://cgs.games/terms): Terms of service.
 - [Privacy](https://cgs.games/privacy): Privacy policy.
+- [About CGS Games](https://cgs.games/about): Card Game Simulator community library operated by Finol Digital LLC.
+- [Contact CGS Games](https://cgs.games/contact): Support, privacy and content questions, and the published mailing address.
 
 ## Optional
 

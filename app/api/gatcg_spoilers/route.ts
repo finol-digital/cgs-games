@@ -8,7 +8,7 @@ import {
   type CachedSpoilerPayload,
 } from '@/lib/firebase/admin';
 import { buildSpoilerData } from '@/lib/gatcgSpoilers';
-import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
+import { checkRateLimit, getClientIp, rateLimitResponseHeaders } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -73,23 +73,14 @@ export async function GET(request: Request) {
   let rateLimitHeaders: Record<string, string> = {};
   if (!warm) {
     const rateLimitResult = checkRateLimit(getClientIp(request), RATE_LIMIT);
+    rateLimitHeaders = rateLimitResponseHeaders(rateLimitResult, RATE_LIMIT);
 
     if (!rateLimitResult.allowed) {
-      const retryAfter = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000);
       return apiError('Too many requests. Please try again later.', 429, {
         ...corsHeaders,
-        'Retry-After': retryAfter.toString(),
-        'X-RateLimit-Limit': RATE_LIMIT.maxRequests.toString(),
-        'X-RateLimit-Remaining': '0',
-        'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
+        ...rateLimitHeaders,
       });
     }
-
-    rateLimitHeaders = {
-      'X-RateLimit-Limit': RATE_LIMIT.maxRequests.toString(),
-      'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-      'X-RateLimit-Reset': new Date(rateLimitResult.resetAt).toISOString(),
-    };
   }
 
   // Hot path: one Firestore read serves a complete response.
@@ -164,12 +155,13 @@ function respond(
     extraHeaders: Record<string, string>;
   },
 ): NextResponse {
-  // Don't let the CDN pin an incomplete payload for long.
-  const cacheControl = options.noStore
-    ? 'no-store'
-    : options.pendingOcrCount > 0
-      ? 'public, s-maxage=120, stale-while-revalidate=3600'
-      : 'public, s-maxage=900, stale-while-revalidate=86400';
+  // Per-client quota fields must not be replayed by a shared cache to other clients.
+  const cacheControl =
+    options.noStore || options.extraHeaders.RateLimit
+      ? 'no-store'
+      : options.pendingOcrCount > 0
+        ? 'public, s-maxage=120, stale-while-revalidate=3600'
+        : 'public, s-maxage=900, stale-while-revalidate=86400';
 
   return new NextResponse(payload, {
     status: 200,

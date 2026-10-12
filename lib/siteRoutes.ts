@@ -9,6 +9,9 @@ export const staticPaths = new Set([
   '/upload',
   '/terms',
   '/privacy',
+  '/about',
+  '/contact',
+  '/developers',
   '/robots.txt',
   '/sitemap.xml',
   '/openapi.json',
@@ -40,6 +43,7 @@ export async function isPublicFile(pathname: string): Promise<boolean> {
 
 /** Lists supported methods for a known API URL, or null for an unknown endpoint. */
 export function apiMethods(path: string): string[] | null {
+  if (path === '/api/sandbox/games') return ['GET', 'HEAD', 'OPTIONS'];
   if (path === '/api/games') return ['GET', 'HEAD', 'POST', 'OPTIONS'];
   if (path === '/api/browse' || path === '/api/gatcg_spoilers') return ['GET', 'HEAD', 'OPTIONS'];
   if (path === '/api/games/upload') return ['POST', 'OPTIONS'];

@@ -2,6 +2,10 @@ import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
+    ...['developers', 'about', 'contact'].map((path) => ({
+      url: `https://cgs.games/${path}`,
+      priority: path === 'developers' ? 0.8 : 0.6,
+    })),
     {
       url: 'https://cgs.games',
       lastModified: new Date(),

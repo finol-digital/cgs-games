@@ -6,6 +6,10 @@ import MissingPage from '@/app/not-found';
 import GamesDeck from '@/components/gamesDeck';
 import { adminCreatorExists, adminGetGamesFor } from '@/lib/firebase/admin';
 import { homepageParagraphs, homepageMarkdown } from '@/lib/siteContent';
+import AboutPage from '@/app/about/page';
+import ContactPage from '@/app/contact/page';
+import DevelopersPage from '@/app/developers/page';
+import { metadata } from '@/app/page';
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminGetGames: jest.fn().mockResolvedValue([]),
@@ -30,11 +34,37 @@ describe('server-rendered content', () => {
     );
     expect(element.querySelector('h3')).toBeNull();
     for (const paragraph of homepageParagraphs) {
-      expect(element.textContent).not.toContain(paragraph);
+      expect(element.querySelector('main')!.textContent).toContain(paragraph);
     }
+    expect(element.querySelector('main')!.textContent!.length).toBeGreaterThan(500);
+    expect(element.querySelector('a[href="/developers"]')).not.toBeNull();
+    const data = JSON.parse(
+      element.querySelector('script[type="application/ld+json"]')!.textContent!,
+    );
+    expect(data['@context']).toBe('https://schema.org');
+    const organization = data['@graph'].find(
+      (entry: { '@type': string }) => entry['@type'] === 'Organization',
+    );
+    expect(organization.contactPoint.email).toBe('david@finoldigital.com');
+    expect(organization.address['@type']).toBe('PostalAddress');
+    expect(organization.address.streetAddress).toBe('17350 State Hwy 249, Ste 220');
+    expect(metadata.alternates?.canonical).toBe('/');
+    expect(metadata.title).toContain('Card Game Simulator');
     expect(element.querySelector('a[href="/upload"]')).not.toBeNull();
     expect(element.querySelector('a[href="/browse"]')).not.toBeNull();
   });
+
+  it.each([AboutPage, ContactPage, DevelopersPage])(
+    'renders public information without JavaScript',
+    (Component) => {
+      const element = document.createElement('div');
+      element.innerHTML = renderToStaticMarkup(<Component />);
+      expect(element.querySelectorAll('h1')).toHaveLength(1);
+      expect(element.querySelector('main')!.textContent!.length).toBeGreaterThan(500);
+      expect(element.querySelector('a[href="/developers"]')).not.toBeNull();
+      expect(element.querySelector('h3,h4,h5,h6')).toBeNull();
+    },
+  );
 
   it('retains the detailed introduction in the agent-facing Markdown response', () => {
     expect(homepageMarkdown.length).toBeGreaterThan(500);

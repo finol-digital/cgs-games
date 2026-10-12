@@ -21,7 +21,11 @@ export async function proxy(request: NextRequest) {
   if (path === '/api' || path.startsWith('/api/')) {
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, API-Version',
+      'Access-Control-Expose-Headers':
+        'API-Version, RateLimit, RateLimit-Policy, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Cache, X-Ocr-Pending, Deprecation, Sunset, Link',
+      'API-Version': '1',
+      Vary: 'API-Version',
     };
     const methods = apiMethods(path);
     if (!methods) return apiError('API endpoint not found', 404, corsHeaders);
@@ -36,6 +40,13 @@ export async function proxy(request: NextRequest) {
           Allow: methods.join(', '),
           ...responseHeaders,
         },
+      });
+    }
+    const version = request.headers.get('api-version');
+    if (version !== null && version !== '1') {
+      return apiError('Unsupported API version', 400, responseHeaders, {
+        code: 'UNSUPPORTED_API_VERSION',
+        hint: 'Send API-Version: 1 or omit the header. See /developers#versioning.',
       });
     }
     return NextResponse.next({ headers: responseHeaders });

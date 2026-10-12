@@ -31,7 +31,11 @@ jest.mock('@/lib/firebase/admin', () => ({
   setCachedSpoilerPayload: jest.fn(),
 }));
 jest.mock('@/lib/gatcgSpoilers', () => ({ buildSpoilerData: jest.fn() }));
-jest.mock('@/lib/rateLimit', () => ({ checkRateLimit: jest.fn(), getClientIp: () => 'test' }));
+jest.mock('@/lib/rateLimit', () => ({
+  ...jest.requireActual('@/lib/rateLimit'),
+  checkRateLimit: jest.fn(),
+  getClientIp: () => 'test',
+}));
 
 const documentGet = jest.fn();
 const documentDelete = jest.fn();
@@ -210,15 +214,19 @@ describe('API response contract', () => {
       .mockReturnValueOnce({ allowed: false, remaining: 0, resetAt: Date.now() + 60000 });
     const limited = await spoilers(new Request('https://cgs.games/api/gatcg_spoilers'));
     expect(limited.headers.get('retry-after')).toBeTruthy();
+    expect(limited.headers.get('ratelimit')).toMatch(/^"spoilers";r=0;t=\d+$/);
+    expect(limited.headers.get('ratelimit-policy')).toBe('"spoilers";q=10;w=60');
     await expectError(limited, 429);
     jest.mocked(buildSpoilerData).mockRejectedValue(new Error('upstream failed'));
     await expectError(await spoilers(new Request('https://cgs.games/api/gatcg_spoilers')), 502);
     jest
       .mocked(getCachedSpoilerPayload)
       .mockResolvedValue({ payload: '{"data":[]}', ageMs: 0, pendingOcrCount: 0, cardCount: 0 });
-    expect(
-      await (await spoilers(new Request('https://cgs.games/api/gatcg_spoilers'))).json(),
-    ).toEqual({ data: [] });
+    const cached = await spoilers(new Request('https://cgs.games/api/gatcg_spoilers'));
+    expect(await cached.json()).toEqual({ data: [] });
+    expect(cached.headers.get('ratelimit-policy')).toBe('"spoilers";q=10;w=60');
+    expect(cached.headers.get('ratelimit')).toMatch(/^"spoilers";r=\d+;t=\d+$/);
+    expect(cached.headers.get('cache-control')).toBe('no-store');
   });
 
   it.each([proxyGet, proxyPost])(

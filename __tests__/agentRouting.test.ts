@@ -129,8 +129,33 @@ describe('page negotiation and missing routes', () => {
     expect(preflight.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS');
     expect(preflight.headers.get('access-control-allow-origin')).toBe('*');
     expect(preflight.headers.get('access-control-allow-headers')).toBe(
-      'Content-Type, Authorization',
+      'Content-Type, Authorization, API-Version',
     );
+  });
+
+  it('selects version 1 by default or explicitly and rejects unknown versions before dispatch', async () => {
+    for (const value of [null, '1', '2', '']) {
+      const input = request('/api/games', 'application/json');
+      if (value !== null) input.headers.set('API-Version', value);
+      const response = await proxy(input);
+      expect(response.headers.get('api-version')).toBe('1');
+      expect(response.headers.get('vary')).toContain('API-Version');
+      expect(response.headers.get('access-control-expose-headers')).toContain('RateLimit');
+      if (value === null || value === '1')
+        expect(response.headers.get('x-middleware-next')).toBe('1');
+      else {
+        expect(response.status).toBe(400);
+        expect((await response.json()).code).toBe('UNSUPPORTED_API_VERSION');
+      }
+    }
+  });
+
+  it('allows sandbox reads and preflight but never writes', async () => {
+    expect((await proxy(request('/api/sandbox/games'))).headers.get('x-middleware-next')).toBe('1');
+    expect((await proxy(request('/api/sandbox/games', '*/*', 'POST'))).status).toBe(405);
+    expect(
+      (await proxy(request('/api/sandbox/games', '*/*', 'OPTIONS'))).headers.get('allow'),
+    ).toBe('GET, HEAD, OPTIONS');
   });
 
   it('retains error strings, CORS and retry headers with machine-readable fields', async () => {

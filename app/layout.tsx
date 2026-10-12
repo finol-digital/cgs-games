@@ -4,6 +4,7 @@ import UserContextProvider from '@/components/userContextProvider';
 import { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import './globals.css';
+import { siteDescription } from '@/lib/siteIdentity';
 
 const notoSans = Noto_Sans({
   subsets: ['latin'],
@@ -14,7 +15,7 @@ const notoSans = Noto_Sans({
 });
 
 const APP_NAME = 'CGS Games';
-const APP_DESCRIPTION = 'Share your CGS games';
+const APP_DESCRIPTION = siteDescription;
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://cgs.games'),

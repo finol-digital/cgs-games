@@ -14,7 +14,8 @@
     "test": "jest",
     "verify:agents": "node scripts/verify-agent-readiness.mjs",
     "typecheck": "next typegen && tsc --noEmit",
-    "postinstall": "patch-package --error-on-fail"
+    "postinstall": "patch-package --error-on-fail",
+    "pack:cli": "node scripts/pack-cli.mjs"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.20",

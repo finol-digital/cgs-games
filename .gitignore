@@ -58,6 +58,7 @@ node_modules/
 
 # Output of 'npm pack'
 *.tgz
+!public/downloads/cgs-games-cli-*.tgz
 
 # Yarn Integrity file
 .yarn-integrity

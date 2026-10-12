@@ -1,4 +1,30 @@
-import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
+import { checkRateLimit, getClientIp, rateLimitResponseHeaders } from '@/lib/rateLimit';
+
+describe('rate limit response fields', () => {
+  it('emits structured fields with relative seconds and retains the legacy absolute reset', () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(100000);
+    try {
+      const config = { maxRequests: 10, windowMs: 60000 };
+      expect(
+        rateLimitResponseHeaders({ allowed: true, remaining: 9, resetAt: 160000 }, config),
+      ).toEqual({
+        'RateLimit-Policy': '"spoilers";q=10;w=60',
+        RateLimit: '"spoilers";r=9;t=60',
+        'X-RateLimit-Limit': '10',
+        'X-RateLimit-Remaining': '9',
+        'X-RateLimit-Reset': new Date(160000).toISOString(),
+      });
+      expect(
+        rateLimitResponseHeaders({ allowed: false, remaining: 0, resetAt: 99999 }, config),
+      ).toMatchObject({
+        RateLimit: '"spoilers";r=0;t=0',
+        'Retry-After': '1',
+      });
+    } finally {
+      now.mockRestore();
+    }
+  });
+});
 
 describe('rateLimit', () => {
   describe('checkRateLimit', () => {
