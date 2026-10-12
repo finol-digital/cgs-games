@@ -151,15 +151,16 @@ export default function DevelopersPage() {
       <pre>
         <code>{`npm install --global https://cgs.games/downloads/cgs-games-cli-1.0.0.tgz
 cgs-games games
+cgs-games browse
 cgs-games games --sandbox
-cgs-games spoilers
 cgs-games openapi`}</code>
       </pre>
       <p>
-        The CLI supports public reads only, sends API-Version: 1, and exits unsuccessfully on an
-        HTTP or network error. It reports Retry-After on 429 without automatically retrying. Use{' '}
-        <code>--base-url http://localhost:3000</code> for local development. For support, visit{' '}
-        <Link href="/contact">Contact CGS Games</Link>.
+        The <code>browse</code> command is an alias for <code>games</code> and accepts the same
+        options, including <code>--sandbox</code>. The CLI supports public reads only, sends
+        API-Version: 1, and exits unsuccessfully on an HTTP or network error. It reports Retry-After
+        on 429 without automatically retrying. Use <code>--base-url http://localhost:3000</code> for
+        local development. For support, visit <Link href="/contact">Contact CGS Games</Link>.
       </p>
     </InformationPage>
   );

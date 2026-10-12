@@ -2,12 +2,12 @@
 import process from 'node:process';
 
 const help = `CGS Games CLI 1.0.0
-Usage: cgs-games <games|spoilers|openapi> [--sandbox] [--base-url URL]
+Usage: cgs-games <games|browse|openapi> [--sandbox] [--base-url URL]
 
 games       Read the newest public games (up to 100).
-spoilers    Read cached Grand Archive spoiler cards.
+browse      Alias for games; accepts the same options.
 openapi     Print the OpenAPI specification.
---sandbox   Use deterministic fixtures; only supported for games.
+--sandbox   Use deterministic fixtures; supported for games and browse.
 --base-url  Default: https://cgs.games. Local HTTP is allowed on loopback only.
 --help      Show this help.
 --version   Show the CLI version.
@@ -27,8 +27,9 @@ async function main(args) {
     process.stdout.write('1.0.0\n');
     return;
   }
-  const [command, ...options] = args;
-  const paths = { games: '/api/games', spoilers: '/api/gatcg_spoilers', openapi: '/openapi.json' };
+  const [requestedCommand, ...options] = args;
+  const command = requestedCommand === 'browse' ? 'games' : requestedCommand;
+  const paths = { games: '/api/games', openapi: '/openapi.json' };
   if (!Object.hasOwn(paths, command)) throw new Error('Unknown command. Use --help.');
   let base = 'https://cgs.games';
   let sandbox = false;
@@ -41,7 +42,8 @@ async function main(args) {
       hasBase = true;
     } else throw new Error(`Unknown, duplicate, or incomplete option: ${option}. Use --help.`);
   }
-  if (sandbox && command !== 'games') throw new Error('--sandbox is only available for games.');
+  if (sandbox && command !== 'games')
+    throw new Error('--sandbox is only available for games and browse.');
   const origin = new URL(base);
   const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname);
   if (

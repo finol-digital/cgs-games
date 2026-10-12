@@ -24,7 +24,7 @@ Request the homepage with `Accept: text/markdown` for Markdown or `Accept: text/
 
 - [CGS Games developer portal and API docs](https://cgs.games/developers): Quickstart, endpoints, authentication, sandbox, CLI, and function-calling guidance. Public reads need no key; the service does not issue developer API keys.
 - [Versioning and deprecation policy](https://cgs.games/developers#versioning): API-Version: 1 is explicit or the default. Unsupported versions return 400. Breaking changes require a new major version; retirement requires at least 90 days' notice with Deprecation, Sunset, and a migration link. Version 1 has no scheduled retirement.
-- [Official CGS Games CLI](https://cgs.games/developers#cli): Install the versioned package linked here; cgs-games games, spoilers, and openapi return public JSON. npm registry publication is pending.
+- [Official CGS Games CLI](https://cgs.games/developers#cli): Install the versioned package linked here; cgs-games games (also available as browse) and openapi return public JSON. The games and browse commands accept --sandbox for fixtures. npm registry publication is pending.
 
 ## Website
 

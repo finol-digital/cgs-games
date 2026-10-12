@@ -6,11 +6,14 @@ Requires Node.js 22 or later. No runtime dependencies or credentials.
 ```sh
 npm install --global https://cgs.games/downloads/cgs-games-cli-1.0.0.tgz
 cgs-games games
+cgs-games browse
 cgs-games games --sandbox
-cgs-games spoilers
+cgs-games browse --sandbox
 cgs-games openapi
 cgs-games games --base-url http://localhost:3000
 ```
+
+`browse` is an alias for `games` and accepts the same options, including `--sandbox`.
 
 Commands print JSON to stdout. Failures exit with status 1 and write to stderr.
 Requests select API version 1 and time out after 30 seconds. A 429 reports

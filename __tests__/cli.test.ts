@@ -44,7 +44,8 @@ describe('official read-only CLI', () => {
   it.each([
     ['games', [], '/api/games'],
     ['games', ['--sandbox'], '/api/sandbox/games'],
-    ['spoilers', [], '/api/gatcg_spoilers'],
+    ['browse', [], '/api/games'],
+    ['browse', ['--sandbox'], '/api/sandbox/games'],
     ['openapi', [], '/openapi.json'],
   ])('prints JSON for %s %s and selects version 1', async (command, options, path) => {
     const result = await execute(process.execPath, [cli, command, ...options, '--base-url', base]);
@@ -56,7 +57,7 @@ describe('official read-only CLI', () => {
   it('reports throttling without retrying or printing a success payload', async () => {
     status = 429;
     await expect(
-      execute(process.execPath, [cli, 'spoilers', '--base-url', base]),
+      execute(process.execPath, [cli, 'games', '--base-url', base]),
     ).rejects.toMatchObject({
       code: 1,
       stdout: '',
@@ -65,10 +66,21 @@ describe('official read-only CLI', () => {
     expect(requests).toHaveLength(1);
   });
 
+  it('rejects the removed spoilers command without making a request', async () => {
+    await expect(
+      execute(process.execPath, [cli, 'spoilers', '--base-url', base]),
+    ).rejects.toMatchObject({
+      code: 1,
+      stdout: '',
+      stderr: 'cgs-games: Unknown command. Use --help.\n',
+    });
+    expect(requests).toHaveLength(0);
+  });
+
   it.each([
     ['delete'],
     ['games', '--unknown'],
-    ['spoilers', '--sandbox'],
+    ['openapi', '--sandbox'],
     ['games', '--base-url'],
     ['games', '--base-url', 'http://example.com'],
     ['games', '--base-url', 'https://user:secret@example.com'],
@@ -84,9 +96,10 @@ describe('official read-only CLI', () => {
 
   it('provides version and help without network access', async () => {
     expect((await execute(process.execPath, [cli, '--version'])).stdout.trim()).toBe('1.0.0');
-    expect((await execute(process.execPath, [cli, '--help'])).stdout).toContain(
-      'https://cgs.games/developers',
-    );
+    const help = (await execute(process.execPath, [cli, '--help'])).stdout;
+    expect(help).toContain('https://cgs.games/developers');
+    expect(help).toContain('browse      Alias for games');
+    expect(help).not.toContain('spoilers');
     expect(requests).toHaveLength(0);
   });
 });
