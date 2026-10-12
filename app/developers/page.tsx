@@ -82,7 +82,9 @@ export default function DevelopersPage() {
         </li>
         <li>
           <code>GET /api/proxy/&#123;url&#125;</code> and{' '}
-          <code>POST /api/proxy/&#123;url&#125;</code>: existing HTTPS resource passthrough.
+          <code>POST /api/proxy/&#123;url&#125;</code>: public HTTPS resource passthrough on port
+          443. Private network targets and unsafe redirects are blocked; active content is
+          sandboxed. Responses are limited to 100 MiB and 30 seconds, and POST bodies to 16 MiB.
           Responses depend on the upstream resource and may be binary. Prefer the typed catalog
           endpoints for function calls.
         </li>

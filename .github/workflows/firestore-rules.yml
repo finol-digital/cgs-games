@@ -1,4 +1,4 @@
-name: Firestore rules
+name: Firebase rules
 
 on:
   push:
@@ -23,5 +23,5 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm ci
-      - name: Test isolated Firestore rules
-        run: npx --yes firebase-tools@15.33.0 emulators:exec --config firebase.rules-test.json --only firestore --project demo-cgs-username-tests "npm run test:rules"
+      - name: Test isolated Firestore and Storage rules
+        run: npx --yes firebase-tools@15.33.0 emulators:exec --config firebase.rules-test.json --only firestore,storage --project demo-cgs-username-tests "npm run test:rules"

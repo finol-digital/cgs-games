@@ -1,17 +1,18 @@
 /** @jest-environment node */
 import { lookup } from 'node:dns/promises';
 import { EventEmitter } from 'node:events';
-import { get, RequestOptions } from 'node:https';
+import { get, request, RequestOptions } from 'node:https';
 import { IncomingMessage } from 'node:http';
 import { PassThrough } from 'node:stream';
 import {
   fetchGameSpecification,
+  fetchPublicResource,
   isPublicAddress,
   UnsafeGameUrlError,
 } from '@/lib/fetchGameSpecification';
 
 jest.mock('node:dns/promises', () => ({ lookup: jest.fn() }));
-jest.mock('node:https', () => ({ get: jest.fn() }));
+jest.mock('node:https', () => ({ get: jest.fn(), request: jest.fn() }));
 
 /** Supplies a mock upstream response without making a network connection. */
 function respond(status = 200, body = '{"name":"Test Game"}', headers = {}) {
@@ -34,6 +35,58 @@ beforeEach(() => {
 });
 
 describe('safe game specification retrieval', () => {
+  it('applies the same DNS boundary to POST without connecting to private hosts', async () => {
+    await expect(
+      fetchPublicResource('https://169.254.169.254/', { method: 'POST', body: '{}' }),
+    ).rejects.toBeInstanceOf(UnsafeGameUrlError);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it('pins POST destinations, retains response headers and sends only the explicit body', async () => {
+    const end = jest.fn();
+    (request as jest.Mock).mockImplementationOnce((_options, callback) => {
+      const incoming = Object.assign(new PassThrough(), {
+        statusCode: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+      queueMicrotask(() => {
+        callback(incoming);
+        incoming.end('{}');
+      });
+      return Object.assign(new EventEmitter(), { end });
+    });
+    const response = await fetchPublicResource('https://example.com/resource', {
+      method: 'POST',
+      body: '{"a":1}',
+    });
+    expect(end).toHaveBeenCalledWith('{"a":1}');
+    expect((request as jest.Mock).mock.calls[0][0]).toMatchObject({
+      hostname: '93.184.216.34',
+      method: 'POST',
+      headers: { Host: 'example.com', 'Content-Type': 'application/json' },
+    });
+    expect(response.headers.get('content-type')).toBe('application/json');
+    expect(await response.text()).toBe('{}');
+  });
+
+  it.each([302, 307])('revalidates POST redirect %i destinations', async (status) => {
+    (request as jest.Mock).mockImplementationOnce((_options, callback) => {
+      queueMicrotask(() =>
+        callback(
+          Object.assign(new PassThrough(), {
+            statusCode: status,
+            headers: { location: 'https://10.0.0.1/private' },
+          }),
+        ),
+      );
+      return Object.assign(new EventEmitter(), { end: jest.fn() });
+    });
+    await expect(
+      fetchPublicResource('https://example.com/resource', { method: 'POST', body: '{}' }),
+    ).rejects.toBeInstanceOf(UnsafeGameUrlError);
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(get).not.toHaveBeenCalled();
+  });
   it.each([
     '127.0.0.1',
     '0.0.0.0',

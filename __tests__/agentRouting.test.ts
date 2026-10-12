@@ -4,6 +4,7 @@ import { proxy } from '@/proxy';
 import { negotiatePage, apiError } from '@/lib/httpResponses';
 import { adminCreatorExists, adminGetGame } from '@/lib/firebase/admin';
 import { staticPaths } from '@/lib/siteRoutes';
+import firebaseConfig from '@/firebase.json';
 
 jest.mock('@/lib/firebase/admin', () => ({
   adminCreatorExists: jest.fn(),
@@ -15,6 +16,15 @@ const request = (path: string, accept = 'text/html', method = 'GET') =>
   new NextRequest('https://cgs.games' + path, { method, headers: { accept } });
 
 describe('page negotiation and missing routes', () => {
+  it('keeps legacy Hosting redirect-only so a deployment cannot recreate the retired server', () => {
+    expect(firebaseConfig.hosting).not.toHaveProperty('source');
+    expect(firebaseConfig.hosting).not.toHaveProperty('frameworksBackend');
+    expect(firebaseConfig.hosting).not.toHaveProperty('rewrites');
+    expect(firebaseConfig.hosting.redirects).toEqual([
+      { source: '/', destination: 'https://cgs.games/', type: 301 },
+      { source: '/:path*', destination: 'https://cgs.games/:path', type: 301 },
+    ]);
+  });
   beforeEach(() => {
     jest.resetAllMocks();
   });

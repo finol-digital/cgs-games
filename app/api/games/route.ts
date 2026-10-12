@@ -5,6 +5,7 @@ import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
 import { apiError } from '@/lib/httpResponses';
 import { fetchGameSpecification, UnsafeGameUrlError } from '@/lib/fetchGameSpecification';
+import { ownsRegisteredUsername } from '@/lib/firebase/ownership';
 
 /** Lists the newest public games and returns a structured error if storage is unavailable. */
 export async function GET() {
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     // Verify the Firebase ID token
     let decodedToken;
     try {
-      decodedToken = await adminAuth.verifyIdToken(idToken);
+      decodedToken = await adminAuth.verifyIdToken(idToken, true);
     } catch {
       return apiError('Invalid or expired token', 401);
     }
@@ -55,6 +56,9 @@ export async function POST(request: Request) {
     const username = userDoc.data()?.username;
     if (!username) {
       return apiError('Username not found in user document', 400);
+    }
+    if (!(await ownsRegisteredUsername(decodedToken.uid, username))) {
+      return apiError('Username ownership could not be verified', 403);
     }
 
     let response;
@@ -74,7 +78,9 @@ export async function POST(request: Request) {
     } = await response.json();
 
     const slug = encodeURI(snakecase(cardGameSpecification.name));
+    if (!slug) return apiError('Game name must produce a nonempty URL slug', 400);
     const game = {
+      ownerUid: decodedToken.uid,
       username: username,
       slug: slug,
       name: cardGameSpecification.name,

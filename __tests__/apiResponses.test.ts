@@ -15,10 +15,15 @@ import {
 } from '@/lib/firebase/admin';
 import { buildSpoilerData } from '@/lib/gatcgSpoilers';
 import { checkRateLimit } from '@/lib/rateLimit';
-import { fetchGameSpecification, UnsafeGameUrlError } from '@/lib/fetchGameSpecification';
+import {
+  fetchGameSpecification,
+  fetchPublicResource,
+  UnsafeGameUrlError,
+} from '@/lib/fetchGameSpecification';
 
 jest.mock('@/lib/fetchGameSpecification', () => ({
   fetchGameSpecification: jest.fn(),
+  fetchPublicResource: jest.fn(),
   UnsafeGameUrlError: class extends Error {},
 }));
 
@@ -80,7 +85,10 @@ beforeEach(() => {
   });
   (adminAuth.verifyIdToken as jest.Mock).mockResolvedValue({ uid: 'test-user' });
   (adminStorage.bucket as jest.Mock).mockReturnValue({ file: () => storedFile });
-  documentGet.mockResolvedValue({ exists: true, data: () => ({ username: 'creator' }) });
+  documentGet.mockResolvedValue({
+    exists: true,
+    data: () => ({ username: 'creator', uid: 'test-user' }),
+  });
   jest
     .mocked(checkRateLimit)
     .mockReturnValue({ allowed: true, remaining: 9, resetAt: Date.now() + 60000 });
@@ -93,6 +101,60 @@ afterEach(() => {
 });
 
 describe('API response contract', () => {
+  it.each([proxyGet, proxyPost])(
+    'sandboxes upstream active content without forwarding cookies',
+    async (handler) => {
+      jest.mocked(fetchPublicResource).mockResolvedValue(
+        new Response('<script>attack()</script>', {
+          headers: { 'Content-Type': 'text/html', 'Set-Cookie': 'session=attacker' },
+        }),
+      );
+      const response = await handler(
+        new NextRequest('https://cgs.games/api/proxy/example.com/page'),
+      );
+      expect(response.headers.get('content-security-policy')).toBe("sandbox; default-src 'none'");
+      expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+      expect(response.headers.has('set-cookie')).toBe(false);
+      expect(await response.text()).toBe('<script>attack()</script>');
+    },
+  );
+
+  it.each([proxyGet, proxyPost])('rejects unsafe proxy targets', async (handler) => {
+    jest.mocked(fetchPublicResource).mockRejectedValue(new UnsafeGameUrlError('Private IP'));
+    await expectError(
+      await handler(new NextRequest('https://cgs.games/api/proxy/127.0.0.1/')),
+      400,
+    );
+  });
+
+  it('does not forward the caller credentials or cookies to a proxy destination', async () => {
+    jest.mocked(fetchPublicResource).mockResolvedValue(Response.json({ ok: true }));
+    const response = await proxyPost(
+      new Request('https://cgs.games/api/proxy/example.com/resource', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer private', Cookie: 'private=value' },
+        body: '{}',
+      }),
+    );
+    expect(fetchPublicResource).toHaveBeenCalledWith('https://example.com/resource', {
+      method: 'POST',
+      body: '{}',
+      accept: '*/*',
+      maxBytes: 100 * 1024 * 1024,
+    });
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('rejects oversized proxy POST bodies before opening an upstream connection', async () => {
+    const response = await proxyPost(
+      new Request('https://cgs.games/api/proxy/example.com/resource', {
+        method: 'POST',
+        body: 'x'.repeat(16 * 1024 * 1024 + 1),
+      }),
+    );
+    expect(response.status).toBe(413);
+    expect(fetchPublicResource).not.toHaveBeenCalled();
+  });
   it.each([games, browse])(
     'returns JSON catalog successes and caught failures',
     async (handler) => {
@@ -233,23 +295,23 @@ describe('API response contract', () => {
     'converts upstream HTTP and network errors to JSON',
     async (handler) => {
       const request = new NextRequest('https://cgs.games/api/proxy/example.com/resource');
-      global.fetch = jest
-        .fn()
+      jest
+        .mocked(fetchPublicResource)
         .mockResolvedValue(new Response('<html>Missing</html>', { status: 404 }));
       await expectError(await handler(request), 404);
-      global.fetch = jest.fn().mockRejectedValue(new Error('unreachable'));
+      jest.mocked(fetchPublicResource).mockRejectedValue(new Error('unreachable'));
       await expectError(await handler(request), 502);
     },
   );
 
   it('preserves proxy success content and GET query parameters', async () => {
-    global.fetch = jest
-      .fn()
+    jest
+      .mocked(fetchPublicResource)
       .mockResolvedValue(new Response('image-bytes', { headers: { 'Content-Type': 'image/png' } }));
     const response = await proxyGet(
       new NextRequest('https://cgs.games/api/proxy/example.com/image?alt=media'),
     );
-    expect(String((global.fetch as jest.Mock).mock.calls[0][0])).toBe(
+    expect(String((fetchPublicResource as jest.Mock).mock.calls[0][0])).toBe(
       'https://example.com/image?alt=media',
     );
     expect(response.headers.get('content-type')).toBe('image/png');
@@ -258,12 +320,12 @@ describe('API response contract', () => {
 
   it('caches public images for an hour and retains upstream cache restrictions', async () => {
     const request = new NextRequest('https://cgs.games/api/proxy/example.com/banner.png');
-    global.fetch = jest
-      .fn()
+    jest
+      .mocked(fetchPublicResource)
       .mockResolvedValue(new Response('image', { headers: { 'Content-Type': 'image/png' } }));
     expect((await proxyGet(request)).headers.get('cache-control')).toBe('public, max-age=3600');
 
-    global.fetch = jest.fn().mockResolvedValue(
+    jest.mocked(fetchPublicResource).mockResolvedValue(
       new Response('image', {
         headers: {
           'Content-Type': 'image/png',
@@ -287,8 +349,8 @@ describe('API response contract', () => {
     ['image/png', '', { 'Set-Cookie': 'session=value' }],
     ['image/png', '', { Expires: 'Sun, 11 Oct 2026 00:00:00 GMT' }],
   ])('does not invent public caching for %s %s %j', async (type, query, extraHeaders) => {
-    global.fetch = jest
-      .fn()
+    jest
+      .mocked(fetchPublicResource)
       .mockResolvedValue(
         new Response('content', { headers: { 'Content-Type': type, ...extraHeaders } }),
       );
@@ -301,8 +363,8 @@ describe('API response contract', () => {
   it.each([300, 304])(
     'maps an upstream %i to 502 while retaining retry and CORS headers',
     async (status) => {
-      global.fetch = jest
-        .fn()
+      jest
+        .mocked(fetchPublicResource)
         .mockResolvedValue(new Response(null, { status, headers: { 'Retry-After': '60' } }));
       const response = await proxyGet(
         new NextRequest('https://cgs.games/api/proxy/example.com/resource'),
@@ -317,7 +379,7 @@ describe('API response contract', () => {
   it.each([401, 403, 404, 429, 500])(
     'keeps upstream %i distinct from local API errors',
     async (status) => {
-      global.fetch = jest.fn().mockResolvedValue(new Response(null, { status }));
+      jest.mocked(fetchPublicResource).mockResolvedValue(new Response(null, { status }));
       const response = await proxyGet(
         new NextRequest('https://cgs.games/api/proxy/example.com/resource'),
       );

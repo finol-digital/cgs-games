@@ -63,7 +63,7 @@ new routes missing from the list. Existing accounts are not renamed by this poli
 Run the database enforcement tests with Java 21 installed:
 
 ```sh
-npx --yes firebase-tools@15.33.0 emulators:exec --config firebase.rules-test.json --only firestore --project demo-cgs-username-tests "npm run test:rules"
+npx --yes firebase-tools@15.33.0 emulators:exec --config firebase.rules-test.json --only firestore,storage --project demo-cgs-username-tests "npm run test:rules"
 ```
 
 The tests use an isolated demo project and reject non-loopback emulator addresses.
@@ -73,5 +73,34 @@ It only reads public username fields/registry names and reports collisions witho
 user IDs. Resolve any existing-name collision before rolling out the new route.
 
 App Hosting deploys the web application; the updated database rules also need an
-authorized `firebase deploy --only firestore:rules --project cgs-games`. Deploy
+authorized `firebase deploy --only firestore:rules,storage --project cgs-games`. Deploy
 those rules as part of rollout so direct clients cannot bypass form validation.
+
+### Firebase ownership boundaries
+
+Clients can read the public game catalog and published assets, but only the
+authenticated server APIs can publish or delete games. These APIs reject revoked
+tokens, require the immutable username registry to agree with the user's profile,
+and bind new games to the verified Firebase UID. Legacy games remain supported
+through the verified registry. Storage cleanup accepts only the exact
+`games/{uid}/{slug}/` prefix derived from that owner and game.
+
+Profiles are private to their owner. Registration atomically creates a minimal
+profile and its matching registry entry; neither ownership mapping can be changed
+by a client. Username availability checks remain public single-document reads.
+Internal caches, unknown collections, and nested namespaces are server-only.
+Users can create, replace, and delete their own staged ZIPs; all published asset
+writes go through the server. Firebase Admin and project IAM principals bypass
+these client rules and must retain only the permissions their workloads need.
+
+Run `npm run audit:firebase` with the existing Admin environment for a read-only
+ownership inventory. It checks profiles, registry mappings, game owners, storage
+prefixes, account existence, object permissions, and deployed rules. Reports can
+contain account identifiers and are saved under ignored `.firebase/security-audit/`.
+An unavailable IAM/control-plane check is reported as a limitation, not a pass;
+complete those checks with an appropriately authorized operator account.
+
+The legacy Firebase Hosting site is redirect-only. `firebase deploy --only hosting`
+updates redirects to `https://cgs.games`; it does not deploy Next.js. Keep the
+retired `ssrcgsgames` backend out of Hosting configuration. Firebase's reserved
+`/__/auth/` helpers remain available for Google sign-in.
