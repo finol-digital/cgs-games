@@ -141,6 +141,25 @@ describe('bounded streaming public resources', () => {
 });
 
 describe('safe game specification retrieval', () => {
+  it('identifies CGS when fetching images, including after an upstream redirect', async () => {
+    respond(302, '', { location: 'https://cdn.example.com/banner.png' });
+    respond(200, 'image bytes', { 'content-type': 'image/png' });
+
+    const response = await fetchPublicResource('https://example.com/banner.png', {
+      accept: '*/*',
+      stream: true,
+    });
+
+    expect(await response.text()).toBe('image bytes');
+    expect(get).toHaveBeenCalledTimes(2);
+    for (const [options] of (get as jest.Mock).mock.calls) {
+      expect(options.headers).toMatchObject({
+        'User-Agent': 'CGS-Games/1.0 (+https://cgs.games)',
+        Accept: '*/*',
+      });
+    }
+  });
+
   it('applies the same DNS boundary to POST without connecting to private hosts', async () => {
     await expect(
       fetchPublicResource('https://169.254.169.254/', { method: 'POST', body: '{}' }),

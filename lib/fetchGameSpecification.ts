@@ -92,6 +92,8 @@ async function fetchHop(
         method,
         headers: {
           Host: url.host,
+          // Some image hosts reject otherwise valid requests without a User-Agent.
+          'User-Agent': 'CGS-Games/1.0 (+https://cgs.games)',
           Accept: options.accept ?? 'application/json',
           'Accept-Encoding': 'identity',
           ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
