@@ -103,7 +103,7 @@ Example Auth recovery, replacing the run and target with reviewed values:
 ./scripts/backups/restore-auth.ps1 -Run '<completed-run>' -TargetProject '<clean-recovery-project>'
 ```
 
-The helper rejects `cgs-games` as a target and refuses a target with existing accounts. `-EnableUsers` preserves their original enabled/disabled state and should only be used for an intended recovery. `-TestOnly` is restricted to `cgs-games-backups`: it imports accounts as disabled, reads back and verifies every original UID, then removes only those test accounts. It does not send email or restore existing login sessions.
+The helper rejects `cgs-games` as a target and refuses a target with existing accounts. `-EnableUsers` preserves their original enabled/disabled state and should only be used for an intended recovery. `-TestOnly` is restricted to `cgs-games-backups`: it imports accounts as disabled, reads back and verifies every original UID, then removes only those test accounts. Cleanup also runs if an import or verification fails; normal recovery preserves imported users on failure for investigation. It does not send email or restore existing login sessions. Running `npm run test:backups` requires PowerShell 7 (`pwsh`) as well as Node.
 
 ## Restore checks and their limits
 
