@@ -1,0 +1,4 @@
+*
+!backup.mjs
+!Dockerfile
+!.dockerignore

@@ -33,6 +33,7 @@ jobs:
       # Check dependency updates even when the secret-dependent build is skipped.
       - run: npm run typecheck
       - run: npm run test
+      - run: npm run test:backups
       - run: npm run build
         if: github.actor != 'dependabot[bot]'
         env:
