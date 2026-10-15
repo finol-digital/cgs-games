@@ -1,0 +1,10 @@
+{
+  "name": "@cgs-games/next-root-glob",
+  "version": "3.3.1",
+  "private": true,
+  "description": "Minimal globSync adapter for Next.js ESLint root directory discovery",
+  "main": "index.cjs",
+  "dependencies": {
+    "tinyglobby": "^0.2.17"
+  }
+}
