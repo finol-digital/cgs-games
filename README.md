@@ -22,37 +22,6 @@ Built with Next.js and Firebase.
 
 **Emulate**: `firebase emulators:start`
 
-### Dependency security
-
-The `braces` dependency chain has been removed instead of locally patching it.
-Prettier uses its native ESLint flat configuration, and `@eslint/compat` keeps the
-existing Next.js/React lint rules working without source patches. `patch-package`
-and the postinstall patch step are no longer needed.
-
-A direct local `fast-glob` dependency supplies `@next/eslint-plugin-next@16.4.0`
-with the small adapter in `packages/next-root-glob`.
-It delegates the plugin's only glob call, `globSync`, to the published
-[`tinyglobby`](https://superchupu.dev/tinyglobby) package and disables automatic
-directory expansion to preserve literal project roots. It contains no forked
-library code and is not a general-purpose replacement for all of `fast-glob`.
-The adapter has its own package name, `@cgs-games/next-root-glob`; its version
-`3.3.1` satisfies the plugin's exact dependency requirement so npm can deduplicate
-it. `.npmrc` enables `install-links` so fresh installs package the local source
-instead of creating directory links. Keep that setting in CI and deployment.
-
-The application uses the default project root. Tests also cover literal roots,
-multiple roots, directory wildcards, and brace alternatives. Advanced root patterns
-such as zero-padded or stepped brace ranges are not supported by tinyglobby; see
-its [syntax differences](https://superchupu.dev/tinyglobby/comparison).
-Review the adapter when upgrading the Next.js ESLint plugin, and
-remove it once upstream drops the vulnerable dependency chain. Run
-`npm test -- --runInBand __tests__/lintDependencies.test.js` to verify root discovery,
-lint enforcement, and the absence of the removed packages from the lockfile.
-
-CI runs `npm audit` without exclusions or severity filtering. Keep the full audit
-clean rather than suppressing advisories or using `npm audit fix --force` to
-downgrade the toolchain.
-
 ## Uploads
 
 `.cgs.zip` uploads support files up to 100 MB. The browser stages zip files directly in Firebase Storage under `staged-uploads/{uid}/...`, then the upload API processes the staged object and publishes game assets under `games/{uid}/{slug}/...`.
@@ -114,3 +83,29 @@ The legacy Firebase Hosting site is redirect-only. `firebase deploy --only hosti
 updates redirects to `https://cgs.games`; it does not deploy Next.js. Keep the
 retired `ssrcgsgames` backend out of Hosting configuration. Firebase's reserved
 `/__/auth/` helpers remain available for Google sign-in.
+
+## Dependency Security
+
+A direct local `fast-glob` dependency supplies `@next/eslint-plugin-next@16.4.0`
+with the small adapter in `packages/next-root-glob`.
+It delegates the plugin's only glob call, `globSync`, to the published
+[`tinyglobby`](https://superchupu.dev/tinyglobby) package and disables automatic
+directory expansion to preserve literal project roots. It contains no forked
+library code and is not a general-purpose replacement for all of `fast-glob`.
+The adapter has its own package name, `@cgs-games/next-root-glob`; its version
+`3.3.1` satisfies the plugin's exact dependency requirement so npm can deduplicate
+it. `.npmrc` enables `install-links` so fresh installs package the local source
+instead of creating directory links. Keep that setting in CI and deployment.
+
+The application uses the default project root. Tests also cover literal roots,
+multiple roots, directory wildcards, and brace alternatives. Advanced root patterns
+such as zero-padded or stepped brace ranges are not supported by tinyglobby; see
+its [syntax differences](https://superchupu.dev/tinyglobby/comparison).
+Review the adapter when upgrading the Next.js ESLint plugin, and
+remove it once upstream drops the vulnerable dependency chain. Run
+`npm test -- --runInBand __tests__/lintDependencies.test.js` to verify root discovery,
+lint enforcement, and the absence of the removed packages from the lockfile.
+
+CI runs `npm audit` without exclusions or severity filtering. Keep the full audit
+clean rather than suppressing advisories or using `npm audit fix --force` to
+downgrade the toolchain.
