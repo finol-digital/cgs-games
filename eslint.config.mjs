@@ -1,15 +1,7 @@
 import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
 import { fixupConfigRules } from '@eslint/compat';
 import nextConfig from 'eslint-config-next/core-web-vitals';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import prettierRecommended from 'eslint-plugin-prettier/recommended';
 
 const eslintConfig = [
   {
@@ -26,14 +18,14 @@ const eslintConfig = [
     ],
   },
   js.configs.recommended,
-  // Review runners may load unpatched plugins that still use the pre-ESLint-10 context API.
+  // Keep older React/import plugins compatible with ESLint 10 without source patches.
   ...fixupConfigRules(nextConfig),
   {
     rules: {
       '@next/next/no-img-element': 'off',
     },
   },
-  ...compat.extends('plugin:prettier/recommended'),
+  prettierRecommended,
   {
     files: [
       '__tests__/**/*.{js,jsx,ts,tsx}',

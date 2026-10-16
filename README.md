@@ -8,7 +8,7 @@ Built with Next.js and Firebase.
 
 **First**: `npm install`
 
-**Audit**: `npm audit` (review findings and the mitigation notes below before changing dependencies)
+**Audit**: `npm audit` (CI requires zero reported vulnerabilities)
 
 **Format**: `npm run format`
 
@@ -22,26 +22,36 @@ Built with Next.js and Firebase.
 
 **Emulate**: `firebase emulators:start`
 
-### Dependency security patches
+### Dependency security
 
-`npm install` and `npm ci` apply the patches in `patches/` and fail if a patch cannot
-be applied. Do not skip the postinstall step when validating or deploying dependencies.
+The `braces` dependency chain has been removed instead of locally patching it.
+Prettier uses its native ESLint flat configuration, and `@eslint/compat` keeps the
+existing Next.js/React lint rules working without source patches. `patch-package`
+and the postinstall patch step are no longer needed.
 
-As of October 11, 2026, `npm audit` reports seven high-severity findings, all from
-the `braces` [stack-exhaustion advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
-and its dependents. There is no patched upstream release. `patches/braces+3.0.3.patch`
-backports the runtime guards from [upstream PR #72](https://github.com/micromatch/braces/pull/72)
-at commit `28d440b5dd449dbf1fe6f3506cf94ecca4d02660` (closed, unmerged): parsing and AST
-traversal are capped at 100 nesting levels, and cyclic expansion parent links are
-rejected. Regression tests cover the guard and normal glob behavior, check every
-`braces` copy recorded in the lockfile against a 9,003-character deeply nested
-pattern, and verify that cyclic child ASTs cannot bypass the traversal limit.
-Run them with `npm test -- --runInBand __tests__/bracesPatch.test.js` after installing.
+A direct local `fast-glob` dependency supplies `@next/eslint-plugin-next@16.4.0`
+with the small adapter in `packages/next-root-glob`.
+It delegates the plugin's only glob call, `globSync`, to the published
+[`tinyglobby`](https://superchupu.dev/tinyglobby) package and disables automatic
+directory expansion to preserve literal project roots. It contains no forked
+library code and is not a general-purpose replacement for all of `fast-glob`.
+The adapter has its own package name, `@cgs-games/next-root-glob`; its version
+`3.3.1` satisfies the plugin's exact dependency requirement so npm can deduplicate
+it. `.npmrc` enables `install-links` so fresh installs package the local source
+instead of creating directory links. Keep that setting in CI and deployment.
 
-The installed version remains 3.0.3, so npm still reports the advisory; this is a
-local mitigation, not a clean audit. Remove the patch after upgrading to a verified
-upstream fix. Avoid `npm audit fix --force`: its suggested major downgrades of
-`eslint-config-next` and `patch-package` are incompatible with the current toolchain.
+The application uses the default project root. Tests also cover literal roots,
+multiple roots, directory wildcards, and brace alternatives. Advanced root patterns
+such as zero-padded or stepped brace ranges are not supported by tinyglobby; see
+its [syntax differences](https://superchupu.dev/tinyglobby/comparison).
+Review the adapter when upgrading the Next.js ESLint plugin, and
+remove it once upstream drops the vulnerable dependency chain. Run
+`npm test -- --runInBand __tests__/lintDependencies.test.js` to verify root discovery,
+lint enforcement, and the absence of the removed packages from the lockfile.
+
+CI runs `npm audit` without exclusions or severity filtering. Keep the full audit
+clean rather than suppressing advisories or using `npm audit fix --force` to
+downgrade the toolchain.
 
 ## Uploads
 
