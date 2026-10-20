@@ -6,6 +6,8 @@ Built with Next.js and Firebase.
 
 ## Local Setup
 
+Requires Node.js 24.12.0 or newer for the Firebase SDK and rules testing tools.
+
 **First**: `npm install`
 
 **Audit**: `npm audit` (CI requires zero reported vulnerabilities)
