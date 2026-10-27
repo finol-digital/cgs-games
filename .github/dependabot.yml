@@ -7,6 +7,15 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: 'chore(deps)'
+    groups:
+      # Keep potentially breaking major upgrades individually reviewable.
+      npm-minor-and-patch:
+        applies-to: version-updates
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+      npm-security:
+        applies-to: security-updates
+        patterns: ['*']
     ignore:
       - dependency-name: 'firebase'
         update-types: ['version-update:semver-major']
@@ -17,3 +26,11 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: 'chore(deps)'
+    groups:
+      github-actions-minor-and-patch:
+        applies-to: version-updates
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+      github-actions-security:
+        applies-to: security-updates
+        patterns: ['*']
