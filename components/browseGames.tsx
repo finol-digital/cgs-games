@@ -3,23 +3,21 @@
 import { useState } from 'react';
 import Game from '@/lib/game';
 import GamesDeck from './gamesDeck';
+import { matchesGameSearch } from '@/lib/gameSearch';
 
-export default function BrowseGames({ games }: { games: Game[] }) {
-  const [searchQuery, setSearchQuery] = useState('');
+interface BrowseGamesProps {
+  games: Game[];
+  initialQuery?: string;
+}
+
+/** Filters the supplied catalog locally, starting with the query supplied by the page URL. */
+export default function BrowseGames({ games, initialQuery = '' }: BrowseGamesProps) {
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
 
   // Normalize the search query once
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  const filteredGames = games.filter((game) => {
-    if (!normalizedQuery) return true;
-
-    return (
-      (game.name && game.name.toLowerCase().includes(normalizedQuery)) ||
-      (game.username && game.username.toLowerCase().includes(normalizedQuery)) ||
-      (game.slug && game.slug.toLowerCase().includes(normalizedQuery)) ||
-      (game.copyright && game.copyright.toLowerCase().includes(normalizedQuery))
-    );
-  });
+  const filteredGames = games.filter((game) => matchesGameSearch(game, normalizedQuery));
 
   const resultCount = filteredGames.length;
 

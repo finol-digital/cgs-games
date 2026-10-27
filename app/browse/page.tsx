@@ -14,13 +14,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function Page() {
-  const allGames = await adminGetAllGames();
+interface BrowsePageProps {
+  searchParams: Promise<{ q?: string | string[] }>;
+}
+
+/** Loads the public catalog and initializes Browse from the first URL search query. */
+export default async function Page({ searchParams }: BrowsePageProps) {
+  const [allGames, params] = await Promise.all([adminGetAllGames(), searchParams]);
+  const initialQuery = (Array.isArray(params.q) ? params.q[0] : params.q) || '';
   return (
     <>
       <main className="main-content">
         <h1 className="text-center text-4xl font-bold my-4">CGS Games Browser</h1>
-        <BrowseGames games={allGames} />
+        <BrowseGames key={initialQuery} games={allGames} initialQuery={initialQuery} />
       </main>
       <Footer />
     </>
