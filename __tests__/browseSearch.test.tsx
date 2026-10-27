@@ -8,6 +8,7 @@ jest.mock('@/lib/firebase/admin', () => ({ adminGetAllGames: jest.fn() }));
 jest.mock(
   '@/components/gamesDeck',
   () =>
+    /** Exposes filtered game names without loading card or Firebase dependencies. */
     function MockDeck({ games }: { games: Game[] }) {
       return <div data-testid="games">{games.map((game) => game.name).join(', ')}</div>;
     },

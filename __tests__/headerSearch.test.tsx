@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import HeaderSearch from '@/components/headerSearch';
 import { SearchGame } from '@/lib/gameSearch';
 
@@ -37,6 +37,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
+/** Changes the header query through the same input event as typing. */
 function search(query: string) {
   const input = screen.getByRole('combobox', { name: 'Search games' });
   fireEvent.change(input, { target: { value: query } });
@@ -134,6 +135,75 @@ describe('header game search', () => {
     fireEvent.focus(input);
     fireEvent.blur(input, { relatedTarget: null });
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it.each(['suggestion', 'Browse'])(
+    'keeps %s mounted until its mouse click activates',
+    async (target) => {
+      render(<HeaderSearch />);
+      const input = search('grand');
+      await screen.findAllByRole('option');
+      act(() => input.focus());
+      const link =
+        target === 'suggestion'
+          ? screen.getAllByRole('option')[0]
+          : screen.getByRole('link', { name: /See all results/ });
+      const click = jest.fn((event: Event) => event.preventDefault());
+      link.addEventListener('click', click);
+      const mouseDown = createEvent.mouseDown(link, { button: 0 });
+      fireEvent(link, mouseDown);
+      // Model browsers that blur to no focused target unless mousedown is canceled.
+      if (!mouseDown.defaultPrevented) fireEvent.blur(input, { relatedTarget: null });
+      expect(link).toBeInTheDocument();
+      expect(input).toHaveFocus();
+      fireEvent.click(link);
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    },
+  );
+
+  it('preserves retry activation when mouse focus would otherwise leave the input', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.mocked(global.fetch).mockRejectedValueOnce(new Error('offline'));
+    render(<HeaderSearch />);
+    act(() => screen.getByRole('combobox').focus());
+    const input = search('grand');
+    const retry = await screen.findByRole('button', { name: 'Try again' });
+    const mouseDown = createEvent.mouseDown(retry, { button: 0 });
+    fireEvent(retry, mouseDown);
+    if (!mouseDown.defaultPrevented) fireEvent.blur(input, { relatedTarget: null });
+    expect(retry).toBeInTheDocument();
+    fireEvent.click(retry);
+    expect(await screen.findAllByRole('option')).toHaveLength(2);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves secondary mouse actions available on result links', async () => {
+    render(<HeaderSearch />);
+    search('grand');
+    const link = (await screen.findAllByRole('option'))[0];
+    expect(fireEvent.mouseDown(link, { button: 1 })).toBe(true);
+    expect(fireEvent.mouseDown(link, { button: 2 })).toBe(true);
+  });
+
+  it('listens for outside presses only while results are visible without aborting loads on dismissal', async () => {
+    const add = jest.spyOn(document, 'addEventListener');
+    const remove = jest.spyOn(document, 'removeEventListener');
+    const { promise, resolve } = Promise.withResolvers<unknown>();
+    global.fetch = jest.fn().mockReturnValue(promise);
+    render(<HeaderSearch />);
+    fireEvent.focus(screen.getByRole('combobox'));
+    expect(add.mock.calls.filter(([type]) => type === 'pointerdown')).toHaveLength(0);
+    const input = search('grand');
+    const listener = add.mock.calls.find(([type]) => type === 'pointerdown')![1];
+    const signal = jest.mocked(global.fetch).mock.calls[0][1]!.signal!;
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(remove).toHaveBeenCalledWith('pointerdown', listener);
+    expect(signal.aborted).toBe(false);
+    await act(async () => resolve({ ok: true, json: async () => games }));
+    fireEvent.focus(input);
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('keeps direct links and falls back safely when thumbnails fail', async () => {

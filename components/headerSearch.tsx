@@ -33,6 +33,8 @@ export default function HeaderSearch() {
   }, [activeIndex, showResults, listId]);
 
   useEffect(() => {
+    if (!showResults) return;
+    /** Closes visible suggestions when a pointer press starts outside search. */
     function dismiss(event: PointerEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
         setOpen(false);
@@ -40,13 +42,17 @@ export default function HeaderSearch() {
       }
     }
     document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [showResults]);
+
+  useEffect(() => {
     return () => {
-      document.removeEventListener('pointerdown', dismiss);
       requestRef.current?.abort();
       requestRef.current = null;
     };
   }, []);
 
+  /** Fetches once per mount, deduplicating requests and allowing failed loads to retry. */
   async function loadCatalog() {
     if (games !== null || requestRef.current) return;
     const controller = new AbortController();
@@ -89,6 +95,7 @@ export default function HeaderSearch() {
     }
   }
 
+  /** Hides the popup and clears keyboard selection without losing the query. */
   function dismiss() {
     setOpen(false);
     setActiveIndex(-1);
@@ -172,7 +179,13 @@ export default function HeaderSearch() {
         )}
       </form>
       {showResults && (
-        <div className="absolute top-full right-0 left-0 z-50 mt-2 overflow-hidden rounded-xl border border-slate-600 bg-slate-800 text-slate-100 shadow-xl">
+        <div
+          // Keep input focus until click activation, including browsers with a null blur target.
+          onMouseDown={(event) => {
+            if (event.button === 0) event.preventDefault();
+          }}
+          className="absolute top-full right-0 left-0 z-50 mt-2 overflow-hidden rounded-xl border border-slate-600 bg-slate-800 text-slate-100 shadow-xl"
+        >
           <p role="status" className="px-4 pt-3 pb-2 text-sm text-slate-300">
             {status === 'loading'
               ? 'Loading games…'

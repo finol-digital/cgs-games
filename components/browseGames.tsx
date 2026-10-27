@@ -10,6 +10,7 @@ interface BrowseGamesProps {
   initialQuery?: string;
 }
 
+/** Filters the supplied catalog locally, starting with the query supplied by the page URL. */
 export default function BrowseGames({ games, initialQuery = '' }: BrowseGamesProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
 

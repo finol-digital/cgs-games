@@ -18,6 +18,7 @@ interface BrowsePageProps {
   searchParams: Promise<{ q?: string | string[] }>;
 }
 
+/** Loads the public catalog and initializes Browse from the first URL search query. */
 export default async function Page({ searchParams }: BrowsePageProps) {
   const [allGames, params] = await Promise.all([adminGetAllGames(), searchParams]);
   const initialQuery = (Array.isArray(params.q) ? params.q[0] : params.q) || '';

@@ -16,6 +16,7 @@ export function matchesGameSearch(
   );
 }
 
+/** Encodes a trimmed search query for Browse, omitting empty query parameters. */
 export function browseSearchHref(query: string): string {
   const normalized = query.trim();
   return normalized ? `/browse?${new URLSearchParams({ q: normalized })}` : '/browse';
