@@ -7,7 +7,7 @@ import HeaderSearch from '@/components/headerSearch';
 export default function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-[var(--color-gold)]">
-      <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center gap-y-2 px-4 py-2 lg:flex-nowrap lg:px-6">
+      <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center gap-y-2 px-4 py-2 lg:grid lg:grid-cols-3 lg:gap-x-4 lg:px-6">
         <MainNav />
         <MobileNav />
         <HeaderSearch />

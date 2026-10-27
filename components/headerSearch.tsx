@@ -104,7 +104,7 @@ export default function HeaderSearch() {
   return (
     <div
       ref={containerRef}
-      className="relative order-last w-full min-w-0 lg:order-none lg:mx-4 lg:max-w-md lg:flex-1"
+      className="relative order-last w-full min-w-0 lg:order-none lg:max-w-md lg:justify-self-center"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) dismiss();
       }}
