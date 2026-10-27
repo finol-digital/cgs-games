@@ -10,7 +10,7 @@ import UserMenu from '@/components/userMenu';
 export default function AccountControls() {
   const { user, username } = useContext(UserContext);
   return (
-    <div className="flex items-center justify-end flex-auto">
+    <div className="ml-auto flex min-w-0 items-center justify-end">
       {user ? (
         username ? (
           <UserMenu username={username} />
