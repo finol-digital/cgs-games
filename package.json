@@ -57,6 +57,7 @@
     "@types/lodash.snakecase": "^4.1.9",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "deepmerge": "file:packages/jest-config-merge",
     "eslint": "^10.13.0",
     "eslint-config-next": "^16.4.3",
     "eslint-config-prettier": "^10.1.8",
@@ -80,6 +81,9 @@
     },
     "@istanbuljs/load-nyc-config": {
       "js-yaml": "^4.3.2"
+    },
+    "jest-config": {
+      "deepmerge": "$deepmerge"
     },
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
