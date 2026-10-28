@@ -1,0 +1,10 @@
+{
+  "name": "@cgs-games/jest-config-merge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scoped adapter for Jest configuration merging without the vulnerable deepmerge package",
+  "main": "index.cjs",
+  "dependencies": {
+    "@fastify/deepmerge": "^3.2.4"
+  }
+}
