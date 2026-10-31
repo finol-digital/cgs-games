@@ -71,10 +71,12 @@ Invoke-Gcloud storage buckets update "gs://$ArchiveBucket" --retention-period=90
 $archiveLifecycle = Join-Path $outputDirectory 'archive-lifecycle.json'
 # Runs are cleaned up after 95 days. Game files under objects/ are shared by every run in a
 # 30-day period (OBJECT_PERIOD_DAYS in backup.mjs), so they must outlive the last run that
-# references them: 95 + 30 = 125 days. Never shorten the objects/ rule below the run rule plus 30.
+# references them: 95 + 30 = 125 days, plus 5 days for a run that finishes after its period ends,
+# whole-day age rounding, and lifecycle processing delay. Keep the objects/ rule at least 35 days
+# longer than the run rule.
 @{ rule = @(
     @{ action = @{ type = 'Delete' }; condition = @{ age = 95; matchesPrefix = @('runs/', 'completed/', 'verified/') } },
-    @{ action = @{ type = 'Delete' }; condition = @{ age = 125; matchesPrefix = @('objects/') } }
+    @{ action = @{ type = 'Delete' }; condition = @{ age = 130; matchesPrefix = @('objects/') } }
 ) } | ConvertTo-Json -Depth 10 | Set-Content $archiveLifecycle
 Invoke-Gcloud storage buckets update "gs://$ArchiveBucket" --lifecycle-file=$archiveLifecycle | Out-Null
 $exportLifecycle = Join-Path $outputDirectory 'export-lifecycle.json'

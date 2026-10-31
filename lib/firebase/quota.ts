@@ -1,6 +1,10 @@
 import { adminDb, adminStorage } from '@/lib/firebase/admin';
 import { apiError } from '@/lib/httpResponses';
 
+// Quotas are checked before a publish rather than reserved, so concurrent publishes by the same
+// creator can each pass and overshoot a limit by up to one archive per request. Each upload is still
+// bounded by MAX_UNCOMPRESSED_BYTES, so the overshoot is limited and visible in storedBytesFor.
+
 /** Listings a single creator may publish, across URL and archive uploads. */
 export const MAX_GAMES_PER_USER = 50;
 /** Published archive bytes a single creator may store, across all of their games. */

@@ -12,7 +12,7 @@ CGS Games uses three separate data stores: Firestore, Firebase Authentication, a
 | Independent backup        | `firebase-backup`, daily at 3 AM America/Chicago                                                                                                         |
 | Freshness check           | `backup-monitor`, hourly at 15 minutes past the hour                                                                                                     |
 | Automated restore drill   | `backup-restore-check`, first of each month at 8 AM America/Chicago                                                                                      |
-| Archive                   | `gs://cgs-games-backups-archive`, 90-day retention; runs cleaned up after 95 days, shared game files (`objects/`) after 125 days                         |
+| Archive                   | `gs://cgs-games-backups-archive`, 90-day retention; runs cleaned up after 95 days, shared game files (`objects/`) after 130 days                         |
 | Temporary exports         | `gs://cgs-games-backups-exports`, cleanup after seven days                                                                                               |
 | Restore test files        | `gs://cgs-games-backups-restore-test`, cleanup after one day                                                                                             |
 | Alerts                    | `david@finoldigital.com`: job failure, complete backup older than 30 hours, restore check older than 35 days, or no healthy hourly check for three hours |
@@ -84,7 +84,7 @@ After confirming the archive, restoring it, and explicitly accepting that retent
 gcloud storage buckets update gs://cgs-games-backups-archive --lock-retention-period
 ```
 
-Because each file is archived at most once per 30-day period and kept for 125 days, the archive holds roughly four to five copies of an unchanged file (previously about 95 with full daily copies), plus one copy per changed generation, soft-deleted storage, and database exports. Runs archived before this change keep their own full copies under `runs/<run>/storage/` until they expire. The `objects/` lifecycle must stay at least 30 days longer than the `runs/` lifecycle; otherwise older runs would reference deleted files. Monitor storage growth and billing as the game library grows. The daily job has a four-hour execution limit and 512 MiB memory; reassess these limits if large object manifests approach memory capacity.
+Because each file is archived at most once per 30-day period and kept for 130 days, the archive holds roughly four to five copies of an unchanged file (previously about 95 with full daily copies), plus one copy per changed generation, soft-deleted storage, and database exports. Runs archived before this change keep their own full copies under `runs/<run>/storage/` until they expire. The `objects/` lifecycle must stay at least 35 days longer than the `runs/` lifecycle (the 30-day period plus margin for run duration and lifecycle delay); otherwise older runs would reference deleted files. Monitor storage growth and billing as the game library grows. The daily job has a four-hour execution limit and 512 MiB memory; reassess these limits if large object manifests approach memory capacity.
 
 Run `npm run test:backups` for backup and restore failure-path tests. The main CI workflow runs these alongside the application tests. Runtime changes require redeploying this separate job; an application deployment does not update it.
 

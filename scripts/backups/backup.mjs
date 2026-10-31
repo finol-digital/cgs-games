@@ -137,7 +137,7 @@ export async function copyObject(api, sourceBucket, object, destinationBucket, d
     const url = new URL(
       `${storage}/b/${encode(sourceBucket)}/o/${encode(object.name)}/rewriteTo/b/${encode(destinationBucket)}/o/${encode(destinationName)}`,
     );
-    // Reused archive objects are recorded without a generation; copy their single live version.
+    // Pin the source generation when known so backups and restores copy exactly the recorded version.
     if (object.generation) url.searchParams.set('sourceGeneration', object.generation);
     url.searchParams.set('ifGenerationMatch', '0');
     if (token) url.searchParams.set('rewriteToken', token);
