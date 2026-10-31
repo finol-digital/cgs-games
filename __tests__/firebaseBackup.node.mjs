@@ -11,6 +11,8 @@ import {
   verifyBackup,
   checkRestore,
   checkVolume,
+  objectPeriod,
+  OBJECT_PERIOD_DAYS,
 } from '../scripts/backups/backup.mjs';
 
 const config = configuration({
@@ -22,8 +24,23 @@ const config = configuration({
 });
 const now = new Date('2026-10-13T02:00:00Z');
 
-function fakeCloud({ failStorage = false, failImport = false } = {}) {
+const assetFile = {
+  name: 'games/a/file.json',
+  generation: '123',
+  size: '12',
+  crc32c: 'test-checksum',
+};
+
+function fakeCloud({
+  failStorage = false,
+  failImport = false,
+  assets = [assetFile],
+  importedDocuments = '1480',
+  restoredCount = '1',
+} = {}) {
   const saved = new Map();
+  // Archive objects created by server-side rewrites, as the list API would describe them.
+  const copied = new Map();
   const actions = [];
   let exportPrefix;
   const api = async (address, options = {}) => {
@@ -46,6 +63,18 @@ function fakeCloud({ failStorage = false, failImport = false } = {}) {
     if (path.includes('/rewriteTo/')) {
       if (failStorage && path.includes('/b/assets/')) throw new Error('source disappeared');
       assert.ok(['123', '456'].includes(url.searchParams.get('sourceGeneration')));
+      assert.equal(url.searchParams.get('ifGenerationMatch'), '0');
+      const destination = path.split('/rewriteTo/b/archive/o/')[1];
+      if (destination) {
+        assert.ok(!copied.has(destination), 'never overwrite an archived object');
+        copied.set(destination, {
+          name: destination,
+          generation: '456',
+          size: '12',
+          crc32c: 'test-checksum',
+          timeCreated: now.toISOString(),
+        });
+      }
       return { done: true, resource: { size: '12', crc32c: 'test-checksum', generation: '456' } };
     }
     if (path.endsWith('/b/staging/o'))
@@ -59,17 +88,17 @@ function fakeCloud({ failStorage = false, failImport = false } = {}) {
           },
         ],
       };
-    if (path.endsWith('/b/assets/o'))
-      return {
-        items: [
-          { name: 'games/a/file.json', generation: '123', size: '12', crc32c: 'test-checksum' },
-        ],
-      };
+    if (path.endsWith('/b/assets/o')) return { items: assets };
     if (path.endsWith('/b/archive/o'))
       return {
-        items: [...saved.keys()]
-          .filter((key) => key.startsWith(url.searchParams.get('prefix')))
-          .map((name) => ({ name, generation: '1', timeCreated: now.toISOString() })),
+        items: [
+          ...[...saved.keys()].map((name) => ({
+            name,
+            generation: '1',
+            timeCreated: now.toISOString(),
+          })),
+          ...copied.values(),
+        ].filter(({ name }) => name.startsWith(url.searchParams.get('prefix'))),
       };
     if (path.includes('/b/archive/o/')) return saved.get(path.split('/b/archive/o/')[1]);
     if (path.endsWith('/databases/(default)'))
@@ -94,10 +123,14 @@ function fakeCloud({ failStorage = false, failImport = false } = {}) {
               backup.name === `${exportDirectory}/${basename}.overall_export_metadata`,
           ),
         );
-        return { done: true, ...(failImport ? { error: { code: 9 } } : {}) };
+        return {
+          done: true,
+          metadata: { progressDocuments: { completedWork: importedDocuments } },
+          ...(failImport ? { error: { code: 9 } } : {}),
+        };
       }
       if (path.endsWith(':runAggregationQuery'))
-        return [{ result: { aggregateFields: { total: { integerValue: '1' } } } }];
+        return [{ result: { aggregateFields: { total: { integerValue: restoredCount } } } }];
       if (options.method === 'DELETE')
         return { response: { '@type': 'type.googleapis.com/google.firestore.admin.v1.Database' } };
       return { etag: 'created-by-this-drill' };
@@ -125,8 +158,11 @@ function fakeCloud({ failStorage = false, failImport = false } = {}) {
       };
     return {};
   };
-  return { api, saved, actions };
+  return { api, saved, copied, actions };
 }
+
+const storageCopies = (actions) =>
+  actions.filter(({ path }) => path.includes('/b/assets/o/') && path.includes('/rewriteTo/'));
 
 describe('Firebase disaster recovery backups', () => {
   it('alerts on major account, database or file loss while ignoring small or unavailable baselines', () => {
@@ -301,6 +337,91 @@ describe('Firebase disaster recovery backups', () => {
     );
     assert.equal(actions.filter((action) => action.method === 'DELETE').length, 0);
     assert.ok(![...saved.keys()].some((key) => key.startsWith('verified/')));
+  });
+
+  it('archives each file generation once per period and reuses it in later runs', async () => {
+    const { api, saved, copied, actions } = fakeCloud();
+    const first = await runBackup(config, api, { now: () => now });
+    const name = `objects/p${objectPeriod(now)}/assets/123/games/a/file.json`;
+    assert.ok(copied.has(name));
+    assert.deepEqual(first.storage[0], {
+      bucket: 'assets',
+      objects: 1,
+      bytes: '12',
+      copied: 1,
+      reused: 0,
+      excludedPrefixes: ['staged-uploads/'],
+    });
+
+    const later = new Date(now.getTime() + 86400000);
+    assert.equal(objectPeriod(later), objectPeriod(now), 'fixture stays within one period');
+    const second = await runBackup(config, api, { now: () => later });
+    assert.equal(storageCopies(actions).length, 1, 'the second run copies no game files');
+    assert.equal(second.storage[0].reused, 1);
+    const manifest = saved.get(`runs/${second.run}/storage-manifests/assets.json`);
+    assert.equal(manifest[0].backup.name, name);
+    assert.equal(manifest[0].backup.generation, '456');
+    assert.equal(manifest[0].source.name, 'games/a/file.json');
+
+    const nextPeriod = new Date(now.getTime() + OBJECT_PERIOD_DAYS * 86400000);
+    await runBackup(config, api, { now: () => nextPeriod });
+    assert.equal(storageCopies(actions).length, 2, 'a new period archives a fresh copy');
+  });
+
+  it('copies a changed generation again and never backs up staged uploads', async () => {
+    const staged = { ...assetFile, name: 'staged-uploads/u/x.cgs.zip' };
+    const changed = { ...assetFile, generation: '456' };
+    const { api, saved, copied } = fakeCloud({ assets: [assetFile, staged] });
+    await runBackup(config, api, { now: () => now });
+    assert.ok(![...copied.keys()].some((key) => key.includes('staged-uploads/')));
+
+    const { api: changedApi, copied: changedCopies } = fakeCloud({ assets: [changed] });
+    for (const [key, value] of copied) changedCopies.set(key, value);
+    const manifest = await runBackup(config, changedApi, { now: () => now });
+    assert.equal(manifest.storage[0].copied, 1);
+    assert.ok(changedCopies.has(`objects/p${objectPeriod(now)}/assets/456/games/a/file.json`));
+    assert.equal([...saved.keys()].filter((key) => key.includes('staged-uploads')).length, 0);
+  });
+
+  it('refuses to reuse an archived copy whose checksum does not match the source', async () => {
+    const { api, copied } = fakeCloud();
+    await runBackup(config, api, { now: () => now });
+    for (const value of copied.values()) value.crc32c = 'corrupted';
+    await assert.rejects(() => runBackup(config, api, { now: () => now }), /checksum or size/);
+  });
+
+  it('fails a restore drill that imports an empty collection', async () => {
+    const { api, saved, actions } = fakeCloud({ restoredCount: '0' });
+    await runBackup(config, api, { now: () => now });
+    await assert.rejects(
+      () => verifyBackup({ ...config, restoreBucket: 'restore-test' }, api, { now }),
+      /no users documents/,
+    );
+    assert.equal(actions.filter((action) => action.method === 'DELETE').length, 0);
+    assert.ok(![...saved.keys()].some((key) => key.startsWith('verified/')));
+  });
+
+  it('fails a restore drill that imports fewer documents than were exported', async () => {
+    const { api, saved } = fakeCloud({ importedDocuments: '12' });
+    await runBackup(config, api, { now: () => now });
+    await assert.rejects(
+      () => verifyBackup({ ...config, restoreBucket: 'restore-test' }, api, { now }),
+      /fewer documents/,
+    );
+    assert.ok(![...saved.keys()].some((key) => key.startsWith('verified/')));
+  });
+
+  it('restores reused archive objects pinned to their archived generation', async () => {
+    const { api, actions } = fakeCloud();
+    await runBackup(config, api, { now: () => now });
+    await runBackup(config, api, { now: () => new Date(now.getTime() + 3600000) });
+    const report = await verifyBackup({ ...config, restoreBucket: 'restore-test' }, api, {
+      now: new Date(now.getTime() + 7200000),
+    });
+    assert.equal(report.filesRestored, 1);
+    assert.equal(report.documentsImported, 1480);
+    const restoreCopy = actions.find(({ path }) => path.includes('/rewriteTo/b/restore-test/'));
+    assert.match(restoreCopy.path, /\/b\/archive\/o\/objects\/p\d+\/assets\/123\//);
   });
 
   it('refuses drills pointing at production and alerts on missing restore checks', async () => {

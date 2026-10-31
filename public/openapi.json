@@ -219,6 +219,25 @@
               }
             }
           },
+          "403": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
           "404": {
             "description": "Structured error. See code, message, and hint for recovery.",
             "content": {
@@ -254,6 +273,25 @@
                   "type": "string"
                 }
               },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
               "API-Version": {
                 "description": "Supported major API version.",
                 "schema": {
@@ -321,7 +359,7 @@
             }
           }
         },
-        "description": "Publish a game from its auto-update URL. See https://cgs.games/developers for integration guidance."
+        "description": "Publish a game from its auto-update URL. The specification must be a JSON object with a string name. Each creator may publish at most 50 games (403 GAME_QUOTA_EXCEEDED). Game names are limited to 200 characters and copyright notices to 500; both must be strings. A creator cannot publish two games with the same slug (409). See https://cgs.games/developers for integration guidance."
       },
       "head": {
         "operationId": "listGamesHeaders",
@@ -1028,7 +1066,7 @@
       "post": {
         "operationId": "uploadGame",
         "summary": "Publish a .cgs.zip archive (maximum 100 MiB)",
-        "description": "Send a multipart file directly, or first upload the archive to Firebase Storage using an authenticated client and then submit its staged path. A staged archive is cleaned up after processing is attempted. Archives need a valid cgs.json and supported game assets.",
+        "description": "Send a multipart file directly, or first upload the archive to Firebase Storage using an authenticated client and then submit its staged path. A staged archive is cleaned up after processing is attempted. Archives need a valid cgs.json and supported game assets. Archives may contain at most 20000 entries (413 TOO_MANY_FILES) and expand to at most 256 MiB, with no single file over 64 MiB (413 ARCHIVE_TOO_LARGE or ENTRY_TOO_LARGE). Each creator may store up to 1 GiB of published files (413 STORAGE_QUOTA_EXCEEDED). Each creator may publish at most 50 games (403 GAME_QUOTA_EXCEEDED). Game names are limited to 200 characters and copyright notices to 500; both must be strings.",
         "security": [
           {
             "firebaseIdToken": []
@@ -1109,6 +1147,25 @@
             }
           },
           "401": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "403": {
             "description": "Structured error. See code, message, and hint for recovery.",
             "content": {
               "application/json": {
@@ -2007,7 +2064,7 @@
           "schema": {
             "type": "string"
           },
-          "description": "Upstream host and path without a scheme, for example example.com/assets/game.json. This catch-all path can contain slashes; requires public HTTPS on port 443. Private IPs, embedded credentials, and unsafe redirects are rejected. GET forwards query parameters. Responses are limited to 100 MiB with a 30-second deadline; POST bodies to 16 MiB. Responses stream as bytes arrive. A limit or connection failure after headers aborts the stream; discard partial content. Active content is sandboxed and upstream cookies are never forwarded."
+          "description": "Upstream host and path without a scheme, for example example.com/assets/game.json. This catch-all path can contain slashes; requires public HTTPS on port 443. Private IPs, embedded credentials, and unsafe redirects are rejected. GET forwards query parameters. Responses are limited to 100 MiB with a 30-second deadline; POST bodies to 16 MiB. Responses stream as bytes arrive. A limit or connection failure after headers aborts the stream; discard partial content. Active content is sandboxed and upstream cookies are never forwarded. Only images (PNG, JPEG, GIF, WebP, AVIF, BMP, TIFF, ICO), JSON, plain text, CSV, and binary downloads (octet-stream, zip) are served; other upstream types, including HTML, SVG, XML and PDF, return 502 UNSUPPORTED_UPSTREAM_TYPE. Binary downloads carry Content-Disposition: attachment. Requests are limited to 600 per minute per client IP per running instance (429 with Retry-After)."
         },
         {
           "name": "API-Version",
@@ -2026,7 +2083,7 @@
         "summary": "Fetch an upstream HTTPS resource",
         "responses": {
           "200": {
-            "description": "Upstream body and Content-Type; may be JSON, an image, or other content.",
+            "description": "Upstream body and Content-Type: an image, JSON, plain text, CSV, or a binary download.",
             "content": {
               "*/*": {
                 "schema": {
@@ -2085,6 +2142,67 @@
                 "schema": {
                   "type": "string",
                   "enum": ["1"]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Wait at least this many seconds before retrying.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"proxy\";q=600;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"proxy\";r=0;t=30"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               }
             }
@@ -2209,6 +2327,67 @@
               }
             }
           },
+          "429": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Wait at least this many seconds before retrying.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"proxy\";q=600;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"proxy\";r=0;t=30"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
           "502": {
             "description": "Structured error. See code, message, and hint for recovery.",
             "content": {
@@ -2293,6 +2472,67 @@
                 "schema": {
                   "type": "string",
                   "enum": ["1"]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Wait at least this many seconds before retrying.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "IETF draft-ietf-httpapi-ratelimit-headers-11 quota policy.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"proxy\";q=600;w=60"
+              },
+              "RateLimit": {
+                "description": "IETF draft structured field: r is remaining requests; t is seconds until reset. Per IP per running instance.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "\"proxy\";r=0;t=30"
+              },
+              "X-RateLimit-Limit": {
+                "description": "Legacy request quota.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Legacy remaining requests.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Legacy absolute reset time (ISO 8601), unlike the relative t in RateLimit.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               }
             }

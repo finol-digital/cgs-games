@@ -1,13 +1,20 @@
 import {
   CgsJson,
   CONTENT_TYPE_MAP,
+  declaredSize,
   fileExistsInZip,
   getFileExtension,
   getPublicUrl,
   isAllowedFile,
   locateCgsJson,
+  MAX_ENTRY_BYTES,
+  MAX_UNCOMPRESSED_BYTES,
+  MAX_ZIP_ENTRIES,
+  readZipEntry,
   rewriteCgsJsonUrls,
   validateCgsJson,
+  ZipBudget,
+  ZipLimitError,
 } from '@/lib/cgsZipUtils';
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
 import { resolveBannerImageUrl } from '@/lib/bannerFallback';
@@ -17,7 +24,16 @@ import snakecase from 'lodash.snakecase';
 import { NextResponse } from 'next/server';
 import { apiError } from '@/lib/httpResponses';
 import { ownsRegisteredUsername } from '@/lib/firebase/ownership';
+import {
+  countGamesFor,
+  gameQuotaResponse,
+  MAX_GAMES_PER_USER,
+  MAX_USER_STORAGE_BYTES,
+  storedBytesFor,
+} from '@/lib/firebase/quota';
+import { isHttpsUrl } from '@/lib/gameMetadata';
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+const UPLOAD_CONCURRENCY = 4;
 const STAGED_UPLOAD_PREFIX = 'staged-uploads';
 
 interface AuthenticatedUser {
@@ -174,6 +190,64 @@ async function processMultipartUpload(request: Request, { uid, username }: Authe
   });
 }
 
+/** A decompression allowance limited by the archive size cap. */
+function archiveBudget(bytes: number): ZipBudget {
+  return {
+    remaining: bytes,
+    exceeded: () =>
+      new ZipLimitError(
+        `Archive exceeds ${MAX_UNCOMPRESSED_BYTES / (1024 * 1024)} MiB when decompressed`,
+        'ARCHIVE_TOO_LARGE',
+      ),
+  };
+}
+
+/** A decompression allowance limited by the creator's remaining storage quota. */
+function quotaBudget(bytes: number): ZipBudget {
+  return {
+    remaining: bytes,
+    exceeded: () =>
+      new ZipLimitError(
+        'Publishing this game would exceed your storage quota',
+        'STORAGE_QUOTA_EXCEEDED',
+      ),
+  };
+}
+
+/** Converts a decompression limit into a structured, actionable error. */
+function zipLimitResponse(error: ZipLimitError) {
+  const hint =
+    error.code === 'STORAGE_QUOTA_EXCEEDED'
+      ? `Delete some of your games first: each creator may store up to ${MAX_USER_STORAGE_BYTES / (1024 * 1024 * 1024)} GiB of published files.`
+      : `Archives may expand to at most ${MAX_UNCOMPRESSED_BYTES / (1024 * 1024)} MiB, with no single file over ${MAX_ENTRY_BYTES / (1024 * 1024)} MiB.`;
+  return apiError(error.message, 413, undefined, { code: error.code, hint });
+}
+
+/** Runs tasks with bounded concurrency, stops starting new ones after a failure, and awaits all. */
+async function forEachLimited<T>(
+  items: T[],
+  limit: number,
+  // eslint-disable-next-line no-unused-vars -- This parameter describes the callback's type.
+  task: (item: T) => Promise<void>,
+) {
+  let next = 0;
+  let failed = false;
+  let failure: unknown;
+  const worker = async () => {
+    while (!failed && next < items.length) {
+      const item = items[next++];
+      try {
+        await task(item);
+      } catch (error) {
+        if (!failed) failure = error;
+        failed = true;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  if (failed) throw failure;
+}
+
 /** Validates the game archive, publishes supported assets, and creates its catalog entry. */
 async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZipUploadInput) {
   console.log('Processing upload', { uid, username, filename, size: zipBuffer.length });
@@ -192,6 +266,13 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
   let entryCount = 0;
   zip.forEach(() => (entryCount += 1));
   console.log('Zip loaded', { entryCount });
+  if (entryCount > MAX_ZIP_ENTRIES) {
+    console.error('Uploaded zip has too many entries', { uid, username, entryCount });
+    return apiError(`Archive contains more than ${MAX_ZIP_ENTRIES} entries`, 413, undefined, {
+      code: 'TOO_MANY_FILES',
+      hint: `Archives may contain at most ${MAX_ZIP_ENTRIES} files and folders.`,
+    });
+  }
 
   const located = locateCgsJson(zip);
   if (!located) {
@@ -203,8 +284,8 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
 
   let cgsJson: CgsJson;
   try {
-    const cgsJsonContent = await cgsJsonFile.async('string');
-    const parsed = JSON.parse(cgsJsonContent);
+    const cgsJsonContent = await readZipEntry(cgsJsonFile, archiveBudget(MAX_UNCOMPRESSED_BYTES));
+    const parsed = JSON.parse(cgsJsonContent.toString('utf-8'));
     const validationError = validateCgsJson(parsed);
     if (validationError) {
       console.error('cgs.json validation failed', { validationError });
@@ -212,6 +293,7 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
     }
     cgsJson = parsed as CgsJson;
   } catch (err: unknown) {
+    if (err instanceof ZipLimitError) return zipLimitResponse(err);
     console.error('Failed to parse or validate cgs.json', { err });
     return jsonError('Invalid cgs.json: not valid JSON', 400);
   }
@@ -234,6 +316,18 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
     );
   }
 
+  if ((await countGamesFor(username)) >= MAX_GAMES_PER_USER) {
+    console.error('Game quota exceeded', { uid, username });
+    return gameQuotaResponse();
+  }
+
+  // The archive may expand to its own limit or the creator's remaining storage, whichever is less.
+  const storageRemaining = MAX_USER_STORAGE_BYTES - (await storedBytesFor(uid));
+  const budget =
+    storageRemaining < MAX_UNCOMPRESSED_BYTES
+      ? quotaBudget(storageRemaining)
+      : archiveBudget(MAX_UNCOMPRESSED_BYTES);
+
   const storageBasePath = `games/${uid}/${slug}`;
   const bucket = adminStorage.bucket();
   const bucketName = bucket.name;
@@ -253,8 +347,7 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
     throw err;
   }
 
-  const uploadPromises: Promise<void>[] = [];
-
+  const entries: { zipEntry: JSZip.JSZipObject; gameRelativePath: string }[] = [];
   zip.forEach((relativePath, zipEntry) => {
     if (zipEntry.dir) return;
 
@@ -265,83 +358,70 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
 
     if (gameRelativePath === 'cgs.json') return;
     if (!isAllowedFile(gameRelativePath)) return;
-
-    const storagePath = `${storageBasePath}/${gameRelativePath}`;
-    const ext = getFileExtension(gameRelativePath);
-    const contentType = CONTENT_TYPE_MAP[ext] || 'application/octet-stream';
-
-    const uploadPromise = zipEntry
-      .async('nodebuffer')
-      .then(async (buffer) => {
-        const fileRef = bucket.file(storagePath);
-        try {
-          await fileRef.save(buffer, {
-            metadata: { contentType },
-            public: true,
-          });
-          console.log('Uploaded file to storage', { storagePath, contentType });
-        } catch (err: unknown) {
-          console.error('Failed to upload file to storage', { storagePath, err });
-          throw err;
-        }
-      })
-      .catch((err) => {
-        console.error('Upload promise rejected for entry', { relativePath, storagePath, err });
-        throw err;
-      });
-
-    uploadPromises.push(uploadPromise);
+    entries.push({ zipEntry, gameRelativePath });
   });
 
   const cgsJsonBuffer = Buffer.from(JSON.stringify(cgsJson, null, 2), 'utf-8');
-  const cgsJsonStoragePath = `${storageBasePath}/cgs.json`;
-  uploadPromises.push(
-    bucket
-      .file(cgsJsonStoragePath)
-      .save(cgsJsonBuffer, {
-        metadata: { contentType: 'application/json' },
-        public: true,
-      })
-      .then(() => console.log('Uploaded rewritten cgs.json', { cgsJsonStoragePath }))
-      .catch((err) => {
-        console.error('Failed to upload rewritten cgs.json', { cgsJsonStoragePath, err });
-        throw err;
-      }),
-  );
-
-  try {
-    await Promise.all(uploadPromises);
-  } catch (err: unknown) {
-    console.error('One or more uploads failed', { err });
-    throw err;
+  budget.remaining -= cgsJsonBuffer.length;
+  // Reject honestly described oversized archives before writing anything. Declared sizes are
+  // untrusted, so readZipEntry still enforces the same budget on the bytes actually produced.
+  const declaredTotal = entries.reduce((total, { zipEntry }) => total + declaredSize(zipEntry), 0);
+  if (budget.remaining < 0 || declaredTotal > budget.remaining) {
+    console.error('Upload exceeds decompression budget', { uid, username, declaredTotal });
+    return zipLimitResponse(budget.exceeded());
   }
 
-  const autoUpdateUrl = getPublicUrl(bucketName, cgsJsonStoragePath);
-  const bannerExt = cgsJson.bannerImageFileType || 'png';
-  const bannerFile = `Banner.${bannerExt}`;
-  const hasBanner = fileExistsInZip(zip, bannerFile, gameRoot);
-  // Fall back to the game card back, then the CGS default card back.
-  const bannerImageUrl = hasBanner
-    ? getPublicUrl(bucketName, `${storageBasePath}/${bannerFile}`)
-    : resolveBannerImageUrl({ cardBackImageUrl: cgsJson.cardBackImageUrl });
-
-  const game = {
-    ownerUid: uid,
-    username,
-    slug,
-    name: cgsJson.name,
-    bannerImageUrl,
-    autoUpdateUrl,
-    copyright: cgsJson.copyright || username,
-    uploadedAt: FieldValue.serverTimestamp(),
-    storageBasePath,
+  const savedPaths: string[] = [];
+  const save = async (storagePath: string, buffer: Buffer, contentType: string) => {
+    await bucket.file(storagePath).save(buffer, { metadata: { contentType }, public: true });
+    savedPaths.push(storagePath);
+    console.log('Uploaded file to storage', { storagePath, contentType });
   };
 
   try {
+    // Decompress a few entries at a time so memory stays bounded regardless of archive layout.
+    await forEachLimited(entries, UPLOAD_CONCURRENCY, async ({ zipEntry, gameRelativePath }) => {
+      const storagePath = `${storageBasePath}/${gameRelativePath}`;
+      const ext = getFileExtension(gameRelativePath);
+      const contentType = CONTENT_TYPE_MAP[ext] || 'application/octet-stream';
+      await save(storagePath, await readZipEntry(zipEntry, budget), contentType);
+    });
+
+    const cgsJsonStoragePath = `${storageBasePath}/cgs.json`;
+    await save(cgsJsonStoragePath, cgsJsonBuffer, 'application/json');
+
+    const autoUpdateUrl = getPublicUrl(bucketName, cgsJsonStoragePath);
+    const bannerExt = cgsJson.bannerImageFileType || 'png';
+    const bannerFile = `Banner.${bannerExt}`;
+    const hasBanner = fileExistsInZip(zip, bannerFile, gameRoot);
+    // Fall back to the game card back, then the CGS default card back.
+    const bannerImageUrl = hasBanner
+      ? getPublicUrl(bucketName, `${storageBasePath}/${bannerFile}`)
+      : resolveBannerImageUrl({
+          cardBackImageUrl: isHttpsUrl(cgsJson.cardBackImageUrl)
+            ? cgsJson.cardBackImageUrl
+            : undefined,
+        });
+
+    const game = {
+      ownerUid: uid,
+      username,
+      slug,
+      name: cgsJson.name,
+      bannerImageUrl,
+      autoUpdateUrl,
+      copyright: cgsJson.copyright || username,
+      uploadedAt: FieldValue.serverTimestamp(),
+      storageBasePath,
+    };
+
     await adminDb.collection('games').add(game);
     console.log('Game document created', { username, slug, storageBasePath });
   } catch (err: unknown) {
-    console.error('Failed to create game document in Firestore', { username, slug, err });
+    // Never leave published files behind for a listing that was not created.
+    await Promise.allSettled(savedPaths.map(async (path) => bucket.file(path).delete()));
+    if (err instanceof ZipLimitError) return zipLimitResponse(err);
+    console.error('Failed to publish uploaded game', { username, slug, err });
     throw err;
   }
 

@@ -52,6 +52,8 @@ const documentGet = jest.fn();
 const documentDelete = jest.fn();
 const documentAdd = jest.fn();
 const storedFile = { getMetadata: jest.fn(), delete: jest.fn() };
+const query = { where: jest.fn(), get: jest.fn(), count: jest.fn() };
+let gameCount = 0;
 const originalFetch = global.fetch;
 let errorLog: jest.SpyInstance;
 let infoLog: jest.SpyInstance;
@@ -85,9 +87,14 @@ beforeEach(() => {
   jest.resetAllMocks();
   errorLog = jest.spyOn(console, 'error').mockImplementation(() => {});
   infoLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+  query.where.mockReturnValue(query);
+  query.get.mockResolvedValue({ empty: true });
+  query.count.mockReturnValue({ get: async () => ({ data: () => ({ count: gameCount }) }) });
+  gameCount = 0;
   (adminDb.collection as jest.Mock).mockReturnValue({
     doc: () => ({ get: documentGet, delete: documentDelete }),
     add: documentAdd,
+    where: query.where,
   });
   (adminAuth.verifyIdToken as jest.Mock).mockResolvedValue({ uid: 'test-user' });
   (adminStorage.bucket as jest.Mock).mockReturnValue({ file: () => storedFile });
@@ -140,11 +147,11 @@ describe('API response contract', () => {
     expect(response.headers.get('access-control-expose-headers')).toContain('API-Version');
   });
   it.each([proxyGet, proxyPost])(
-    'sandboxes upstream active content without forwarding cookies',
+    'sandboxes upstream content without forwarding cookies',
     async (handler) => {
       jest.mocked(fetchPublicResource).mockResolvedValue(
         new Response('<script>attack()</script>', {
-          headers: { 'Content-Type': 'text/html', 'Set-Cookie': 'session=attacker' },
+          headers: { 'Content-Type': 'text/plain', 'Set-Cookie': 'session=attacker' },
         }),
       );
       const response = await handler(
@@ -156,6 +163,58 @@ describe('API response contract', () => {
       expect(await response.text()).toBe('<script>attack()</script>');
     },
   );
+
+  it.each(['text/html; charset=utf-8', 'image/svg+xml', 'application/xml', 'application/pdf'])(
+    'refuses to serve %s documents under the cgs.games origin',
+    async (contentType) => {
+      const cancel = jest.fn();
+      jest.mocked(fetchPublicResource).mockResolvedValue(
+        new Response(new ReadableStream({ cancel }), {
+          headers: { 'Content-Type': contentType },
+        }),
+      );
+      const response = await proxyGet(
+        new NextRequest('https://cgs.games/api/proxy/example.com/phish'),
+      );
+      await expectError(response.clone(), 502);
+      expect((await response.json()).code).toBe('UNSUPPORTED_UPSTREAM_TYPE');
+      expect(cancel).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('serves game data types and forces binary archives to download', async () => {
+    for (const [contentType, disposition] of [
+      ['application/json; charset=utf-8', null],
+      ['application/vnd.api+json', null],
+      ['text/csv', null],
+      ['image/webp', null],
+      ['application/zip', 'attachment'],
+      ['application/octet-stream', 'attachment'],
+    ]) {
+      jest
+        .mocked(fetchPublicResource)
+        .mockResolvedValue(new Response('data', { headers: { 'Content-Type': contentType! } }));
+      const response = await proxyGet(
+        new NextRequest('https://cgs.games/api/proxy/example.com/resource'),
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-disposition')).toBe(disposition);
+    }
+  });
+
+  it('rate limits proxy clients with retry guidance and no upstream request', async () => {
+    jest
+      .mocked(checkRateLimit)
+      .mockReturnValue({ allowed: false, remaining: 0, resetAt: Date.now() + 30000 });
+    const response = await proxyGet(
+      new NextRequest('https://cgs.games/api/proxy/example.com/image.png'),
+    );
+    await expectError(response.clone(), 429);
+    expect(response.headers.get('retry-after')).toBeTruthy();
+    expect(response.headers.get('ratelimit-policy')).toContain('"proxy"');
+    expect(checkRateLimit).toHaveBeenCalledWith('proxy:test', expect.any(Object));
+    expect(fetchPublicResource).not.toHaveBeenCalled();
+  });
 
   it.each([proxyGet, proxyPost])('rejects unsafe proxy targets', async (handler) => {
     jest.mocked(fetchPublicResource).mockRejectedValue(new UnsafeGameUrlError('Private IP'));
@@ -250,6 +309,49 @@ describe('API response contract', () => {
     );
     expect(await result.json()).toEqual({ success: true, slug: 'test_game' });
     expect(documentAdd).toHaveBeenCalled();
+  });
+
+  it.each([
+    { name: { toString: 'x' } },
+    { name: ['Game'] },
+    { name: '   ' },
+    { name: 'x'.repeat(201) },
+    { name: 'Game', copyright: { owner: 'x' } },
+    { name: 'Game', copyright: 7 },
+    { name: 'Game', copyright: 'x'.repeat(501) },
+  ])('refuses specification metadata that shared pages cannot render: %j', async (spec) => {
+    jest.mocked(fetchGameSpecification).mockResolvedValue(Response.json(spec));
+    const result = await publish(
+      makeRequest('/api/games', '{"autoUpdateUrl":"https://example.com/cgs.json"}', 'token'),
+    );
+    await expectError(result, 400);
+    expect(documentAdd).not.toHaveBeenCalled();
+  });
+
+  it('refuses non-object specifications and oversized URLs', async () => {
+    jest.mocked(fetchGameSpecification).mockResolvedValue(Response.json(['Game']));
+    const publishUrl = (url: string) =>
+      publish(makeRequest('/api/games', JSON.stringify({ autoUpdateUrl: url }), 'token'));
+    await expectError(await publishUrl('https://example.com/cgs.json'), 400);
+    await expectError(await publishUrl('https://example.com/' + 'x'.repeat(2048)), 400);
+    expect(documentAdd).not.toHaveBeenCalled();
+  });
+
+  it('rejects a duplicate URL listing and enforces the per-creator game quota', async () => {
+    jest
+      .mocked(fetchGameSpecification)
+      .mockImplementation(async () => Response.json({ name: 'Test Game' }));
+    const request = () =>
+      makeRequest('/api/games', '{"autoUpdateUrl":"https://example.com/cgs.json"}', 'token');
+    query.get.mockResolvedValueOnce({ empty: false });
+    await expectError(await publish(request()), 409);
+    gameCount = 50;
+    const limited = await publish(request());
+    await expectError(limited.clone(), 403);
+    expect((await limited.json()).code).toBe('GAME_QUOTA_EXCEEDED');
+    expect(documentAdd).not.toHaveBeenCalled();
+    expect(query.where).toHaveBeenCalledWith('username', '==', 'creator');
+    expect(query.where).toHaveBeenCalledWith('slug', '==', 'test_game');
   });
 
   it('returns JSON deletion errors and preserves the text success', async () => {

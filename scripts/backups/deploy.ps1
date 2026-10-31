@@ -69,7 +69,13 @@ foreach ($bucket in @($ArchiveBucket, $ExportBucket)) {
 # Leave retention unlocked until a successful restore and explicit approval of the irreversible lock.
 Invoke-Gcloud storage buckets update "gs://$ArchiveBucket" --retention-period=90d --soft-delete-duration=7d | Out-Null
 $archiveLifecycle = Join-Path $outputDirectory 'archive-lifecycle.json'
-@{ rule = @(@{ action = @{ type = 'Delete' }; condition = @{ age = 95 } }) } | ConvertTo-Json -Depth 10 | Set-Content $archiveLifecycle
+# Runs are cleaned up after 95 days. Game files under objects/ are shared by every run in a
+# 30-day period (OBJECT_PERIOD_DAYS in backup.mjs), so they must outlive the last run that
+# references them: 95 + 30 = 125 days. Never shorten the objects/ rule below the run rule plus 30.
+@{ rule = @(
+    @{ action = @{ type = 'Delete' }; condition = @{ age = 95; matchesPrefix = @('runs/', 'completed/', 'verified/') } },
+    @{ action = @{ type = 'Delete' }; condition = @{ age = 125; matchesPrefix = @('objects/') } }
+) } | ConvertTo-Json -Depth 10 | Set-Content $archiveLifecycle
 Invoke-Gcloud storage buckets update "gs://$ArchiveBucket" --lifecycle-file=$archiveLifecycle | Out-Null
 $exportLifecycle = Join-Path $outputDirectory 'export-lifecycle.json'
 @{ rule = @(@{ action = @{ type = 'Delete' }; condition = @{ age = 7 } }) } | ConvertTo-Json -Depth 10 | Set-Content $exportLifecycle
@@ -79,6 +85,16 @@ Invoke-Gcloud storage buckets update "gs://$ExportBucket" --lifecycle-file=$expo
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$ExportBucket" "--member=serviceAccount:service-$sourceNumber@gcp-sa-firestore.iam.gserviceaccount.com" --role=roles/storage.admin | Out-Null
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$ExportBucket" "--member=serviceAccount:$worker" --role=roles/storage.objectViewer | Out-Null
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$ArchiveBucket" "--member=serviceAccount:$worker" --role=roles/storage.objectCreator | Out-Null
+# The worker lists object names and checksums to reuse already archived game files. It still
+# cannot read, replace, or delete archive contents.
+$listerRoleFile = Join-Path $outputDirectory 'archive-lister-role.json'
+@{ title = 'Backup archive lister'; stage = 'GA'; description = 'List archive object metadata without reading contents.'; includedPermissions = @('storage.objects.list') } | ConvertTo-Json -Depth 5 | Set-Content $listerRoleFile
+$existingBackupRoles = Invoke-Gcloud iam roles list --project=$BackupProject --format=json | ConvertFrom-Json
+$listerRole = "projects/$BackupProject/roles/backupArchiveLister"
+$listerAction = if ($listerRole -in $existingBackupRoles.name) { 'update' } else { 'create' }
+Invoke-Gcloud iam roles $listerAction backupArchiveLister --project=$BackupProject --file=$listerRoleFile | Out-Null
+if ($listerAction -eq 'create') { Start-Sleep -Seconds 15 }
+Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$ArchiveBucket" "--member=serviceAccount:$worker" --role=$listerRole | Out-Null
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$ArchiveBucket" "--member=serviceAccount:$monitor" --role=roles/storage.objectViewer | Out-Null
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$ArchiveBucket" "--member=serviceAccount:$verifier" --role=roles/storage.objectViewer | Out-Null
 Invoke-Gcloud storage buckets add-iam-policy-binding "gs://$ArchiveBucket" "--member=serviceAccount:$verifier" --role=roles/storage.objectCreator | Out-Null
@@ -155,7 +171,7 @@ Invoke-Gcloud iam roles $restoreAction backupRestoreDrill --project=$BackupProje
 if ($restoreAction -eq 'create') { Start-Sleep -Seconds 15 }
 Invoke-Gcloud projects add-iam-policy-binding $BackupProject "--member=serviceAccount:$verifier" --role=$restoreRole --condition=None | Out-Null
 $environmentFile = Join-Path $outputDirectory 'environment.json'
-@{ SOURCE_PROJECT = $SourceProject; BACKUP_PROJECT = $BackupProject; ARCHIVE_BUCKET = $ArchiveBucket; EXPORT_BUCKET = $ExportBucket; SOURCE_BUCKETS = $SourceBucket; RESTORE_BUCKET = $restoreBucket; MAX_BACKUP_AGE_HOURS = '30' } | ConvertTo-Json | Set-Content $environmentFile
+@{ SOURCE_PROJECT = $SourceProject; BACKUP_PROJECT = $BackupProject; ARCHIVE_BUCKET = $ArchiveBucket; EXPORT_BUCKET = $ExportBucket; SOURCE_BUCKETS = $SourceBucket; RESTORE_BUCKET = $restoreBucket; MAX_BACKUP_AGE_HOURS = '30'; SOURCE_EXCLUDE_PREFIXES = 'staged-uploads/' } | ConvertTo-Json | Set-Content $environmentFile
 Invoke-Gcloud run jobs deploy firebase-backup --project=$BackupProject --region=$Region --image=$imageDigest --service-account=$worker --tasks=1 --parallelism=1 --max-retries=1 --task-timeout=14400s --memory=512Mi --cpu=1 --env-vars-file=$environmentFile | Out-Null
 Invoke-Gcloud run jobs deploy backup-monitor --project=$BackupProject --region=$Region --image=$imageDigest --service-account=$monitor --tasks=1 --parallelism=1 --max-retries=1 --task-timeout=600s --memory=512Mi --cpu=1 --env-vars-file=$environmentFile '--args=--check' | Out-Null
 Invoke-Gcloud run jobs deploy backup-restore-check --project=$BackupProject --region=$Region --image=$imageDigest --service-account=$verifier --tasks=1 --parallelism=1 --max-retries=0 --task-timeout=14400s --memory=512Mi --cpu=1 --env-vars-file=$environmentFile '--args=--verify' | Out-Null

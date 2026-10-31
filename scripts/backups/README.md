@@ -12,7 +12,7 @@ CGS Games uses three separate data stores: Firestore, Firebase Authentication, a
 | Independent backup        | `firebase-backup`, daily at 3 AM America/Chicago                                                                                                         |
 | Freshness check           | `backup-monitor`, hourly at 15 minutes past the hour                                                                                                     |
 | Automated restore drill   | `backup-restore-check`, first of each month at 8 AM America/Chicago                                                                                      |
-| Archive                   | `gs://cgs-games-backups-archive`, 90-day retention; lifecycle cleanup after 95 days                                                                      |
+| Archive                   | `gs://cgs-games-backups-archive`, 90-day retention; runs cleaned up after 95 days, shared game files (`objects/`) after 125 days                         |
 | Temporary exports         | `gs://cgs-games-backups-exports`, cleanup after seven days                                                                                               |
 | Restore test files        | `gs://cgs-games-backups-restore-test`, cleanup after one day                                                                                             |
 | Alerts                    | `david@finoldigital.com`: job failure, complete backup older than 30 hours, restore check older than 35 days, or no healthy hourly check for three hours |
@@ -29,7 +29,7 @@ The archive's 90-day retention was permanently locked with owner approval and ve
 
 - Every Firestore collection group, including subcollections, exported from a whole-minute PITR timestamp.
 - Raw Auth records, original user IDs, provider associations, custom claims, available password hashes and MFA fields. Auth configuration includes the sensitive password hash parameters and provider configuration exposed by the API.
-- Every live object in the configured game-files bucket, copied by exact source generation and checked for matching size and CRC32C. Each daily backup is a separate full copy. Deletions in production do not delete earlier archives.
+- Every live object in the configured game-files bucket, except transient `staged-uploads/` (configurable with `SOURCE_EXCLUDE_PREFIXES`), copied by exact source generation and checked for matching size and CRC32C. Files are stored once per 30-day period under `objects/p<period>/<bucket>/<generation>/<original name>`: the first run in a period copies each file, and later runs in that period reuse the archived copy of the same generation after checking its size and CRC32C. A changed file has a new generation and is copied again. Each run's storage manifest lists every file it covers, so every completed run is still a full, independently restorable backup. Deletions in production do not delete earlier archives.
 - Deployed Firebase rules, Firestore index and field configuration, database settings, bucket settings, and project and bucket IAM policies.
 - Object manifests containing original paths and metadata, and a final `manifest.json` with artifact SHA-256 hashes.
 
@@ -41,7 +41,7 @@ Source-file overwrites or deletions during a backup can cause that attempt to fa
 
 ## Access boundaries
 
-The worker uses its Cloud Run service identity, without a production private key. Its custom production role permits exports and configuration reads; game-file access is read-only. On the archive, it can create objects but cannot read, replace, delete, or change retention. The production Firestore service agent can manage only the temporary export bucket and has no archive access.
+The worker uses its Cloud Run service identity, without a production private key. Its custom production role permits exports and configuration reads; game-file access is read-only. On the archive, it can create objects and list object names and checksums (to reuse archived game files), but cannot read, replace, delete, or change retention. The production Firestore service agent can manage only the temporary export bucket and has no archive access.
 
 The monitor can read the archive. The restore verifier can read it and create verification reports, copy files to the test bucket, and manage test databases in the backup project. It has no production permissions. The scheduler can invoke only the three jobs. The build identity can build images and write build logs, but cannot access the archive.
 
@@ -66,6 +66,8 @@ gcloud firestore backups schedules list --project=cgs-games --database='(default
 # Create only if a daily schedule does not already exist:
 gcloud firestore backups schedules create --project=cgs-games --database='(default)' --recurrence=daily --retention=14w
 gcloud storage buckets update gs://cgs-games.appspot.com --soft-delete-duration=30d
+# Delete abandoned staged uploads after one day (the upload API removes processed ones):
+gcloud storage buckets update gs://cgs-games.appspot.com --lifecycle-file=scripts/storage-lifecycle.json
 ```
 
 Run the first backup, restore drill, and monitor in that order. Wait for each execution to succeed:
@@ -82,7 +84,7 @@ After confirming the archive, restoring it, and explicitly accepting that retent
 gcloud storage buckets update gs://cgs-games-backups-archive --lock-retention-period
 ```
 
-Full daily file copies currently amplify stored file data by approximately 95 times, plus soft-deleted storage and database exports. Monitor storage growth and billing as the game library grows. The daily job has a four-hour execution limit and 512 MiB memory; reassess these limits if large object manifests approach memory capacity.
+Because each file is archived at most once per 30-day period and kept for 125 days, the archive holds roughly four to five copies of an unchanged file (previously about 95 with full daily copies), plus one copy per changed generation, soft-deleted storage, and database exports. Runs archived before this change keep their own full copies under `runs/<run>/storage/` until they expire. The `objects/` lifecycle must stay at least 30 days longer than the `runs/` lifecycle; otherwise older runs would reference deleted files. Monitor storage growth and billing as the game library grows. The daily job has a four-hour execution limit and 512 MiB memory; reassess these limits if large object manifests approach memory capacity.
 
 Run `npm run test:backups` for backup and restore failure-path tests. The main CI workflow runs these alongside the application tests. Runtime changes require redeploying this separate job; an application deployment does not update it.
 
@@ -113,7 +115,13 @@ The independent monitor subsequently passed for that backup and restore report, 
 
 The Git history bundle is archived at `repository/2026-10-12/cgs-games.bundle`; recovery scripts and result summaries are under `recovery-tools/2026-10-12/` in the archive bucket. The deployed image digest is recorded in `final-image.txt` there. These are initial snapshots; maintain the repository and redeploy the backup jobs when their implementation changes.
 
-The monthly job verifies every JSON artifact checksum and Auth identity count, copies all archived game files into a private test bucket, imports the Firestore export into a uniquely named `drill-*` database, and queries users, usernames, and games. It deletes only the database it created, after success, and writes `verified/<drill>.json`. Failed databases remain for investigation; remove them after resolving the failure to avoid accumulating cost.
+The monthly job verifies every JSON artifact checksum and Auth identity count, copies all archived game files into a private test bucket, imports the Firestore export into a uniquely named `drill-*` database, and queries users, usernames, and games. The drill fails unless:
+
+- the number of restored files equals the manifest's file count
+- the import restores at least as many documents as the export recorded
+- users, usernames and games each contain at least one document
+
+A successful but empty or partial import therefore does not count as verified. It deletes only the database it created, after success, and writes `verified/<drill>.json`. Failed databases remain for investigation; remove them after resolving the failure to avoid accumulating cost.
 
 This automated check does not enable real sign-in providers, import Auth accounts, or cut application traffic over. Repeat the Auth import test and the end-to-end application checks above periodically and after authentication or schema changes. Confirm alert delivery with Cloud Monitoring's notification-channel test and maintain a human owner for investigating incidents.
 

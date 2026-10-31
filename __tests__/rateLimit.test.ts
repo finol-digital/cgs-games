@@ -88,31 +88,23 @@ describe('rateLimit', () => {
   });
 
   describe('getClientIp', () => {
-    it('should extract IP from x-forwarded-for header', () => {
+    it('uses the proxy-appended rightmost x-forwarded-for entry, not client-supplied ones', () => {
       const headers = new Headers();
-      headers.set('x-forwarded-for', '192.168.1.1, 10.0.0.1');
+      headers.set('x-forwarded-for', '6.6.6.6, 192.168.1.1');
 
       const mockRequest = { headers } as Request;
       const ip = getClientIp(mockRequest);
       expect(ip).toBe('192.168.1.1');
     });
 
-    it('should extract IP from x-real-ip header', () => {
+    it('ignores client-controlled headers that a platform does not overwrite', () => {
       const headers = new Headers();
       headers.set('x-real-ip', '192.168.1.2');
-
-      const mockRequest = { headers } as Request;
-      const ip = getClientIp(mockRequest);
-      expect(ip).toBe('192.168.1.2');
-    });
-
-    it('should extract IP from cf-connecting-ip header', () => {
-      const headers = new Headers();
       headers.set('cf-connecting-ip', '192.168.1.3');
+      headers.set('x-vercel-ip', '192.168.1.4');
 
       const mockRequest = { headers } as Request;
-      const ip = getClientIp(mockRequest);
-      expect(ip).toBe('192.168.1.3');
+      expect(getClientIp(mockRequest)).toBe('unknown');
     });
 
     it('should return "unknown" when no IP headers present', () => {
@@ -122,15 +114,13 @@ describe('rateLimit', () => {
       expect(ip).toBe('unknown');
     });
 
-    it('should prioritize x-forwarded-for over other headers', () => {
+    it('prefers the Firebase App Hosting client address over x-forwarded-for', () => {
       const headers = new Headers();
-      headers.set('x-forwarded-for', '192.168.1.1');
-      headers.set('x-real-ip', '192.168.1.2');
-      headers.set('cf-connecting-ip', '192.168.1.3');
+      headers.set('x-forwarded-for', '6.6.6.6, 35.191.0.1');
+      headers.set('x-fah-client-ip', '203.0.113.7');
 
       const mockRequest = { headers } as Request;
-      const ip = getClientIp(mockRequest);
-      expect(ip).toBe('192.168.1.1');
+      expect(getClientIp(mockRequest)).toBe('203.0.113.7');
     });
   });
 });

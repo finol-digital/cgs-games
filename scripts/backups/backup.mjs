@@ -6,6 +6,16 @@ import { setTimeout as sleep } from 'node:timers/promises';
 const storage = 'https://storage.googleapis.com/storage/v1';
 const encode = encodeURIComponent;
 
+// Game files are archived once per period under objects/p<period>/ and reused by every run in
+// that period, instead of being copied in full every day. The archive lifecycle must keep
+// objects/ for at least OBJECT_PERIOD_DAYS longer than the run retention (see deploy.ps1), so
+// every object a run references outlives the run itself.
+export const OBJECT_PERIOD_DAYS = 30;
+
+export function objectPeriod(date) {
+  return Math.floor(date.getTime() / (OBJECT_PERIOD_DAYS * 86400000));
+}
+
 export function configuration(env) {
   const required = [
     'SOURCE_PROJECT',
@@ -24,6 +34,11 @@ export function configuration(env) {
     database: env.DATABASE_ID || '(default)',
     maxAgeHours: Number(env.MAX_BACKUP_AGE_HOURS || 30),
     restoreBucket: env.RESTORE_BUCKET,
+    // Transient, user-controlled uploads that the application deletes after processing.
+    excludePrefixes: (env.SOURCE_EXCLUDE_PREFIXES ?? 'staged-uploads/')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
   };
   if (config.source === config.project) throw new Error('Backups must use a separate project');
   if (
@@ -122,7 +137,8 @@ export async function copyObject(api, sourceBucket, object, destinationBucket, d
     const url = new URL(
       `${storage}/b/${encode(sourceBucket)}/o/${encode(object.name)}/rewriteTo/b/${encode(destinationBucket)}/o/${encode(destinationName)}`,
     );
-    url.searchParams.set('sourceGeneration', object.generation);
+    // Reused archive objects are recorded without a generation; copy their single live version.
+    if (object.generation) url.searchParams.set('sourceGeneration', object.generation);
     url.searchParams.set('ifGenerationMatch', '0');
     if (token) url.searchParams.set('rewriteToken', token);
     response = await api(url.toString(), {
@@ -144,18 +160,55 @@ export async function copyObject(api, sourceBucket, object, destinationBucket, d
   };
 }
 
-export async function copyBucket(api, source, destination, prefix, sourcePrefix = '') {
+/**
+ * Copies every object under sourcePrefix (except excluded prefixes) to `${prefix}<relative name>`.
+ * With `existing` (archive objects already listed under prefix, keyed by name), objects are
+ * addressed by source generation instead, and an already archived generation is reused rather
+ * than copied again.
+ */
+export async function copyBucket(
+  api,
+  source,
+  destination,
+  prefix,
+  { sourcePrefix = '', exclude = [], existing } = {},
+) {
   const objects = [];
   const endpoint = `${storage}/b/${encode(source)}/o?maxResults=1000&prefix=${encode(sourcePrefix)}`;
   for await (const page of pages(api, endpoint, 'items')) {
+    const included = page.filter((object) => !exclude.some((p) => object.name.startsWith(p)));
     // Bounded concurrency keeps memory and API pressure independent of bucket size.
-    for (let index = 0; index < page.length; index += 8) {
+    for (let index = 0; index < included.length; index += 8) {
       const results = await Promise.all(
-        page.slice(index, index + 8).map(async (object) => {
+        included.slice(index, index + 8).map(async (object) => {
           const relative = object.name.slice(sourcePrefix.length);
+          if (!existing) {
+            return {
+              source: object,
+              backup: await copyObject(api, source, object, destination, `${prefix}${relative}`),
+            };
+          }
+          const name = `${prefix}${object.generation}/${relative}`;
+          const archived = existing.get(name);
+          if (!archived) {
+            return {
+              source: object,
+              backup: await copyObject(api, source, object, destination, name),
+            };
+          }
+          // The name pins the source generation, so the content must match exactly.
+          if (archived.size !== object.size || archived.crc32c !== object.crc32c) {
+            throw new Error('Archived object checksum or size mismatch');
+          }
           return {
             source: object,
-            backup: await copyObject(api, source, object, destination, `${prefix}${relative}`),
+            backup: {
+              name,
+              generation: archived.generation,
+              size: object.size,
+              crc32c: object.crc32c,
+              reused: true,
+            },
           };
         }),
       );
@@ -283,7 +336,7 @@ export async function runBackup(
     config.staging,
     config.archive,
     `${prefix}firestore/${run}/`,
-    `${exportPrefix}/`,
+    { sourcePrefix: `${exportPrefix}/` },
   );
   const overall = exported.find((object) =>
     object.backup.name.endsWith('.overall_export_metadata'),
@@ -305,11 +358,31 @@ export async function runBackup(
       `configuration/buckets/${bucket}-iam.json`,
       await api(`${storage}/b/${encode(bucket)}/iam?optionsRequestedPolicyVersion=3`),
     );
-    const objects = await copyBucket(api, bucket, config.archive, `${prefix}storage/${bucket}/`);
+    // List-only access to the archive: names and checksums, never object contents.
+    const objectPrefix = `objects/p${objectPeriod(new Date(startedAt))}/${bucket}/`;
+    const existing = new Map();
+    for await (const page of pages(
+      api,
+      `${storage}/b/${encode(config.archive)}/o?maxResults=1000&prefix=${encode(objectPrefix)}`,
+      'items',
+    ))
+      for (const item of page) existing.set(item.name, item);
+    const objects = await copyBucket(api, bucket, config.archive, objectPrefix, {
+      exclude: config.excludePrefixes,
+      existing,
+    });
     await save(`storage-manifests/${bucket}.json`, objects);
     const bytes = objects.reduce((sum, object) => sum + BigInt(object.source.size), 0n).toString();
-    manifest.storage.push({ bucket, objects: objects.length, bytes });
-    log('storage_exported', { objects: objects.length, bytes });
+    const reused = objects.filter((object) => object.backup.reused).length;
+    manifest.storage.push({
+      bucket,
+      objects: objects.length,
+      bytes,
+      copied: objects.length - reused,
+      reused,
+      excludedPrefixes: config.excludePrefixes,
+    });
+    log('storage_exported', { objects: objects.length, bytes, reused });
   }
   manifest.completedAt = now().toISOString();
   const manifestArtifact = await saveJson(api, config.archive, `${prefix}manifest.json`, manifest);
@@ -438,6 +511,8 @@ export async function verifyBackup(config, api, { pause = sleep, now = new Date(
       objects += fileManifest.slice(index, index + 8).length;
     }
   }
+  const expectedObjects = manifest.storage.reduce((total, bucket) => total + bucket.objects, 0);
+  if (objects !== expectedObjects) throw new Error('Restored file count does not match the backup');
   const databasePath = `projects/${config.project}/databases/${drillId}`;
   const databaseUrl = `https://firestore.googleapis.com/v1/${databasePath}`;
   const databaseSettings = await getJson(`${prefix}configuration/database.json`);
@@ -452,7 +527,7 @@ export async function verifyBackup(config, api, { pause = sleep, now = new Date(
     ),
     pause,
   );
-  await waitOperation(
+  const imported = await waitOperation(
     api,
     await api(`${databaseUrl}:importDocuments`, {
       method: 'POST',
@@ -463,6 +538,15 @@ export async function verifyBackup(config, api, { pause = sleep, now = new Date(
     }),
     pause,
   );
+  // A successful operation is not enough: the import must restore every exported document.
+  const exportedDocuments = Number(manifest.firestore.documentCount);
+  const importedDocuments = Number(imported.metadata?.progressDocuments?.completedWork);
+  if (Number.isFinite(exportedDocuments)) {
+    if (!Number.isFinite(importedDocuments))
+      throw new Error('Restore did not report how many documents it imported');
+    if (importedDocuments < exportedDocuments)
+      throw new Error('Restored fewer documents than the backup exported');
+  }
   const counts = {};
   for (const collectionId of ['users', 'usernames', 'games']) {
     const result = await api(`${databaseUrl}/documents:runAggregationQuery`, {
@@ -478,6 +562,9 @@ export async function verifyBackup(config, api, { pause = sleep, now = new Date(
       .total;
     if (!count) throw new Error('Restored database could not be queried');
     counts[collectionId] = Number(count.integerValue || 0);
+    // The site cannot run without these collections; an empty restore is a failed restore.
+    if (!(counts[collectionId] > 0))
+      throw new Error(`Restored database has no ${collectionId} documents`);
   }
   // Delete only the uniquely named database created above, and only after its import and reads succeed.
   const restored = await api(databaseUrl);
@@ -491,6 +578,7 @@ export async function verifyBackup(config, api, { pause = sleep, now = new Date(
     checkedAt: new Date().toISOString(),
     authRecordsValidated: authIds.size,
     filesRestored: objects,
+    documentsImported: importedDocuments,
     firestoreCounts: counts,
     deletedTestDatabase: databasePath,
     limitation:

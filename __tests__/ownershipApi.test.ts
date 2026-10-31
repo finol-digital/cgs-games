@@ -19,6 +19,30 @@ const erase = jest.fn();
 const add = jest.fn();
 const fileDelete = jest.fn();
 const listFiles = jest.fn();
+const query = { where: jest.fn(), get: jest.fn(), count: jest.fn() };
+
+/** Builds a staged-upload bucket fixture holding the given archive. */
+function stagedBucket(buffer: Buffer, stored: { metadata: { size: string } }[] = []) {
+  const save = jest.fn().mockResolvedValue(undefined);
+  const publishedDelete = jest.fn().mockResolvedValue(undefined);
+  const stagedDelete = jest.fn().mockResolvedValue(undefined);
+  const file = jest.fn((path: string) =>
+    path.startsWith('staged-uploads/')
+      ? {
+          getMetadata: async () => [{ size: buffer.length }],
+          download: async () => [buffer],
+          delete: stagedDelete,
+        }
+      : { save, delete: publishedDelete },
+  );
+  const getFiles = jest.fn().mockResolvedValue([stored]);
+  jest
+    .mocked(adminStorage.bucket)
+    .mockReturnValue({ name: 'fixture-bucket', file, getFiles } as never);
+  return { save, file, getFiles, publishedDelete, stagedDelete };
+}
+const stagedRequest = () =>
+  request({ stagedPath: 'staged-uploads/alice-uid/x.cgs.zip', originalFilename: 'game.cgs.zip' });
 let profile: Record<string, unknown>;
 let registration: Record<string, unknown>;
 let game: Record<string, unknown>;
@@ -49,7 +73,11 @@ beforeEach(() => {
       delete: erase,
     }),
     add,
+    where: query.where,
   })) as never);
+  query.where.mockReturnValue(query);
+  query.get.mockResolvedValue({ empty: true });
+  query.count.mockReturnValue({ get: async () => ({ data: () => ({ count: 0 }) }) });
   listFiles.mockResolvedValue([[{ delete: fileDelete }]]);
   jest.mocked(adminStorage.bucket).mockReturnValue({ getFiles: listFiles } as never);
   jest.mocked(fetchGameSpecification).mockResolvedValue(Response.json({ name: 'New Game' }));
@@ -172,24 +200,7 @@ describe('privileged Firebase write APIs', () => {
     zip.file('cgs.json', JSON.stringify({ name: 'My Game' }));
     zip.file('Banner.png', new Uint8Array([1, 2, 3]));
     const buffer = await zip.generateAsync({ type: 'nodebuffer' });
-    const save = jest.fn().mockResolvedValue(undefined);
-    const stagedDelete = jest.fn().mockResolvedValue(undefined);
-    const file = jest.fn((path: string) =>
-      path.startsWith('staged-uploads/')
-        ? {
-            getMetadata: async () => [{ size: buffer.length }],
-            download: async () => [buffer],
-            delete: stagedDelete,
-          }
-        : { save },
-    );
-    jest.mocked(adminStorage.bucket).mockReturnValue({ name: 'fixture-bucket', file } as never);
-    const query = { where: jest.fn(), get: async () => ({ empty: true }) };
-    query.where.mockReturnValue(query);
-    const original = jest.mocked(adminDb.collection).getMockImplementation()!;
-    jest
-      .mocked(adminDb.collection)
-      .mockImplementation(((name: string) => ({ ...original(name), where: query.where })) as never);
+    const { file, stagedDelete } = stagedBucket(buffer);
     const response = await upload(
       request({
         stagedPath: 'staged-uploads/alice-uid/x.cgs.zip',
@@ -220,5 +231,68 @@ describe('privileged Firebase write APIs', () => {
       ),
     ).toBe(true);
     expect(stagedDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses an archive that would exceed the creator storage quota before writing', async () => {
+    const zip = new JSZip();
+    zip.file('cgs.json', JSON.stringify({ name: 'My Game' }));
+    zip.file('AllCards.json', 'x'.repeat(4096));
+    const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+    const { save, getFiles, stagedDelete } = stagedBucket(buffer, [
+      { metadata: { size: String(1024 * 1024 * 1024 - 1024) } },
+    ]);
+    const response = await upload(stagedRequest());
+    expect(response.status).toBe(413);
+    expect((await response.json()).code).toBe('STORAGE_QUOTA_EXCEEDED');
+    expect(getFiles).toHaveBeenCalledWith({ prefix: 'games/alice-uid/' });
+    expect(save).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
+    expect(stagedDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('enforces the per-creator game quota for archive uploads', async () => {
+    const zip = new JSZip();
+    zip.file('cgs.json', JSON.stringify({ name: 'My Game' }));
+    const { save } = stagedBucket(await zip.generateAsync({ type: 'nodebuffer' }));
+    query.count.mockReturnValue({ get: async () => ({ data: () => ({ count: 50 }) }) });
+    const response = await upload(stagedRequest());
+    expect(response.status).toBe(403);
+    expect((await response.json()).code).toBe('GAME_QUOTA_EXCEEDED');
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('removes already published files when a later step fails', async () => {
+    const zip = new JSZip();
+    zip.file('cgs.json', JSON.stringify({ name: 'My Game' }));
+    zip.file('Banner.png', new Uint8Array([1, 2, 3]));
+    const { save, publishedDelete } = stagedBucket(await zip.generateAsync({ type: 'nodebuffer' }));
+    add.mockRejectedValue(new Error('database unavailable'));
+    const response = await upload(stagedRequest());
+    expect(response.status).toBe(500);
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(publishedDelete).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    [{ name: 'My Game', copyright: { owner: 'x' } }, 400],
+    [{ name: 'x'.repeat(201) }, 400],
+  ])('rejects cgs.json metadata that shared pages cannot render: %j', async (cgsJson, status) => {
+    const zip = new JSZip();
+    zip.file('cgs.json', JSON.stringify(cgsJson));
+    const { save } = stagedBucket(await zip.generateAsync({ type: 'nodebuffer' }));
+    expect((await upload(stagedRequest())).status).toBe(status);
+    expect(save).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the default banner instead of storing a non-HTTPS card back URL', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'cgs.json',
+      JSON.stringify({ name: 'My Game', cardBackImageUrl: 'javascript:alert(1)' }),
+    );
+    stagedBucket(await zip.generateAsync({ type: 'nodebuffer' }));
+    expect((await upload(stagedRequest())).status).toBe(200);
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ bannerImageUrl: '/CardBack.png' }));
   });
 });
