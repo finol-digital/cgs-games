@@ -21,9 +21,26 @@ describe('page negotiation and missing routes', () => {
     for (const url of ['/api/proxy/example.com/file', '/api/proxy/example.com/nested/path']) {
       expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(false);
     }
-    for (const url of ['/', '/api/games', '/api/proxy', '/api/proxy/']) {
+    for (const url of ['/', '/api/games', '/api/proxy', '/api/proxy/', '/_next/image']) {
       expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(true);
     }
+    expect(
+      unstable_doesMiddlewareMatch({ config, nextConfig: {}, url: '/_next/static/chunks/a.js' }),
+    ).toBe(false);
+  });
+  it('charges optimized proxy images to the visitor and leaves other images alone', async () => {
+    const image = (url: string) =>
+      new NextRequest(`https://cgs.games/_next/image?url=${encodeURIComponent(url)}&w=64&q=75`, {
+        headers: { 'x-forwarded-for': '198.51.100.23' },
+      });
+    for (let i = 0; i < 600; i++) {
+      expect((await proxy(image(`/api/proxy/example.com/${i}.png`))).status).toBe(200);
+    }
+    const limited = await proxy(image('/api/proxy/example.com/next.png'));
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get('retry-after')).toBeTruthy();
+    expect(limited.headers.get('ratelimit-policy')).toContain('"proxy"');
+    expect((await proxy(image('/CardBack.png'))).status).toBe(200);
   });
   it('keeps legacy Hosting redirect-only so a deployment cannot recreate the retired server', () => {
     expect(firebaseConfig.hosting).not.toHaveProperty('source');

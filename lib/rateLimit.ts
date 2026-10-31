@@ -19,6 +19,9 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
+/** Proxy requests per client IP per minute; banner-heavy pages and game imports stay well below it. */
+export const PROXY_RATE_LIMIT: RateLimitConfig = { maxRequests: 600, windowMs: 60 * 1000 };
+
 /** IETF draft-ietf-httpapi-ratelimit-headers-11 structured fields, plus legacy compatibility. */
 export function rateLimitResponseHeaders(
   result: RateLimitResult,
@@ -129,6 +132,15 @@ function sanitizeIp(ip: string | null): string | null {
   }
 
   return null;
+}
+
+/**
+ * True for a request the server made to itself, such as the image optimizer fetching a local
+ * /api/proxy URL with no headers. On App Hosting every external request carries x-fah-client-ip,
+ * and the Cloud Run URL rejects callers other than App Hosting, so its absence cannot be forged.
+ */
+export function isInternalRequest(request: Request): boolean {
+  return Boolean(process.env.K_SERVICE) && !request.headers.has('x-fah-client-ip');
 }
 
 let warnedMissingPlatformIp = false;

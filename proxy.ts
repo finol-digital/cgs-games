@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { markdownResponse, negotiatePage, notFoundMarkdown } from '@/lib/httpResponses';
+import { apiError, markdownResponse, negotiatePage, notFoundMarkdown } from '@/lib/httpResponses';
 import { homepageMarkdown } from '@/lib/siteContent';
 import { isPublicFile, staticPaths } from '@/lib/siteRoutes';
 import { apiPolicy } from '@/lib/apiPolicy';
+import {
+  checkRateLimit,
+  getClientIp,
+  PROXY_RATE_LIMIT,
+  rateLimitResponseHeaders,
+} from '@/lib/rateLimit';
 
 /** Returns the negotiated 404 representation before React begins streaming. */
 function missingPage(request: NextRequest) {
@@ -16,9 +22,27 @@ function missingPage(request: NextRequest) {
   });
 }
 
+/**
+ * The image optimizer fetches /api/proxy URLs internally without the visitor's headers, so the
+ * route cannot tell visitors apart. Charge those optimizations to the visitor's proxy quota here.
+ */
+function limitProxiedImage(request: NextRequest) {
+  if (!request.nextUrl.searchParams.get('url')?.startsWith('/api/proxy/')) {
+    return NextResponse.next();
+  }
+  const limit = checkRateLimit('proxy:' + getClientIp(request), PROXY_RATE_LIMIT);
+  if (limit.allowed) return NextResponse.next();
+  return apiError(
+    'Too many proxy requests. Please try again later.',
+    429,
+    rateLimitResponseHeaders(limit, PROXY_RATE_LIMIT, 'proxy'),
+  );
+}
+
 /** Negotiates agent content and checks public resources before dispatching to Next.js. */
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  if (path === '/_next/image') return limitProxiedImage(request);
   if (path === '/api' || path.startsWith('/api/')) {
     const { headers, response } = apiPolicy(request);
     return response ?? NextResponse.next({ headers });
@@ -74,4 +98,5 @@ export async function proxy(request: NextRequest) {
 }
 
 // Proxy routes apply apiPolicy themselves: Next's middleware clone waits for request EOF.
-export const config = { matcher: ['/((?!_next/|api/proxy/.+).*)'] };
+// The image optimizer is matched only so limitProxiedImage can charge proxied images per visitor.
+export const config = { matcher: ['/((?!_next/|api/proxy/.+).*)', '/_next/image'] };

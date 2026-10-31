@@ -86,8 +86,8 @@ export default function DevelopersPage() {
           have been sent, the stream is aborted; discard partial content. Responses depend on the
           upstream resource and may be binary. Only images, JSON, plain text, CSV, and binary
           downloads are served; documents such as HTML, SVG, XML, and PDF are refused. Requests are
-          limited to 600 per minute per client. Prefer the typed catalog endpoints for function
-          calls.
+          limited to 600 per minute per client, including optimized images served through{' '}
+          <code>/_next/image</code>. Prefer the typed catalog endpoints for function calls.
         </li>
         <li>
           <code>GET /api/sandbox/games</code>: deterministic example catalog, with no database
