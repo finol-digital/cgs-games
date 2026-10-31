@@ -216,6 +216,28 @@ describe('API response contract', () => {
     expect(fetchPublicResource).not.toHaveBeenCalled();
   });
 
+  it("leaves the image optimizer's internal proxy fetches to the per-visitor image limit", async () => {
+    process.env.K_SERVICE = 'cgs-games';
+    try {
+      jest
+        .mocked(fetchPublicResource)
+        .mockResolvedValue(new Response('png', { headers: { 'Content-Type': 'image/png' } }));
+      const internal = await proxyGet(
+        new NextRequest('https://cgs.games/api/proxy/example.com/image.png'),
+      );
+      expect(internal.status).toBe(200);
+      expect(checkRateLimit).not.toHaveBeenCalled();
+      await proxyGet(
+        new NextRequest('https://cgs.games/api/proxy/example.com/image.png', {
+          headers: { 'x-fah-client-ip': '203.0.113.7' },
+        }),
+      );
+      expect(checkRateLimit).toHaveBeenCalledTimes(1);
+    } finally {
+      delete process.env.K_SERVICE;
+    }
+  });
+
   it.each([proxyGet, proxyPost])('rejects unsafe proxy targets', async (handler) => {
     jest.mocked(fetchPublicResource).mockRejectedValue(new UnsafeGameUrlError('Private IP'));
     await expectError(

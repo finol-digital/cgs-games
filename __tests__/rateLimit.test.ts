@@ -1,4 +1,9 @@
-import { checkRateLimit, getClientIp, rateLimitResponseHeaders } from '@/lib/rateLimit';
+import {
+  checkRateLimit,
+  getClientIp,
+  isInternalRequest,
+  rateLimitResponseHeaders,
+} from '@/lib/rateLimit';
 
 describe('rate limit response fields', () => {
   it('emits structured fields with relative seconds and retains the legacy absolute reset', () => {
@@ -121,6 +126,27 @@ describe('rateLimit', () => {
 
       const mockRequest = { headers } as Request;
       expect(getClientIp(mockRequest)).toBe('203.0.113.7');
+    });
+  });
+
+  describe('isInternalRequest', () => {
+    const original = process.env.K_SERVICE;
+    afterEach(() => {
+      if (original === undefined) delete process.env.K_SERVICE;
+      else process.env.K_SERVICE = original;
+    });
+
+    it('treats App Hosting requests without a client address as internal', () => {
+      process.env.K_SERVICE = 'cgs-games';
+      const internal = { headers: new Headers({ 'x-forwarded-for': '169.254.1.1' }) } as Request;
+      const external = { headers: new Headers({ 'x-fah-client-ip': '203.0.113.7' }) } as Request;
+      expect(isInternalRequest(internal)).toBe(true);
+      expect(isInternalRequest(external)).toBe(false);
+    });
+
+    it('never exempts requests outside App Hosting', () => {
+      delete process.env.K_SERVICE;
+      expect(isInternalRequest({ headers: new Headers() } as Request)).toBe(false);
     });
   });
 });

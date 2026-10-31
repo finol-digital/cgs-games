@@ -3,7 +3,13 @@ import { apiError } from '@/lib/httpResponses';
 import { fetchPublicResource, UnsafeGameUrlError } from '@/lib/fetchGameSpecification';
 import { readBoundedText, RequestBodyLimitError } from '@/lib/boundedRequest';
 import { apiPolicy } from '@/lib/apiPolicy';
-import { checkRateLimit, getClientIp, rateLimitResponseHeaders } from '@/lib/rateLimit';
+import {
+  checkRateLimit,
+  getClientIp,
+  isInternalRequest,
+  PROXY_RATE_LIMIT,
+  rateLimitResponseHeaders,
+} from '@/lib/rateLimit';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,9 +40,6 @@ const DOWNLOAD_TYPES = new Set([
   'application/zip',
   'application/x-zip-compressed',
 ]);
-
-/** Requests per client IP per minute; banner-heavy pages and game imports stay well below it. */
-const PROXY_RATE_LIMIT = { maxRequests: 600, windowMs: 60 * 1000 };
 
 /** Returns the bare media type when the proxy may serve it, otherwise null. */
 function proxiedMediaType(contentType: string): string | null {
@@ -146,14 +149,17 @@ async function forward(request: Request, method: 'GET' | 'POST') {
 async function handle(request: Request, method: 'GET' | 'POST' | 'HEAD') {
   const policy = apiPolicy(request);
   if (policy.response) return policy.response;
-  const limit = checkRateLimit('proxy:' + getClientIp(request), PROXY_RATE_LIMIT);
-  if (!limit.allowed) {
-    // Quota fields go only on 429s, so successful responses stay shared-cacheable.
-    return apiError('Too many proxy requests. Please try again later.', 429, {
-      ...corsHeaders,
-      ...policy.headers,
-      ...rateLimitResponseHeaders(limit, PROXY_RATE_LIMIT, 'proxy'),
-    });
+  // The image optimizer's internal fetches carry no client IP; proxy.ts limits those per visitor.
+  if (!isInternalRequest(request)) {
+    const limit = checkRateLimit('proxy:' + getClientIp(request), PROXY_RATE_LIMIT);
+    if (!limit.allowed) {
+      // Quota fields go only on 429s, so successful responses stay shared-cacheable.
+      return apiError('Too many proxy requests. Please try again later.', 429, {
+        ...corsHeaders,
+        ...policy.headers,
+        ...rateLimitResponseHeaders(limit, PROXY_RATE_LIMIT, 'proxy'),
+      });
+    }
   }
   const response = await forward(request, method === 'POST' ? 'POST' : 'GET');
   for (const [name, value] of Object.entries(policy.headers)) {
