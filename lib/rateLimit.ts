@@ -23,11 +23,12 @@ export interface RateLimitResult {
 export function rateLimitResponseHeaders(
   result: RateLimitResult,
   config: RateLimitConfig,
+  policy = 'spoilers',
 ): Record<string, string> {
   const resetSeconds = Math.max(0, Math.ceil((result.resetAt - Date.now()) / 1000));
   return {
-    'RateLimit-Policy': `"spoilers";q=${config.maxRequests};w=${Math.ceil(config.windowMs / 1000)}`,
-    RateLimit: `"spoilers";r=${Math.max(0, result.remaining)};t=${resetSeconds}`,
+    'RateLimit-Policy': `"${policy}";q=${config.maxRequests};w=${Math.ceil(config.windowMs / 1000)}`,
+    RateLimit: `"${policy}";r=${Math.max(0, result.remaining)};t=${resetSeconds}`,
     'X-RateLimit-Limit': config.maxRequests.toString(),
     'X-RateLimit-Remaining': Math.max(0, result.remaining).toString(),
     'X-RateLimit-Reset': new Date(result.resetAt).toISOString(),
@@ -130,44 +131,35 @@ function sanitizeIp(ip: string | null): string | null {
   return null;
 }
 
+let warnedMissingPlatformIp = false;
+
 /**
- * Extract client IP from the request.
- * Prefers platform-provided values (e.g. NextRequest.ip) and
- * falls back to common proxy headers, with basic sanitization.
+ * Extract client IP from the request, using only values a client cannot choose.
+ *
+ * Firebase App Hosting sets x-fah-client-ip to the connecting client's address. Elsewhere, the
+ * rightmost X-Forwarded-For entry is the one appended by the nearest proxy; every entry to its
+ * left, and headers such as X-Real-IP, can be supplied by the client to evade rate limits.
  */
 export function getClientIp(request: Request): string {
   const headers = request.headers;
   const candidates: string[] = [];
 
-  // Prefer Next.js / platform-provided IP if available
-  const maybeIp = (request as any)?.ip;
-  if (typeof maybeIp === 'string') {
-    candidates.push(maybeIp);
+  const appHostingIp = headers.get('x-fah-client-ip');
+  if (appHostingIp) {
+    candidates.push(appHostingIp);
+  } else if (process.env.K_SERVICE && !warnedMissingPlatformIp) {
+    // On Cloud Run the rightmost X-Forwarded-For hop can be a shared Google front end, which
+    // would make many clients share one rate-limit bucket. Surface it rather than fail silently.
+    warnedMissingPlatformIp = true;
+    console.warn('x-fah-client-ip is missing; rate limits fall back to X-Forwarded-For');
   }
 
-  // Common platform headers (these are typically set by the host, not the client)
   const forwardedFor = headers.get('x-forwarded-for');
   if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, take the first one
-    const first = forwardedFor.split(',')[0]?.trim();
-    if (first) {
-      candidates.push(first);
+    const last = forwardedFor.split(',').at(-1)?.trim();
+    if (last) {
+      candidates.push(last);
     }
-  }
-
-  const realIp = headers.get('x-real-ip');
-  if (realIp) {
-    candidates.push(realIp);
-  }
-
-  const cfConnectingIp = headers.get('cf-connecting-ip');
-  if (cfConnectingIp) {
-    candidates.push(cfConnectingIp);
-  }
-
-  const vercelIp = headers.get('x-vercel-ip');
-  if (vercelIp) {
-    candidates.push(vercelIp);
   }
 
   for (const candidate of candidates) {

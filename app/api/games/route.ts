@@ -6,6 +6,8 @@ import { NextResponse } from 'next/server';
 import { apiError } from '@/lib/httpResponses';
 import { fetchGameSpecification, UnsafeGameUrlError } from '@/lib/fetchGameSpecification';
 import { ownsRegisteredUsername } from '@/lib/firebase/ownership';
+import { countGamesFor, gameQuotaResponse, MAX_GAMES_PER_USER } from '@/lib/firebase/quota';
+import { isHttpsUrl, MAX_URL_LENGTH, validateGameMetadata } from '@/lib/gameMetadata';
 
 /** Lists the newest public games and returns a structured error if storage is unavailable. */
 export async function GET() {
@@ -36,6 +38,9 @@ export async function POST(request: Request) {
     const autoUpdateUrl = body?.autoUpdateUrl;
     if (typeof autoUpdateUrl !== 'string' || !autoUpdateUrl) {
       return apiError('Missing autoUpdateUrl', 400);
+    }
+    if (autoUpdateUrl.length > MAX_URL_LENGTH) {
+      return apiError(`autoUpdateUrl must be at most ${MAX_URL_LENGTH} characters`, 400);
     }
 
     const idToken = authHeader.split('Bearer ')[1];
@@ -70,15 +75,40 @@ export async function POST(request: Request) {
       return apiError('Failed to fetch the game specification', 502);
     }
     if (!response.ok) return apiError('Failed to fetch the game specification', 502);
-    const cardGameSpecification: {
+    let specification: unknown;
+    try {
+      specification = await response.json();
+    } catch {
+      return apiError('The game specification is not valid JSON', 502);
+    }
+    if (!specification || typeof specification !== 'object' || Array.isArray(specification)) {
+      return apiError('The game specification must be a JSON object', 400);
+    }
+    const cardGameSpecification = specification as {
       name: string;
       bannerImageUrl?: string;
       cardBackImageUrl?: string;
-      copyright: string;
-    } = await response.json();
+      copyright?: string;
+    };
+    // Stored values are rendered on shared pages; a malformed listing must not break them.
+    const metadataError = validateGameMetadata(cardGameSpecification);
+    if (metadataError) return apiError(`Invalid game specification: ${metadataError}`, 400);
 
     const slug = encodeURI(snakecase(cardGameSpecification.name));
     if (!slug) return apiError('Game name must produce a nonempty URL slug', 400);
+
+    const existingGames = await adminDb
+      .collection('games')
+      .where('username', '==', username)
+      .where('slug', '==', slug)
+      .get();
+    if (!existingGames.empty) {
+      return apiError(
+        `You already have a game named "${cardGameSpecification.name}". Delete it first or choose a different name.`,
+        409,
+      );
+    }
+    if ((await countGamesFor(username)) >= MAX_GAMES_PER_USER) return gameQuotaResponse();
     const game = {
       ownerUid: decodedToken.uid,
       username: username,
@@ -94,15 +124,7 @@ export async function POST(request: Request) {
       uploadedAt: FieldValue.serverTimestamp(),
     };
 
-    let isValidUrl: boolean;
-    try {
-      isValidUrl =
-        game.bannerImageUrl === DEFAULT_CARD_BACK_PATH ||
-        new URL(game.bannerImageUrl).protocol === 'https:';
-    } catch {
-      isValidUrl = false;
-    }
-    if (!isValidUrl) {
+    if (game.bannerImageUrl !== DEFAULT_CARD_BACK_PATH && !isHttpsUrl(game.bannerImageUrl)) {
       return apiError('Invalid bannerImageUrl!', 400);
     }
 

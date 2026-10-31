@@ -1,4 +1,79 @@
 import JSZip from 'jszip';
+import type { Readable } from 'node:stream';
+import { validateGameMetadata } from '@/lib/gameMetadata';
+
+/** Total decompressed bytes one archive may expand to (the compressed limit is 100 MiB). */
+export const MAX_UNCOMPRESSED_BYTES = 256 * 1024 * 1024;
+/** Decompressed bytes allowed for any single archive entry. */
+export const MAX_ENTRY_BYTES = 64 * 1024 * 1024;
+/** Entries, including directories, allowed in one archive. */
+export const MAX_ZIP_ENTRIES = 20000;
+
+/** Signals that an archive exceeded a decompression limit; `code` identifies which one. */
+export class ZipLimitError extends Error {
+  readonly code: 'ENTRY_TOO_LARGE' | 'ARCHIVE_TOO_LARGE' | 'STORAGE_QUOTA_EXCEEDED';
+
+  constructor(message: string, code: ZipLimitError['code']) {
+    super(message);
+    this.code = code;
+  }
+}
+
+/** A decompression allowance shared by every entry read from one archive. */
+export interface ZipBudget {
+  remaining: number;
+  /** Error raised when the shared allowance runs out. */
+  exceeded: () => ZipLimitError;
+}
+
+/** Returns the size an entry claims in the central directory. Untrusted: only an early hint. */
+export function declaredSize(entry: JSZip.JSZipObject): number {
+  const size = (entry as unknown as { _data?: { uncompressedSize?: unknown } })._data
+    ?.uncompressedSize;
+  return typeof size === 'number' && size >= 0 ? size : 0;
+}
+
+/**
+ * Decompresses one entry while counting the bytes actually produced, aborting as soon as the
+ * entry or the archive-wide budget is exceeded. Declared sizes can lie, so this is the real limit.
+ */
+export function readZipEntry(entry: JSZip.JSZipObject, budget: ZipBudget): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const stream = entry.nodeStream('nodebuffer') as Readable;
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let settled = false;
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      stream.destroy();
+      reject(error);
+    };
+    stream.on('data', (chunk: Buffer) => {
+      if (settled) return;
+      size += chunk.length;
+      budget.remaining -= chunk.length;
+      if (size > MAX_ENTRY_BYTES) {
+        fail(
+          new ZipLimitError(
+            `An archive file exceeds ${MAX_ENTRY_BYTES / (1024 * 1024)} MiB when decompressed`,
+            'ENTRY_TOO_LARGE',
+          ),
+        );
+      } else if (budget.remaining < 0) {
+        fail(budget.exceeded());
+      } else {
+        chunks.push(chunk);
+      }
+    });
+    stream.on('error', fail);
+    stream.on('end', () => {
+      if (settled) return;
+      settled = true;
+      resolve(Buffer.concat(chunks));
+    });
+  });
+}
 
 export const ALLOWED_EXTENSIONS = new Set([
   '.json',
@@ -126,10 +201,8 @@ export function validateCgsJson(parsed: unknown): string | null {
     return 'Invalid cgs.json: not valid JSON';
   }
   const obj = parsed as Record<string, unknown>;
-  if (!obj.name || typeof obj.name !== 'string') {
-    return "Invalid cgs.json: missing required 'name' field";
-  }
-  return null;
+  const error = validateGameMetadata({ name: obj.name, copyright: obj.copyright });
+  return error ? `Invalid cgs.json: ${error}` : null;
 }
 
 /**

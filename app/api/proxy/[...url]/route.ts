@@ -3,6 +3,7 @@ import { apiError } from '@/lib/httpResponses';
 import { fetchPublicResource, UnsafeGameUrlError } from '@/lib/fetchGameSpecification';
 import { readBoundedText, RequestBodyLimitError } from '@/lib/boundedRequest';
 import { apiPolicy } from '@/lib/apiPolicy';
+import { checkRateLimit, getClientIp, rateLimitResponseHeaders } from '@/lib/rateLimit';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +13,41 @@ const corsHeaders = {
   'Content-Security-Policy': "sandbox; default-src 'none'",
   'X-Content-Type-Options': 'nosniff',
 };
+
+// The proxy exists for game data and images. Refusing documents (HTML, SVG, XML, PDF, ...) keeps
+// cgs.games from presenting arbitrary third-party pages under its own URL.
+const IMAGE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'image/bmp',
+  'image/tiff',
+  'image/x-icon',
+  'image/vnd.microsoft.icon',
+]);
+const TEXT_TYPES = new Set(['application/json', 'text/plain', 'text/csv']);
+const DOWNLOAD_TYPES = new Set([
+  'application/octet-stream',
+  'application/zip',
+  'application/x-zip-compressed',
+]);
+
+/** Requests per client IP per minute; banner-heavy pages and game imports stay well below it. */
+const PROXY_RATE_LIMIT = { maxRequests: 600, windowMs: 60 * 1000 };
+
+/** Returns the bare media type when the proxy may serve it, otherwise null. */
+function proxiedMediaType(contentType: string): string | null {
+  const mediaType = contentType.split(';')[0].trim().toLowerCase();
+  const allowed =
+    IMAGE_TYPES.has(mediaType) ||
+    TEXT_TYPES.has(mediaType) ||
+    DOWNLOAD_TYPES.has(mediaType) ||
+    /^application\/[a-z0-9.+-]+\+json$/.test(mediaType);
+  return allowed ? mediaType : null;
+}
 
 /** Forwards an HTTPS request, preserving successes and normalizing upstream failures. */
 async function forward(request: Request, method: 'GET' | 'POST') {
@@ -53,9 +89,24 @@ async function forward(request: Request, method: 'GET' | 'POST') {
         },
       );
     }
-    const headers = new Headers(corsHeaders);
     const contentType = response.headers.get('content-type') ?? 'application/octet-stream';
+    const mediaType = proxiedMediaType(contentType);
+    if (!mediaType) {
+      await response.body?.cancel();
+      return apiError(
+        'The upstream content type is not supported by this proxy',
+        502,
+        corsHeaders,
+        {
+          code: 'UNSUPPORTED_UPSTREAM_TYPE',
+          hint: 'The proxy serves only images, JSON, plain text, CSV, and binary downloads such as zip archives.',
+        },
+      );
+    }
+    const headers = new Headers(corsHeaders);
     headers.set('Content-Type', contentType);
+    // Binary downloads must never be rendered as a page on the cgs.games origin.
+    if (DOWNLOAD_TYPES.has(mediaType)) headers.set('Content-Disposition', 'attachment');
     const encoding = response.headers.get('content-encoding');
     if (encoding) headers.set('Content-Encoding', encoding);
     if (method === 'POST') headers.set('Cache-Control', 'no-store');
@@ -95,6 +146,15 @@ async function forward(request: Request, method: 'GET' | 'POST') {
 async function handle(request: Request, method: 'GET' | 'POST' | 'HEAD') {
   const policy = apiPolicy(request);
   if (policy.response) return policy.response;
+  const limit = checkRateLimit('proxy:' + getClientIp(request), PROXY_RATE_LIMIT);
+  if (!limit.allowed) {
+    // Quota fields go only on 429s, so successful responses stay shared-cacheable.
+    return apiError('Too many proxy requests. Please try again later.', 429, {
+      ...corsHeaders,
+      ...policy.headers,
+      ...rateLimitResponseHeaders(limit, PROXY_RATE_LIMIT, 'proxy'),
+    });
+  }
   const response = await forward(request, method === 'POST' ? 'POST' : 'GET');
   for (const [name, value] of Object.entries(policy.headers)) {
     if (name === 'Vary' && response.headers.has(name)) response.headers.append(name, value);

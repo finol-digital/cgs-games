@@ -69,7 +69,9 @@ export default function DevelopersPage() {
         <li>
           <code>POST /api/games/upload</code>: upload a multipart <code>file</code> (.cgs.zip, at
           most 100 MiB), or submit a JSON stagedPath and originalFilename from an authenticated
-          Firebase Storage upload. See the specification for allowed paths and cleanup behavior.
+          Firebase Storage upload. Archives may expand to at most 256 MiB (no single file over 64
+          MiB, at most 20000 entries). Each creator may publish up to 50 games and store up to 1 GiB
+          of published files. See the specification for allowed paths and cleanup behavior.
         </li>
         <li>
           <code>DELETE /api/games/&#123;id&#125;</code>: delete an owned game using its catalog
@@ -82,7 +84,9 @@ export default function DevelopersPage() {
           sandboxed. Responses are limited to 100 MiB and 30 seconds, and POST bodies to 16 MiB.
           Responses stream as bytes arrive. If a limit or connection failure occurs after headers
           have been sent, the stream is aborted; discard partial content. Responses depend on the
-          upstream resource and may be binary. Prefer the typed catalog endpoints for function
+          upstream resource and may be binary. Only images, JSON, plain text, CSV, and binary
+          downloads are served; documents such as HTML, SVG, XML, and PDF are refused. Requests are
+          limited to 600 per minute per client. Prefer the typed catalog endpoints for function
           calls.
         </li>
         <li>

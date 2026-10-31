@@ -1,11 +1,15 @@
 import JSZip from 'jszip';
 import {
+  declaredSize,
   getFileExtension,
   getPublicUrl,
   isAllowedFile,
   locateCgsJson,
+  MAX_ENTRY_BYTES,
+  readZipEntry,
   rewriteCgsJsonUrls,
   validateCgsJson,
+  ZipLimitError,
 } from '@/lib/cgsZipUtils';
 import { CgsJson } from '@/lib/cgsZipUtils';
 
@@ -185,6 +189,50 @@ describe('cgsZipUtils', () => {
 
     it('should return error for non-object input', () => {
       expect(validateCgsJson('string')).toBe('Invalid cgs.json: not valid JSON');
+    });
+
+    it('rejects copyright values that cannot be rendered as text, and oversized metadata', () => {
+      expect(validateCgsJson({ name: 'Game', copyright: { owner: 'x' } })).toBe(
+        "Invalid cgs.json: 'copyright' must be a string",
+      );
+      expect(validateCgsJson({ name: 'Game', copyright: 'x'.repeat(501) })).toMatch(/copyright/);
+      expect(validateCgsJson({ name: 'x'.repeat(201) })).toMatch(/'name' must be at most/);
+      expect(validateCgsJson({ name: 'Game', copyright: null })).toBeNull();
+    });
+  });
+
+  describe('readZipEntry', () => {
+    const budget = (remaining: number) => ({
+      remaining,
+      exceeded: () => new ZipLimitError('budget exceeded', 'ARCHIVE_TOO_LARGE'),
+    });
+    const loadEntry = async (content: string | Uint8Array) => {
+      const zip = new JSZip();
+      zip.file('data.bin', content);
+      const loaded = await JSZip.loadAsync(
+        await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }),
+      );
+      return loaded.file('data.bin')!;
+    };
+
+    it('returns the decompressed bytes and charges them to the shared budget', async () => {
+      const shared = budget(1000);
+      expect((await readZipEntry(await loadEntry('hello'), shared)).toString()).toBe('hello');
+      expect(shared.remaining).toBe(995);
+    });
+
+    it('counts bytes actually produced, even when the declared size understates them', async () => {
+      const entry = await loadEntry('x'.repeat(5000));
+      (entry as unknown as { _data: { uncompressedSize: number } })._data.uncompressedSize = 1;
+      expect(declaredSize(entry)).toBe(1);
+      await expect(readZipEntry(entry, budget(4096))).rejects.toThrow('budget exceeded');
+    });
+
+    it('rejects a single entry larger than the per-entry limit', async () => {
+      const entry = await loadEntry(new Uint8Array(MAX_ENTRY_BYTES + 1));
+      await expect(readZipEntry(entry, budget(Number.MAX_SAFE_INTEGER))).rejects.toMatchObject({
+        code: 'ENTRY_TOO_LARGE',
+      });
     });
   });
 
