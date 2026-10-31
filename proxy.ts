@@ -24,12 +24,11 @@ function missingPage(request: NextRequest) {
 
 /**
  * The image optimizer fetches /api/proxy URLs internally without the visitor's headers, so the
- * route cannot tell visitors apart. Charge those optimizations to the visitor's proxy quota here.
+ * route cannot tell visitors apart. Charge every optimization to the visitor's proxy quota here:
+ * the optimizer normalizes `url` (dot segments, percent-encoding) before fetching it, so matching
+ * on the raw parameter could be bypassed, and pages load far fewer images than the limit allows.
  */
-function limitProxiedImage(request: NextRequest) {
-  if (!request.nextUrl.searchParams.get('url')?.startsWith('/api/proxy/')) {
-    return NextResponse.next();
-  }
+function limitOptimizedImage(request: NextRequest) {
   const limit = checkRateLimit('proxy:' + getClientIp(request), PROXY_RATE_LIMIT);
   if (limit.allowed) return NextResponse.next();
   return apiError(
@@ -42,7 +41,7 @@ function limitProxiedImage(request: NextRequest) {
 /** Negotiates agent content and checks public resources before dispatching to Next.js. */
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (path === '/_next/image') return limitProxiedImage(request);
+  if (path === '/_next/image') return limitOptimizedImage(request);
   if (path === '/api' || path.startsWith('/api/')) {
     const { headers, response } = apiPolicy(request);
     return response ?? NextResponse.next({ headers });
@@ -98,5 +97,5 @@ export async function proxy(request: NextRequest) {
 }
 
 // Proxy routes apply apiPolicy themselves: Next's middleware clone waits for request EOF.
-// The image optimizer is matched only so limitProxiedImage can charge proxied images per visitor.
+// The image optimizer is matched only so limitOptimizedImage can charge each visitor's images.
 export const config = { matcher: ['/((?!_next/|api/proxy/.+).*)', '/_next/image'] };

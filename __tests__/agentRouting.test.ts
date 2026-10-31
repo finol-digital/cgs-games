@@ -28,19 +28,29 @@ describe('page negotiation and missing routes', () => {
       unstable_doesMiddlewareMatch({ config, nextConfig: {}, url: '/_next/static/chunks/a.js' }),
     ).toBe(false);
   });
-  it('charges optimized proxy images to the visitor and leaves other images alone', async () => {
+  it('charges every optimized image to the visitor, however its URL is spelled', async () => {
     const image = (url: string) =>
       new NextRequest(`https://cgs.games/_next/image?url=${encodeURIComponent(url)}&w=64&q=75`, {
         headers: { 'x-forwarded-for': '198.51.100.23' },
       });
+    const spellings = ['/api/proxy/example.com/', '/api/./proxy/example.com/', '/api/%2e/proxy/'];
     for (let i = 0; i < 600; i++) {
-      expect((await proxy(image(`/api/proxy/example.com/${i}.png`))).status).toBe(200);
+      const response = await proxy(image(`${spellings[i % spellings.length]}${i}.png`));
+      expect(response.status).toBe(200);
     }
-    const limited = await proxy(image('/api/proxy/example.com/next.png'));
-    expect(limited.status).toBe(429);
-    expect(limited.headers.get('retry-after')).toBeTruthy();
-    expect(limited.headers.get('ratelimit-policy')).toContain('"proxy"');
-    expect((await proxy(image('/CardBack.png'))).status).toBe(200);
+    for (const url of ['/api/%2E/proxy/example.com/next.png', '/CardBack.png']) {
+      const limited = await proxy(image(url));
+      expect(limited.status).toBe(429);
+      expect(limited.headers.get('retry-after')).toBeTruthy();
+      expect(limited.headers.get('ratelimit-policy')).toContain('"proxy"');
+    }
+    const otherVisitor = new NextRequest(
+      'https://cgs.games/_next/image?url=%2FCardBack.png&w=64&q=75',
+      {
+        headers: { 'x-forwarded-for': '198.51.100.24' },
+      },
+    );
+    expect((await proxy(otherVisitor)).status).toBe(200);
   });
   it('keeps legacy Hosting redirect-only so a deployment cannot recreate the retired server', () => {
     expect(firebaseConfig.hosting).not.toHaveProperty('source');
