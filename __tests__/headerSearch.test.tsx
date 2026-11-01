@@ -222,6 +222,20 @@ describe('header game search', () => {
     expect(image).toHaveAttribute('src', '/CardBack.png');
   });
 
+  it('never loads a private thumbnail destination directly', async () => {
+    const privateGame = { ...games[0], bannerImageUrl: 'https://192.168.1.1/banner.png' };
+    jest.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [privateGame],
+    } as unknown as Response);
+    render(<HeaderSearch />);
+    search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    expect(image).toHaveAttribute('src', '/api/proxy/192.168.1.1/banner.png');
+    fireEvent.error(image);
+    expect(image).toHaveAttribute('src', '/CardBack.png');
+  });
+
   it('shows an empty state and clears without requesting the catalog again', async () => {
     render(<HeaderSearch />);
     const input = search('missing game');

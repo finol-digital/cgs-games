@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { canLoadImageDirectly } from '@/lib/publicAddress';
 import { cn } from '@/lib/utils';
 
 interface BannerProps {
@@ -33,7 +34,8 @@ export default function Banner({
     // Match the upload API's URL parsing, including mixed-case schemes and whitespace.
     const url = new URL(imgDefault);
     if (url.protocol === 'https:') {
-      directUrl = url.href;
+      // Only URLs the proxy would also accept may load in the visitor's browser.
+      if (canLoadImageDirectly(url.href)) directUrl = url.href;
       imgPath = '/api/proxy/' + url.href.slice('https://'.length);
     }
   } catch {

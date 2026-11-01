@@ -68,6 +68,15 @@ describe('Banner proxy fallback', () => {
     expect(imageSource()).toBe('/api/proxy/example.com/a.png');
   });
 
+  it.each(['https://192.168.1.1/banner.png', 'https://printer.local/banner.png'])(
+    'never loads a private destination directly: %s',
+    (img) => {
+      render(<Banner img={img} txt="Test game" />);
+      fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
+      expect(imageSource()).toBe('/api/proxy/' + img.slice('https://'.length));
+    },
+  );
+
   it('keeps local images on the optimizer after an error', () => {
     render(<Banner img="/CardBack.png" txt="Test game" />);
     fireEvent.error(screen.getByRole('img', { name: 'Test game' }));

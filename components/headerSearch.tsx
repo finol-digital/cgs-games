@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Search, X } from 'lucide-react';
 import { browseSearchHref, matchesGameSearch, SearchGame } from '@/lib/gameSearch';
+import { canLoadImageDirectly } from '@/lib/publicAddress';
 
 /** Loads the public catalog on demand, then filters without per-keystroke requests. */
 export default function HeaderSearch() {
@@ -235,7 +236,10 @@ export default function HeaderSearch() {
                     onError={(event) => {
                       const image = event.currentTarget;
                       const src = image.getAttribute('src');
-                      if (src?.startsWith('/api/proxy/')) {
+                      if (
+                        src?.startsWith('/api/proxy/') &&
+                        canLoadImageDirectly(game.bannerImageUrl)
+                      ) {
                         // Some hosts block cgs.games' servers but not visitors' browsers.
                         image.setAttribute('referrerpolicy', 'no-referrer');
                         image.src = game.bannerImageUrl;
