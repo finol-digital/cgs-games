@@ -4,7 +4,9 @@ import { get, request as httpsRequest } from 'node:https';
 import { isIP } from 'node:net';
 import { checkServerIdentity } from 'node:tls';
 import { Readable, Transform, pipeline } from 'node:stream';
-import ipaddr from 'ipaddr.js';
+import { isPublicAddress } from '@/lib/publicAddress';
+
+export { isPublicAddress };
 
 const MAX_BYTES = 16 * 1024 * 1024;
 const REDIRECTS = new Set([301, 302, 303, 307, 308]);
@@ -38,15 +40,6 @@ async function lookupBeforeDeadline(
 
 /** Identifies URLs that must not be fetched from the server's network. */
 export class UnsafeGameUrlError extends Error {}
-
-/** Accepts only globally routed addresses, excluding local and transition networks. */
-export function isPublicAddress(address: string): boolean {
-  if (!ipaddr.isValid(address)) return false;
-  const parsed = ipaddr.process(address);
-  if (parsed.range() !== 'unicast') return false;
-  // IPv6 destinations must also be in the currently allocated global unicast range.
-  return parsed.kind() === 'ipv4' || parsed.match(ipaddr.parse('2000::'), 3);
-}
 
 /** Fetches one validated destination, pinning the connection to the checked DNS result. */
 async function fetchHop(

@@ -74,6 +74,8 @@ async function forward(request: Request, method: 'GET' | 'POST') {
       stream: true,
       signal: request.signal,
     });
+    // Names the exact resource checked, so image fallbacks can confirm it matches what they load.
+    const checkedHeaders = { ...corsHeaders, 'X-Proxy-Upstream-Url': url.href };
     if (!response.ok) {
       await response.body?.cancel();
       const status = response.status >= 400 ? response.status : 502;
@@ -81,7 +83,7 @@ async function forward(request: Request, method: 'GET' | 'POST') {
         'The upstream resource returned an error',
         status,
         {
-          ...corsHeaders,
+          ...checkedHeaders,
           ...(response.headers.has('retry-after')
             ? { 'Retry-After': response.headers.get('retry-after')! }
             : {}),
@@ -99,7 +101,7 @@ async function forward(request: Request, method: 'GET' | 'POST') {
       return apiError(
         'The upstream content type is not supported by this proxy',
         502,
-        corsHeaders,
+        checkedHeaders,
         {
           code: 'UNSUPPORTED_UPSTREAM_TYPE',
           hint: 'The proxy serves only images, JSON, plain text, CSV, and binary downloads such as zip archives.',
@@ -141,7 +143,12 @@ async function forward(request: Request, method: 'GET' | 'POST') {
     if (error instanceof UnsafeGameUrlError)
       return apiError('Use a public HTTPS resource on port 443', 400, corsHeaders);
     console.error('Proxy request failed:', error);
-    return apiError('Failed to fetch the upstream resource', 502, corsHeaders);
+    // Distinct from UPSTREAM_ERROR: no public endpoint answered (DNS, network, too many redirects),
+    // so image fallbacks must not load this URL directly.
+    return apiError('Failed to fetch the upstream resource', 502, corsHeaders, {
+      code: 'UPSTREAM_UNREACHABLE',
+      hint: 'Check that the upstream host is reachable and redirects at most five times.',
+    });
   }
 }
 

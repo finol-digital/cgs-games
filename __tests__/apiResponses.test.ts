@@ -468,6 +468,38 @@ describe('API response contract', () => {
     },
   );
 
+  it.each([
+    ['an upstream error', new Response(null, { status: 403 })],
+    ['an unsupported type', new Response('<html>', { headers: { 'Content-Type': 'text/html' } })],
+  ])('names the checked upstream URL on %s', async (_case, upstream) => {
+    jest.mocked(fetchPublicResource).mockResolvedValue(upstream);
+    const response = await proxyGet(
+      new NextRequest('https://cgs.games/api/proxy/example.com/a/../b.png/?alt=media'),
+    );
+    expect(response.headers.get('x-proxy-upstream-url')).toBe(
+      'https://example.com/b.png?alt=media',
+    );
+  });
+
+  it.each([
+    ['https://cgs.games/api/proxy/example.com/images/', 'https://example.com/images'],
+    ['https://cgs.games/api/proxy/example.com/?image=1', 'https://example.com/?image=1'],
+  ])('reports the URL it checked for %s', async (requestUrl, checked) => {
+    jest.mocked(fetchPublicResource).mockResolvedValue(new Response(null, { status: 403 }));
+    const response = await proxyGet(new NextRequest(requestUrl));
+    expect(response.headers.get('x-proxy-upstream-url')).toBe(checked);
+  });
+
+  it('marks unreachable upstreams distinctly from upstream error responses', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.mocked(fetchPublicResource).mockRejectedValue(new Error('Too many redirects.'));
+    const response = await proxyGet(
+      new NextRequest('https://cgs.games/api/proxy/example.com/resource'),
+    );
+    expect(response.status).toBe(502);
+    expect((await response.json()).code).toBe('UPSTREAM_UNREACHABLE');
+  });
+
   it('preserves proxy success content and GET query parameters', async () => {
     jest
       .mocked(fetchPublicResource)

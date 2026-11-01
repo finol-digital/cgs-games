@@ -44,6 +44,20 @@ function search(query: string) {
   return input;
 }
 
+/** A proxy failure response that, like the real proxy, names the upstream URL it checked. */
+function proxyResponse(path: string, code: string, status = 502, checked?: string) {
+  const upstream = checked ?? 'https://' + path.slice('/api/proxy/'.length);
+  return {
+    ok: false,
+    status,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === 'x-proxy-upstream-url' ? upstream : null),
+    },
+    body: { cancel: async () => {} },
+    json: async () => ({ code }),
+  } as unknown as Response;
+}
+
 describe('header game search', () => {
   it('loads lazily and reuses the catalog while typing and reopening', async () => {
     render(<HeaderSearch />);
@@ -206,7 +220,16 @@ describe('header game search', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
+  /** Makes the next proxy check (after the catalog request) report the given failure code. */
+  function proxyCheckFails(code: string, status = 502) {
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => games } as unknown as Response)
+      .mockImplementationOnce(async (path) => proxyResponse(String(path), code, status));
+  }
+
   it('keeps direct links and falls back safely when thumbnails fail', async () => {
+    proxyCheckFails('UNSUPPORTED_UPSTREAM_TYPE');
     render(<HeaderSearch />);
     search('grand');
     const options = await screen.findAllByRole('option');
@@ -214,9 +237,84 @@ describe('header game search', () => {
     const image = options[0].querySelector('img')!;
     expect(image).toHaveAttribute('src', '/api/proxy/example.com/banner.png');
     fireEvent.error(image);
+    await waitFor(() => expect(image).toHaveAttribute('src', 'https://example.com/banner.png'));
+    expect(image).toHaveAttribute('referrerpolicy', 'no-referrer');
+    expect(global.fetch).toHaveBeenLastCalledWith('/api/proxy/example.com/banner.png', {
+      cache: 'no-store',
+    });
+    fireEvent.error(image);
     expect(image).toHaveAttribute('src', '/CardBack.png');
     fireEvent.error(image);
     expect(image).toHaveAttribute('src', '/CardBack.png');
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('checks the same host it loads when the URL has dot segments', async () => {
+    const dotted = {
+      ...games[0],
+      bannerImageUrl: 'https://private.example/../public.example/banner.png',
+    };
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => [dotted] } as unknown as Response)
+      .mockImplementationOnce(async (path) =>
+        proxyResponse(String(path), 'UNSUPPORTED_UPSTREAM_TYPE'),
+      );
+    render(<HeaderSearch />);
+    search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    expect(image).toHaveAttribute('src', '/api/proxy/private.example/public.example/banner.png');
+    fireEvent.error(image);
+    await waitFor(() =>
+      expect(image).toHaveAttribute('src', 'https://private.example/public.example/banner.png'),
+    );
+    expect(global.fetch).toHaveBeenLastCalledWith(
+      '/api/proxy/private.example/public.example/banner.png',
+      { cache: 'no-store' },
+    );
+  });
+
+  it('does not load a thumbnail removed while the proxy was checked', async () => {
+    const { promise, resolve } = Promise.withResolvers<Response>();
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => games } as unknown as Response)
+      .mockReturnValueOnce(promise);
+    render(<HeaderSearch />);
+    const input = search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    fireEvent.error(image);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(image.isConnected).toBe(false);
+    await act(async () =>
+      resolve(proxyResponse('/api/proxy/example.com/banner.png', 'UNSUPPORTED_UPSTREAM_TYPE')),
+    );
+    expect(image).toHaveAttribute('src', '/api/proxy/example.com/banner.png');
+  });
+
+  it('uses the card back when the proxy refused the destination', async () => {
+    proxyCheckFails('INVALID_REQUEST', 400);
+    render(<HeaderSearch />);
+    search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    fireEvent.error(image);
+    await waitFor(() => expect(image).toHaveAttribute('src', '/CardBack.png'));
+    expect(image).not.toHaveAttribute('referrerpolicy');
+  });
+
+  it('never loads a private thumbnail destination directly', async () => {
+    const privateGame = { ...games[0], bannerImageUrl: 'https://192.168.1.1/banner.png' };
+    jest.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [privateGame],
+    } as unknown as Response);
+    render(<HeaderSearch />);
+    search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    expect(image).toHaveAttribute('src', '/api/proxy/192.168.1.1/banner.png');
+    fireEvent.error(image);
+    await waitFor(() => expect(image).toHaveAttribute('src', '/CardBack.png'));
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('shows an empty state and clears without requesting the catalog again', async () => {

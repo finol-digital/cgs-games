@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Search, X } from 'lucide-react';
 import { browseSearchHref, matchesGameSearch, SearchGame } from '@/lib/gameSearch';
+import { directImageFallback, proxyImagePath } from '@/lib/imageFallback';
 
 /** Loads the public catalog on demand, then filters without per-keystroke requests. */
 export default function HeaderSearch() {
@@ -223,18 +224,29 @@ export default function HeaderSearch() {
                   className={`flex items-center gap-3 px-4 py-3 text-slate-100! no-underline! hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-[#d3bd7a] ${activeIndex === index ? 'bg-slate-700' : ''}`}
                 >
                   <img
-                    src={
-                      /^https:\/\//i.test(game.bannerImageUrl)
-                        ? `/api/proxy/${game.bannerImageUrl.slice(8)}`
-                        : '/CardBack.png'
-                    }
+                    src={proxyImagePath(game.bannerImageUrl) ?? '/CardBack.png'}
                     alt=""
                     width={40}
                     height={48}
                     loading="lazy"
                     onError={(event) => {
-                      if (event.currentTarget.getAttribute('src') !== '/CardBack.png') {
-                        event.currentTarget.src = '/CardBack.png';
+                      const image = event.currentTarget;
+                      const src = image.getAttribute('src');
+                      if (src?.startsWith('/api/proxy/')) {
+                        // Some hosts block cgs.games' servers but not visitors' browsers.
+                        void directImageFallback(game.bannerImageUrl).then((directUrl) => {
+                          // Skip if the thumbnail was replaced or removed while the proxy was
+                          // checked: a detached image still fetches its new source.
+                          if (!image.isConnected || image.getAttribute('src') !== src) return;
+                          if (directUrl) {
+                            image.setAttribute('referrerpolicy', 'no-referrer');
+                            image.src = directUrl;
+                          } else {
+                            image.src = '/CardBack.png';
+                          }
+                        });
+                      } else if (src !== '/CardBack.png') {
+                        image.src = '/CardBack.png';
                       }
                     }}
                     className="h-12 w-10 shrink-0 rounded bg-slate-900 object-contain"
