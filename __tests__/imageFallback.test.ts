@@ -102,11 +102,31 @@ describe('directImageFallback', () => {
     await expect(directImageFallback('https://example.com/a.png')).resolves.toBeNull();
   });
 
+  it('refuses a trailing-slash path, which the proxy checks without the slash', async () => {
+    global.fetch = jest.fn(async () =>
+      proxyResponse(
+        '/api/proxy/example.com/images/',
+        'UNSUPPORTED_UPSTREAM_TYPE',
+        502,
+        'https://example.com/images',
+      ),
+    );
+    await expect(directImageFallback('https://example.com/images/')).resolves.toBeNull();
+  });
+
+  it.each(['https://example.com', 'https://example.com/?image=1'])(
+    'allows a root-path image the proxy checked exactly: %s',
+    async (url) => {
+      const checked = new URL(url).href;
+      global.fetch = jest.fn(async () =>
+        proxyResponse('/api/proxy/example.com', 'UNSUPPORTED_UPSTREAM_TYPE', 502, checked),
+      );
+      await expect(directImageFallback(url)).resolves.toBe(checked);
+    },
+  );
+
   it('never asks the proxy about URLs the proxy would refuse', async () => {
     global.fetch = jest.fn();
-    // The proxy drops a trailing slash, so it would check a different resource.
-    await expect(directImageFallback('https://example.com/images/')).resolves.toBeNull();
-    await expect(directImageFallback('https://example.com')).resolves.toBeNull();
     await expect(directImageFallback('https://192.168.1.1/a.png')).resolves.toBeNull();
     await expect(directImageFallback('http://example.com/a.png')).resolves.toBeNull();
     expect(global.fetch).not.toHaveBeenCalled();

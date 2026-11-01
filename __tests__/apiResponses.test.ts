@@ -481,6 +481,15 @@ describe('API response contract', () => {
     );
   });
 
+  it.each([
+    ['https://cgs.games/api/proxy/example.com/images/', 'https://example.com/images'],
+    ['https://cgs.games/api/proxy/example.com/?image=1', 'https://example.com/?image=1'],
+  ])('reports the URL it checked for %s', async (requestUrl, checked) => {
+    jest.mocked(fetchPublicResource).mockResolvedValue(new Response(null, { status: 403 }));
+    const response = await proxyGet(new NextRequest(requestUrl));
+    expect(response.headers.get('x-proxy-upstream-url')).toBe(checked);
+  });
+
   it('marks unreachable upstreams distinctly from upstream error responses', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.mocked(fetchPublicResource).mockRejectedValue(new Error('Too many redirects.'));

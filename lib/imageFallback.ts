@@ -34,8 +34,6 @@ export function proxyImagePath(value: string): string | null {
 export async function directImageFallback(value: string): Promise<string | null> {
   const url = parseHttpsImageUrl(value);
   if (!url || !canLoadImageDirectly(url.href)) return null;
-  // The proxy drops a trailing slash, so it would check a different resource than the browser loads.
-  if (url.pathname.endsWith('/')) return null;
   try {
     const response = await fetch(proxyImagePath(url.href)!, { cache: 'no-store' });
     if (response.ok) {
@@ -43,6 +41,7 @@ export async function directImageFallback(value: string): Promise<string | null>
       return null;
     }
     // However the path was normalized on the way, the proxy must have checked exactly this URL.
+    // For example, it drops a trailing slash, so /x/ is refused while the root path still works.
     if (response.headers.get('x-proxy-upstream-url') !== url.href) {
       await response.body?.cancel();
       return null;
