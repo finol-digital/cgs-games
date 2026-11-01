@@ -233,8 +233,14 @@ export default function HeaderSearch() {
                     height={48}
                     loading="lazy"
                     onError={(event) => {
-                      if (event.currentTarget.getAttribute('src') !== '/CardBack.png') {
-                        event.currentTarget.src = '/CardBack.png';
+                      const image = event.currentTarget;
+                      const src = image.getAttribute('src');
+                      if (src?.startsWith('/api/proxy/')) {
+                        // Some hosts block cgs.games' servers but not visitors' browsers.
+                        image.setAttribute('referrerpolicy', 'no-referrer');
+                        image.src = game.bannerImageUrl;
+                      } else if (src !== '/CardBack.png') {
+                        image.src = '/CardBack.png';
                       }
                     }}
                     className="h-12 w-10 shrink-0 rounded bg-slate-900 object-contain"

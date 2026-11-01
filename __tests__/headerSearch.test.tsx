@@ -214,6 +214,9 @@ describe('header game search', () => {
     const image = options[0].querySelector('img')!;
     expect(image).toHaveAttribute('src', '/api/proxy/example.com/banner.png');
     fireEvent.error(image);
+    expect(image).toHaveAttribute('src', 'https://example.com/banner.png');
+    expect(image).toHaveAttribute('referrerpolicy', 'no-referrer');
+    fireEvent.error(image);
     expect(image).toHaveAttribute('src', '/CardBack.png');
     fireEvent.error(image);
     expect(image).toHaveAttribute('src', '/CardBack.png');
