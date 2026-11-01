@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import { canLoadImageDirectly } from '@/lib/publicAddress';
+import { canFallBackToDirectImage } from '@/lib/imageFallback';
 import { cn } from '@/lib/utils';
 
 interface BannerProps {
@@ -17,7 +17,7 @@ interface BannerProps {
 /**
  * Renders a responsive banner, proxying HTTPS sources and prioritizing visible content on request.
  * Some hosts block cgs.games' servers (e.g. bot challenges for data-center IPs), so a proxied image
- * that fails to load falls back to the original URL, fetched directly by the visitor's browser.
+ * that fails to load may fall back to the original URL, fetched directly by the visitor's browser.
  */
 export default function Banner({
   home = '/',
@@ -34,21 +34,20 @@ export default function Banner({
     // Match the upload API's URL parsing, including mixed-case schemes and whitespace.
     const url = new URL(imgDefault);
     if (url.protocol === 'https:') {
-      // Only URLs the proxy would also accept may load in the visitor's browser.
-      if (canLoadImageDirectly(url.href)) directUrl = url.href;
+      directUrl = url.href;
       imgPath = '/api/proxy/' + url.href.slice('https://'.length);
     }
   } catch {
     // Local public assets are relative paths and do not need the HTTPS proxy.
   }
   // Every image change retries the proxy first, even returning to a URL that failed before.
-  const [proxyFailed, setProxyFailed] = useState(false);
-  const [failureSource, setFailureSource] = useState(directUrl);
-  if (failureSource !== directUrl) {
-    setFailureSource(directUrl);
-    setProxyFailed(false);
+  const [directFallbackFor, setDirectFallbackFor] = useState<string | null>(null);
+  const [fallbackSource, setFallbackSource] = useState(directUrl);
+  if (fallbackSource !== directUrl) {
+    setFallbackSource(directUrl);
+    setDirectFallbackFor(null);
   }
-  const direct = directUrl !== null && proxyFailed;
+  const direct = directUrl !== null && directFallbackFor === directUrl;
   const bannerImage = (
     <Image
       className="object-contain rounded"
@@ -61,7 +60,16 @@ export default function Banner({
       // The fallback bypasses the optimizer, whose remote patterns only allow the proxy.
       unoptimized={direct}
       referrerPolicy={direct ? 'no-referrer' : undefined}
-      onError={directUrl && !direct ? () => setProxyFailed(true) : undefined}
+      onError={
+        directUrl && !direct
+          ? () => {
+              // A check that resolves after the image changed names a URL no longer shown.
+              void canFallBackToDirectImage(directUrl, imgPath).then(
+                (allowed) => allowed && setDirectFallbackFor(directUrl),
+              );
+            }
+          : undefined
+      }
     />
   );
 

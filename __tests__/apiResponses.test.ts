@@ -468,6 +468,16 @@ describe('API response contract', () => {
     },
   );
 
+  it('marks unreachable upstreams distinctly from upstream error responses', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.mocked(fetchPublicResource).mockRejectedValue(new Error('Too many redirects.'));
+    const response = await proxyGet(
+      new NextRequest('https://cgs.games/api/proxy/example.com/resource'),
+    );
+    expect(response.status).toBe(502);
+    expect((await response.json()).code).toBe('UPSTREAM_UNREACHABLE');
+  });
+
   it('preserves proxy success content and GET query parameters', async () => {
     jest
       .mocked(fetchPublicResource)

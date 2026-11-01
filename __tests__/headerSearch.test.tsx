@@ -206,7 +206,16 @@ describe('header game search', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
+  /** Makes the next proxy check (after the catalog request) report the given failure code. */
+  function proxyCheckFails(code: string, status = 502) {
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => games } as unknown as Response)
+      .mockResolvedValueOnce({ ok: false, status, json: async () => ({ code }) } as Response);
+  }
+
   it('keeps direct links and falls back safely when thumbnails fail', async () => {
+    proxyCheckFails('UNSUPPORTED_UPSTREAM_TYPE');
     render(<HeaderSearch />);
     search('grand');
     const options = await screen.findAllByRole('option');
@@ -214,12 +223,26 @@ describe('header game search', () => {
     const image = options[0].querySelector('img')!;
     expect(image).toHaveAttribute('src', '/api/proxy/example.com/banner.png');
     fireEvent.error(image);
-    expect(image).toHaveAttribute('src', 'https://example.com/banner.png');
+    await waitFor(() => expect(image).toHaveAttribute('src', 'https://example.com/banner.png'));
     expect(image).toHaveAttribute('referrerpolicy', 'no-referrer');
+    expect(global.fetch).toHaveBeenLastCalledWith('/api/proxy/example.com/banner.png', {
+      cache: 'no-store',
+    });
     fireEvent.error(image);
     expect(image).toHaveAttribute('src', '/CardBack.png');
     fireEvent.error(image);
     expect(image).toHaveAttribute('src', '/CardBack.png');
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('uses the card back when the proxy refused the destination', async () => {
+    proxyCheckFails('INVALID_REQUEST', 400);
+    render(<HeaderSearch />);
+    search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    fireEvent.error(image);
+    await waitFor(() => expect(image).toHaveAttribute('src', '/CardBack.png'));
+    expect(image).not.toHaveAttribute('referrerpolicy');
   });
 
   it('never loads a private thumbnail destination directly', async () => {
@@ -233,7 +256,8 @@ describe('header game search', () => {
     const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
     expect(image).toHaveAttribute('src', '/api/proxy/192.168.1.1/banner.png');
     fireEvent.error(image);
-    expect(image).toHaveAttribute('src', '/CardBack.png');
+    await waitFor(() => expect(image).toHaveAttribute('src', '/CardBack.png'));
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('shows an empty state and clears without requesting the catalog again', async () => {

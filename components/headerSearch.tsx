@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Search, X } from 'lucide-react';
 import { browseSearchHref, matchesGameSearch, SearchGame } from '@/lib/gameSearch';
-import { canLoadImageDirectly } from '@/lib/publicAddress';
+import { canFallBackToDirectImage } from '@/lib/imageFallback';
 
 /** Loads the public catalog on demand, then filters without per-keystroke requests. */
 export default function HeaderSearch() {
@@ -236,13 +236,18 @@ export default function HeaderSearch() {
                     onError={(event) => {
                       const image = event.currentTarget;
                       const src = image.getAttribute('src');
-                      if (
-                        src?.startsWith('/api/proxy/') &&
-                        canLoadImageDirectly(game.bannerImageUrl)
-                      ) {
+                      if (src?.startsWith('/api/proxy/')) {
                         // Some hosts block cgs.games' servers but not visitors' browsers.
-                        image.setAttribute('referrerpolicy', 'no-referrer');
-                        image.src = game.bannerImageUrl;
+                        void canFallBackToDirectImage(game.bannerImageUrl, src).then((allowed) => {
+                          // Skip if the thumbnail was replaced while the proxy was checked.
+                          if (image.getAttribute('src') !== src) return;
+                          if (allowed) {
+                            image.setAttribute('referrerpolicy', 'no-referrer');
+                            image.src = game.bannerImageUrl;
+                          } else {
+                            image.src = '/CardBack.png';
+                          }
+                        });
                       } else if (src !== '/CardBack.png') {
                         image.src = '/CardBack.png';
                       }

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Banner from '@/components/banner';
 
 function imageSource() {
@@ -41,45 +41,99 @@ describe('Banner image sources', () => {
 });
 
 describe('Banner proxy fallback', () => {
-  it('loads the original URL directly when the proxied image fails', () => {
+  const originalFetch = global.fetch;
+  const image = () => screen.getByRole('img', { name: 'Test game' });
+
+  /** Makes the proxy report a failure with the given code. */
+  function proxyFails(code: string, status = 502) {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status, json: async () => ({ code }) });
+  }
+
+  beforeEach(() => proxyFails('UNSUPPORTED_UPSTREAM_TYPE'));
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('loads the original URL directly when the proxy reports a blocked upstream', async () => {
     render(<Banner img="https://example.com/banner%2010.png" txt="Test game" />);
-    fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
-    const image = screen.getByRole('img', { name: 'Test game' });
-    expect(image).toHaveAttribute('src', 'https://example.com/banner%2010.png');
-    expect(image).toHaveAttribute('referrerpolicy', 'no-referrer');
-  });
-
-  it('does not retry once the direct URL also fails', () => {
-    render(<Banner img="https://example.com/banner.png" txt="Test game" />);
-    fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
-    fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
-    expect(screen.getByRole('img', { name: 'Test game' })).toHaveAttribute(
-      'src',
-      'https://example.com/banner.png',
+    fireEvent.error(image());
+    await waitFor(() =>
+      expect(image()).toHaveAttribute('src', 'https://example.com/banner%2010.png'),
     );
+    expect(image()).toHaveAttribute('referrerpolicy', 'no-referrer');
+    expect(global.fetch).toHaveBeenCalledWith('/api/proxy/example.com/banner%2010.png', {
+      cache: 'no-store',
+    });
   });
 
-  it('returns to the proxy when the banner source changes', () => {
+  it.each([
+    ['an unsafe destination or redirect', 'BAD_REQUEST', 400],
+    ['our own rate limit', 'RATE_LIMITED', 429],
+    ['an unreachable upstream', 'BAD_GATEWAY', 502],
+  ])('stays on the proxy for %s', async (_reason, code, status) => {
+    proxyFails(code, status);
+    render(<Banner img="https://example.com/banner.png" txt="Test game" />);
+    fireEvent.error(image());
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    await act(async () => {});
+    expect(imageSource()).toBe('/api/proxy/example.com/banner.png');
+  });
+
+  it('stays on the proxy when the proxy check itself fails', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new TypeError('offline'));
+    render(<Banner img="https://example.com/banner.png" txt="Test game" />);
+    fireEvent.error(image());
+    await act(async () => {});
+    expect(imageSource()).toBe('/api/proxy/example.com/banner.png');
+  });
+
+  it('does not retry once the direct URL also fails', async () => {
+    render(<Banner img="https://example.com/banner.png" txt="Test game" />);
+    fireEvent.error(image());
+    await waitFor(() => expect(image()).toHaveAttribute('src', 'https://example.com/banner.png'));
+    fireEvent.error(image());
+    await act(async () => {});
+    expect(image()).toHaveAttribute('src', 'https://example.com/banner.png');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns to the proxy when the banner source changes', async () => {
     const { rerender } = render(<Banner img="https://example.com/a.png" txt="Test game" />);
-    fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
+    fireEvent.error(image());
+    await waitFor(() => expect(image()).toHaveAttribute('src', 'https://example.com/a.png'));
     rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
     expect(imageSource()).toBe('/api/proxy/example.com/b.png');
     rerender(<Banner img="https://example.com/a.png" txt="Test game" />);
     expect(imageSource()).toBe('/api/proxy/example.com/a.png');
   });
 
+  it('ignores a check that finishes after the source changed', async () => {
+    const { promise, resolve } = Promise.withResolvers<unknown>();
+    global.fetch = jest.fn().mockReturnValue(promise);
+    const { rerender } = render(<Banner img="https://example.com/a.png" txt="Test game" />);
+    fireEvent.error(image());
+    rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
+    await act(async () =>
+      resolve({ ok: false, json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }) }),
+    );
+    expect(imageSource()).toBe('/api/proxy/example.com/b.png');
+  });
+
   it.each(['https://192.168.1.1/banner.png', 'https://printer.local/banner.png'])(
     'never loads a private destination directly: %s',
-    (img) => {
+    async (img) => {
       render(<Banner img={img} txt="Test game" />);
-      fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
+      fireEvent.error(image());
+      await act(async () => {});
       expect(imageSource()).toBe('/api/proxy/' + img.slice('https://'.length));
+      expect(global.fetch).not.toHaveBeenCalled();
     },
   );
 
   it('keeps local images on the optimizer after an error', () => {
     render(<Banner img="/CardBack.png" txt="Test game" />);
-    fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
+    fireEvent.error(image());
     expect(imageSource()).toBe('/CardBack.png');
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });
