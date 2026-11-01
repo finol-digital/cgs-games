@@ -235,6 +235,32 @@ describe('header game search', () => {
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('checks the same host it loads when the URL has dot segments', async () => {
+    const dotted = {
+      ...games[0],
+      bannerImageUrl: 'https://private.example/../public.example/banner.png',
+    };
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => [dotted] } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }),
+      } as Response);
+    render(<HeaderSearch />);
+    search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    expect(image).toHaveAttribute('src', '/api/proxy/private.example/public.example/banner.png');
+    fireEvent.error(image);
+    await waitFor(() =>
+      expect(image).toHaveAttribute('src', 'https://private.example/public.example/banner.png'),
+    );
+    expect(global.fetch).toHaveBeenLastCalledWith(
+      '/api/proxy/private.example/public.example/banner.png',
+      { cache: 'no-store' },
+    );
+  });
+
   it('uses the card back when the proxy refused the destination', async () => {
     proxyCheckFails('INVALID_REQUEST', 400);
     render(<HeaderSearch />);

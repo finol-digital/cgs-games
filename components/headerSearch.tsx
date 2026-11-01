@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Search, X } from 'lucide-react';
 import { browseSearchHref, matchesGameSearch, SearchGame } from '@/lib/gameSearch';
-import { canFallBackToDirectImage } from '@/lib/imageFallback';
+import { directImageFallback, proxyImagePath } from '@/lib/imageFallback';
 
 /** Loads the public catalog on demand, then filters without per-keystroke requests. */
 export default function HeaderSearch() {
@@ -224,11 +224,7 @@ export default function HeaderSearch() {
                   className={`flex items-center gap-3 px-4 py-3 text-slate-100! no-underline! hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-[#d3bd7a] ${activeIndex === index ? 'bg-slate-700' : ''}`}
                 >
                   <img
-                    src={
-                      /^https:\/\//i.test(game.bannerImageUrl)
-                        ? `/api/proxy/${game.bannerImageUrl.slice(8)}`
-                        : '/CardBack.png'
-                    }
+                    src={proxyImagePath(game.bannerImageUrl) ?? '/CardBack.png'}
                     alt=""
                     width={40}
                     height={48}
@@ -238,12 +234,12 @@ export default function HeaderSearch() {
                       const src = image.getAttribute('src');
                       if (src?.startsWith('/api/proxy/')) {
                         // Some hosts block cgs.games' servers but not visitors' browsers.
-                        void canFallBackToDirectImage(game.bannerImageUrl, src).then((allowed) => {
+                        void directImageFallback(game.bannerImageUrl).then((directUrl) => {
                           // Skip if the thumbnail was replaced while the proxy was checked.
                           if (image.getAttribute('src') !== src) return;
-                          if (allowed) {
+                          if (directUrl) {
                             image.setAttribute('referrerpolicy', 'no-referrer');
-                            image.src = game.bannerImageUrl;
+                            image.src = directUrl;
                           } else {
                             image.src = '/CardBack.png';
                           }

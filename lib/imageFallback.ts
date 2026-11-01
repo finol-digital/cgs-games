@@ -5,29 +5,45 @@ import { canLoadImageDirectly } from '@/lib/publicAddress';
 // keeps the image behind the proxy.
 const BLOCKED_UPSTREAM_CODES = new Set(['UNSUPPORTED_UPSTREAM_TYPE', 'UPSTREAM_ERROR']);
 
+/** Parses an HTTPS image URL into its normalized form, without a fragment. */
+function parseHttpsImageUrl(value: string): URL | null {
+  try {
+    const url = new URL(value.trim());
+    url.hash = '';
+    return url.protocol === 'https:' ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns the proxy path for an HTTPS image URL, or null for other URLs. It is built from the
+ * normalized URL, which has no dot segments, so the browser requests the same host the URL names.
+ */
+export function proxyImagePath(value: string): string | null {
+  const url = parseHttpsImageUrl(value);
+  return url && '/api/proxy/' + url.href.slice('https://'.length);
+}
+
 /**
  * Decides whether an image that failed through the proxy may load directly in the visitor's
- * browser. Some hosts block cgs.games' servers but not browsers. The URL must pass the proxy's
- * own rules, and the proxy must confirm the host was public but refused or served a bad response.
+ * browser, returning the URL to load or null. Some hosts block cgs.games' servers but not
+ * browsers. The URL must pass the proxy's own rules, and the proxy must confirm the host was
+ * public but refused or served a bad response. The proxy checks exactly the returned URL.
  */
-export async function canFallBackToDirectImage(
-  directUrl: string,
-  proxyPath: string,
-): Promise<boolean> {
-  if (!canLoadImageDirectly(directUrl)) return false;
+export async function directImageFallback(value: string): Promise<string | null> {
+  const url = parseHttpsImageUrl(value);
+  if (!url || !canLoadImageDirectly(url.href)) return null;
   try {
-    const response = await fetch(proxyPath, { cache: 'no-store' });
+    const response = await fetch(proxyImagePath(url.href)!, { cache: 'no-store' });
     if (response.ok) {
       await response.body?.cancel();
-      return false;
+      return null;
     }
     const body: unknown = await response.json();
-    return (
-      typeof body === 'object' &&
-      body !== null &&
-      BLOCKED_UPSTREAM_CODES.has(String((body as { code?: unknown }).code))
-    );
+    const code = typeof body === 'object' && body !== null && (body as { code?: unknown }).code;
+    return BLOCKED_UPSTREAM_CODES.has(String(code)) ? url.href : null;
   } catch {
-    return false;
+    return null;
   }
 }

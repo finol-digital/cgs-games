@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import { canFallBackToDirectImage } from '@/lib/imageFallback';
+import { directImageFallback, proxyImagePath } from '@/lib/imageFallback';
 import { cn } from '@/lib/utils';
 
 interface BannerProps {
@@ -28,18 +28,12 @@ export default function Banner({
   className,
 }: BannerProps) {
   const imgDefault = img?.trim() || '/Card-Game-Simulator.png';
-  let imgPath = imgDefault;
-  let directUrl: string | null = null;
-  try {
-    // Match the upload API's URL parsing, including mixed-case schemes and whitespace.
-    const url = new URL(imgDefault);
-    if (url.protocol === 'https:') {
-      directUrl = url.href;
-      imgPath = '/api/proxy/' + url.href.slice('https://'.length);
-    }
-  } catch {
-    // Local public assets are relative paths and do not need the HTTPS proxy.
-  }
+  // Matches the upload API's URL parsing, including mixed-case schemes and whitespace. Local
+  // public assets are relative paths and do not need the HTTPS proxy.
+  const proxyPath = proxyImagePath(imgDefault);
+  const imgPath = proxyPath ?? imgDefault;
+  // The same normalized URL the proxy path names, so the proxy checks exactly what may load.
+  const directUrl = proxyPath && 'https://' + proxyPath.slice('/api/proxy/'.length);
   // Every image change retries the proxy first, even returning to a URL that failed before.
   const [fallback, setFallback] = useState({ source: directUrl, direct: false });
   if (fallback.source !== directUrl) setFallback({ source: directUrl, direct: false });
@@ -59,9 +53,9 @@ export default function Banner({
       onError={
         directUrl && !direct
           ? () => {
-              void canFallBackToDirectImage(directUrl, imgPath).then((allowed) => {
+              void directImageFallback(directUrl).then((checked) => {
                 // A check that finishes after the image changed must not touch the new image.
-                if (allowed) {
+                if (checked === directUrl) {
                   setFallback((current) =>
                     current.source === directUrl ? { ...current, direct: true } : current,
                   );
