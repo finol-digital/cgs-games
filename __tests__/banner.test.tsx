@@ -119,6 +119,19 @@ describe('Banner proxy fallback', () => {
     expect(imageSource()).toBe('/api/proxy/example.com/b.png');
   });
 
+  it('ignores a check that finishes after leaving and returning to the same URL', async () => {
+    const { promise, resolve } = Promise.withResolvers<unknown>();
+    global.fetch = jest.fn().mockReturnValue(promise);
+    const { rerender } = render(<Banner img="https://example.com/a.png" txt="Test game" />);
+    fireEvent.error(image());
+    rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
+    rerender(<Banner img="https://example.com/a.png" txt="Test game" />);
+    await act(async () =>
+      resolve({ ok: false, json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }) }),
+    );
+    expect(imageSource()).toBe('/api/proxy/example.com/a.png');
+  });
+
   it('keeps the current fallback when an earlier check finishes late', async () => {
     const blocked = { ok: false, json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }) };
     const { promise, resolve } = Promise.withResolvers<unknown>();

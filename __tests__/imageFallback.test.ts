@@ -77,6 +77,9 @@ describe('directImageFallback', () => {
 
   it('never asks the proxy about URLs the proxy would refuse', async () => {
     global.fetch = jest.fn();
+    // The proxy drops a trailing slash, so it would check a different resource.
+    await expect(directImageFallback('https://example.com/images/')).resolves.toBeNull();
+    await expect(directImageFallback('https://example.com')).resolves.toBeNull();
     await expect(directImageFallback('https://192.168.1.1/a.png')).resolves.toBeNull();
     await expect(directImageFallback('http://example.com/a.png')).resolves.toBeNull();
     expect(global.fetch).not.toHaveBeenCalled();

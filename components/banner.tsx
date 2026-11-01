@@ -53,11 +53,13 @@ export default function Banner({
       onError={
         directUrl && !direct
           ? () => {
+              // Each image change creates a new state object, so a check started before the
+              // change, even for the same URL, can't apply after it.
+              const attempt = fallback;
               void directImageFallback(directUrl).then((checked) => {
-                // A check that finishes after the image changed must not touch the new image.
                 if (checked === directUrl) {
                   setFallback((current) =>
-                    current.source === directUrl ? { ...current, direct: true } : current,
+                    current === attempt ? { ...current, direct: true } : current,
                   );
                 }
               });

@@ -34,6 +34,8 @@ export function proxyImagePath(value: string): string | null {
 export async function directImageFallback(value: string): Promise<string | null> {
   const url = parseHttpsImageUrl(value);
   if (!url || !canLoadImageDirectly(url.href)) return null;
+  // The proxy drops a trailing slash, so it would check a different resource than the browser loads.
+  if (url.pathname.endsWith('/')) return null;
   try {
     const response = await fetch(proxyImagePath(url.href)!, { cache: 'no-store' });
     if (response.ok) {
