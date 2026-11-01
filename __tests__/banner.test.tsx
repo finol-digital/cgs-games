@@ -64,6 +64,8 @@ describe('Banner proxy fallback', () => {
     fireEvent.error(screen.getByRole('img', { name: 'Test game' }));
     rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
     expect(imageSource()).toBe('/api/proxy/example.com/b.png');
+    rerender(<Banner img="https://example.com/a.png" txt="Test game" />);
+    expect(imageSource()).toBe('/api/proxy/example.com/a.png');
   });
 
   it('keeps local images on the optimizer after an error', () => {

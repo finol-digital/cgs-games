@@ -26,8 +26,6 @@ export default function Banner({
   sizes = '100vw',
   className,
 }: BannerProps) {
-  // Records which direct URL failed through the proxy, so a new img prop starts proxied again.
-  const [proxyFailedFor, setProxyFailedFor] = useState<string | null>(null);
   const imgDefault = img?.trim() || '/Card-Game-Simulator.png';
   let imgPath = imgDefault;
   let directUrl: string | null = null;
@@ -41,7 +39,14 @@ export default function Banner({
   } catch {
     // Local public assets are relative paths and do not need the HTTPS proxy.
   }
-  const direct = directUrl !== null && proxyFailedFor === directUrl;
+  // Every image change retries the proxy first, even returning to a URL that failed before.
+  const [proxyFailed, setProxyFailed] = useState(false);
+  const [failureSource, setFailureSource] = useState(directUrl);
+  if (failureSource !== directUrl) {
+    setFailureSource(directUrl);
+    setProxyFailed(false);
+  }
+  const direct = directUrl !== null && proxyFailed;
   const bannerImage = (
     <Image
       className="object-contain rounded"
@@ -54,7 +59,7 @@ export default function Banner({
       // The fallback bypasses the optimizer, whose remote patterns only allow the proxy.
       unoptimized={direct}
       referrerPolicy={direct ? 'no-referrer' : undefined}
-      onError={directUrl && !direct ? () => setProxyFailedFor(directUrl) : undefined}
+      onError={directUrl && !direct ? () => setProxyFailed(true) : undefined}
     />
   );
 
