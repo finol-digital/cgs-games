@@ -119,6 +119,19 @@ describe('Banner proxy fallback', () => {
     expect(imageSource()).toBe('/api/proxy/example.com/b.png');
   });
 
+  it('keeps the current fallback when an earlier check finishes late', async () => {
+    const blocked = { ok: false, json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }) };
+    const { promise, resolve } = Promise.withResolvers<unknown>();
+    global.fetch = jest.fn().mockReturnValueOnce(promise).mockResolvedValueOnce(blocked);
+    const { rerender } = render(<Banner img="https://example.com/a.png" txt="Test game" />);
+    fireEvent.error(image());
+    rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
+    fireEvent.error(image());
+    await waitFor(() => expect(image()).toHaveAttribute('src', 'https://example.com/b.png'));
+    await act(async () => resolve(blocked));
+    expect(image()).toHaveAttribute('src', 'https://example.com/b.png');
+  });
+
   it.each(['https://192.168.1.1/banner.png', 'https://printer.local/banner.png'])(
     'never loads a private destination directly: %s',
     async (img) => {

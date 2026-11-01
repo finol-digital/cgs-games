@@ -41,13 +41,9 @@ export default function Banner({
     // Local public assets are relative paths and do not need the HTTPS proxy.
   }
   // Every image change retries the proxy first, even returning to a URL that failed before.
-  const [directFallbackFor, setDirectFallbackFor] = useState<string | null>(null);
-  const [fallbackSource, setFallbackSource] = useState(directUrl);
-  if (fallbackSource !== directUrl) {
-    setFallbackSource(directUrl);
-    setDirectFallbackFor(null);
-  }
-  const direct = directUrl !== null && directFallbackFor === directUrl;
+  const [fallback, setFallback] = useState({ source: directUrl, direct: false });
+  if (fallback.source !== directUrl) setFallback({ source: directUrl, direct: false });
+  const direct = directUrl !== null && fallback.source === directUrl && fallback.direct;
   const bannerImage = (
     <Image
       className="object-contain rounded"
@@ -63,10 +59,14 @@ export default function Banner({
       onError={
         directUrl && !direct
           ? () => {
-              // A check that resolves after the image changed names a URL no longer shown.
-              void canFallBackToDirectImage(directUrl, imgPath).then(
-                (allowed) => allowed && setDirectFallbackFor(directUrl),
-              );
+              void canFallBackToDirectImage(directUrl, imgPath).then((allowed) => {
+                // A check that finishes after the image changed must not touch the new image.
+                if (allowed) {
+                  setFallback((current) =>
+                    current.source === directUrl ? { ...current, direct: true } : current,
+                  );
+                }
+              });
             }
           : undefined
       }
