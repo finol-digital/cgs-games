@@ -235,8 +235,9 @@ export default function HeaderSearch() {
                       if (src?.startsWith('/api/proxy/')) {
                         // Some hosts block cgs.games' servers but not visitors' browsers.
                         void directImageFallback(game.bannerImageUrl).then((directUrl) => {
-                          // Skip if the thumbnail was replaced while the proxy was checked.
-                          if (image.getAttribute('src') !== src) return;
+                          // Skip if the thumbnail was replaced or removed while the proxy was
+                          // checked: a detached image still fetches its new source.
+                          if (!image.isConnected || image.getAttribute('src') !== src) return;
                           if (directUrl) {
                             image.setAttribute('referrerpolicy', 'no-referrer');
                             image.src = directUrl;

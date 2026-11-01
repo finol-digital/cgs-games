@@ -44,6 +44,20 @@ function search(query: string) {
   return input;
 }
 
+/** A proxy failure response that, like the real proxy, names the upstream URL it checked. */
+function proxyResponse(path: string, code: string, status = 502, checked?: string) {
+  const upstream = checked ?? 'https://' + path.slice('/api/proxy/'.length);
+  return {
+    ok: false,
+    status,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === 'x-proxy-upstream-url' ? upstream : null),
+    },
+    body: { cancel: async () => {} },
+    json: async () => ({ code }),
+  } as unknown as Response;
+}
+
 describe('header game search', () => {
   it('loads lazily and reuses the catalog while typing and reopening', async () => {
     render(<HeaderSearch />);
@@ -211,7 +225,7 @@ describe('header game search', () => {
     jest
       .mocked(global.fetch)
       .mockResolvedValueOnce({ ok: true, json: async () => games } as unknown as Response)
-      .mockResolvedValueOnce({ ok: false, status, json: async () => ({ code }) } as Response);
+      .mockImplementationOnce(async (path) => proxyResponse(String(path), code, status));
   }
 
   it('keeps direct links and falls back safely when thumbnails fail', async () => {
@@ -243,10 +257,9 @@ describe('header game search', () => {
     jest
       .mocked(global.fetch)
       .mockResolvedValueOnce({ ok: true, json: async () => [dotted] } as unknown as Response)
-      .mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }),
-      } as Response);
+      .mockImplementationOnce(async (path) =>
+        proxyResponse(String(path), 'UNSUPPORTED_UPSTREAM_TYPE'),
+      );
     render(<HeaderSearch />);
     search('grand');
     const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
@@ -259,6 +272,24 @@ describe('header game search', () => {
       '/api/proxy/private.example/public.example/banner.png',
       { cache: 'no-store' },
     );
+  });
+
+  it('does not load a thumbnail removed while the proxy was checked', async () => {
+    const { promise, resolve } = Promise.withResolvers<Response>();
+    jest
+      .mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => games } as unknown as Response)
+      .mockReturnValueOnce(promise);
+    render(<HeaderSearch />);
+    const input = search('grand');
+    const image = (await screen.findAllByRole('option'))[0].querySelector('img')!;
+    fireEvent.error(image);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(image.isConnected).toBe(false);
+    await act(async () =>
+      resolve(proxyResponse('/api/proxy/example.com/banner.png', 'UNSUPPORTED_UPSTREAM_TYPE')),
+    );
+    expect(image).toHaveAttribute('src', '/api/proxy/example.com/banner.png');
   });
 
   it('uses the card back when the proxy refused the destination', async () => {

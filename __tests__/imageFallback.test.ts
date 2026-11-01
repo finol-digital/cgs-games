@@ -1,5 +1,19 @@
 import { directImageFallback, proxyImagePath } from '@/lib/imageFallback';
 
+/** A proxy failure response that, like the real proxy, names the upstream URL it checked. */
+function proxyResponse(path: string, code: string, status = 502, checked?: string) {
+  const upstream = checked ?? 'https://' + path.slice('/api/proxy/'.length);
+  return {
+    ok: false,
+    status,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === 'x-proxy-upstream-url' ? upstream : null),
+    },
+    body: { cancel: async () => {} },
+    json: async () => ({ code }),
+  } as unknown as Response;
+}
+
 describe('proxyImagePath', () => {
   it.each([
     ['https://example.com/banner.png', '/api/proxy/example.com/banner.png'],
@@ -37,7 +51,9 @@ describe('directImageFallback', () => {
 
   /** Makes the proxy report a failure with the given code. */
   function proxyFails(code: string, status = 502) {
-    global.fetch = jest.fn().mockResolvedValue({ ok: false, status, json: async () => ({ code }) });
+    global.fetch = jest.fn(async (path: Parameters<typeof fetch>[0]) =>
+      proxyResponse(String(path), code, status),
+    );
   }
 
   it('checks and returns the same normalized URL', async () => {
@@ -72,6 +88,17 @@ describe('directImageFallback', () => {
     await expect(directImageFallback('https://example.com/a.png')).resolves.toBeNull();
     expect(cancel).toHaveBeenCalled();
     global.fetch = jest.fn().mockRejectedValue(new TypeError('offline'));
+    await expect(directImageFallback('https://example.com/a.png')).resolves.toBeNull();
+  });
+
+  it.each([
+    ['a missing checked URL', null],
+    ['a different checked URL', 'https://public.example/a.png'],
+    ['a normalized variant', 'https://example.com/a.png?'],
+  ])('refuses when the proxy reports %s', async (_case, checked) => {
+    const response = proxyResponse('/api/proxy/example.com/a.png', 'UNSUPPORTED_UPSTREAM_TYPE');
+    jest.spyOn(response.headers, 'get').mockReturnValue(checked);
+    global.fetch = jest.fn().mockResolvedValue(response);
     await expect(directImageFallback('https://example.com/a.png')).resolves.toBeNull();
   });
 

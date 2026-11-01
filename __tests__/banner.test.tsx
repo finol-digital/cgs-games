@@ -40,13 +40,29 @@ describe('Banner image sources', () => {
   });
 });
 
+/** A proxy failure response that, like the real proxy, names the upstream URL it checked. */
+function proxyResponse(path: string, code: string, status = 502, checked?: string) {
+  const upstream = checked ?? 'https://' + path.slice('/api/proxy/'.length);
+  return {
+    ok: false,
+    status,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === 'x-proxy-upstream-url' ? upstream : null),
+    },
+    body: { cancel: async () => {} },
+    json: async () => ({ code }),
+  } as unknown as Response;
+}
+
 describe('Banner proxy fallback', () => {
   const originalFetch = global.fetch;
   const image = () => screen.getByRole('img', { name: 'Test game' });
 
   /** Makes the proxy report a failure with the given code. */
   function proxyFails(code: string, status = 502) {
-    global.fetch = jest.fn().mockResolvedValue({ ok: false, status, json: async () => ({ code }) });
+    global.fetch = jest.fn(async (path: Parameters<typeof fetch>[0]) =>
+      proxyResponse(String(path), code, status),
+    );
   }
 
   beforeEach(() => proxyFails('UNSUPPORTED_UPSTREAM_TYPE'));
@@ -114,7 +130,7 @@ describe('Banner proxy fallback', () => {
     fireEvent.error(image());
     rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
     await act(async () =>
-      resolve({ ok: false, json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }) }),
+      resolve(proxyResponse('/api/proxy/example.com/a.png', 'UNSUPPORTED_UPSTREAM_TYPE')),
     );
     expect(imageSource()).toBe('/api/proxy/example.com/b.png');
   });
@@ -127,21 +143,22 @@ describe('Banner proxy fallback', () => {
     rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
     rerender(<Banner img="https://example.com/a.png" txt="Test game" />);
     await act(async () =>
-      resolve({ ok: false, json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }) }),
+      resolve(proxyResponse('/api/proxy/example.com/a.png', 'UNSUPPORTED_UPSTREAM_TYPE')),
     );
     expect(imageSource()).toBe('/api/proxy/example.com/a.png');
   });
 
   it('keeps the current fallback when an earlier check finishes late', async () => {
-    const blocked = { ok: false, json: async () => ({ code: 'UNSUPPORTED_UPSTREAM_TYPE' }) };
+    const blocked = (name: string) =>
+      proxyResponse(`/api/proxy/example.com/${name}`, 'UNSUPPORTED_UPSTREAM_TYPE');
     const { promise, resolve } = Promise.withResolvers<unknown>();
-    global.fetch = jest.fn().mockReturnValueOnce(promise).mockResolvedValueOnce(blocked);
+    global.fetch = jest.fn().mockReturnValueOnce(promise).mockResolvedValueOnce(blocked('b.png'));
     const { rerender } = render(<Banner img="https://example.com/a.png" txt="Test game" />);
     fireEvent.error(image());
     rerender(<Banner img="https://example.com/b.png" txt="Test game" />);
     fireEvent.error(image());
     await waitFor(() => expect(image()).toHaveAttribute('src', 'https://example.com/b.png'));
-    await act(async () => resolve(blocked));
+    await act(async () => resolve(blocked('a.png')));
     expect(image()).toHaveAttribute('src', 'https://example.com/b.png');
   });
 
