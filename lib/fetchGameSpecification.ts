@@ -184,7 +184,12 @@ export async function fetchPublicResource(
   const signal = options.signal ? AbortSignal.any([deadline, options.signal]) : deadline;
   for (let redirects = 0; redirects <= 5; redirects++) {
     const response = await fetchHop(url, signal, options);
-    if (!REDIRECTS.has(response.status)) return response;
+    if (!REDIRECTS.has(response.status)) {
+      // These Responses are assembled from node:https, so their native url is empty.
+      // Record our validated final destination, never an upstream-supplied header.
+      Object.defineProperty(response, 'url', { value: url.href });
+      return response;
+    }
     const location = response.headers.get('location');
     if (!location) throw new Error('Upstream redirect has no destination.');
     url = new URL(location, url);

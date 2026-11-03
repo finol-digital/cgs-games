@@ -111,3 +111,19 @@ lint enforcement, and the absence of the removed packages from the lockfile.
 CI runs `npm audit` without exclusions or severity filtering. Keep the full audit
 clean rather than suppressing advisories or using `npm audit fix --force` to
 downgrade the toolchain.
+
+## Proxy document origins
+
+Successful `/api/proxy/...` responses include `X-CGS-Final-URL`, the absolute
+upstream URL validated by the server after redirects. The API CORS policy exposes
+this header to WebGL clients. It is retained with the body in cached responses
+and in HEAD responses; existing cache restrictions are unchanged. Upstream
+headers cannot override it. `X-Proxy-Upstream-Url` on errors still identifies the
+original checked request and must not be used as a relative-document base.
+
+CGS uses the final URL to resolve relative localization catalogs and image
+references, independently of a game's update URL. Clients using older proxy
+responses without this header must retain an unknown remote origin and fall back
+to absolute or bundled resources. This server change must be deployed before
+relative remote resources can work through the production proxy; it does not
+require changes to existing game definitions.
