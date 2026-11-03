@@ -500,6 +500,30 @@ describe('API response contract', () => {
     expect((await response.json()).code).toBe('UPSTREAM_UNREACHABLE');
   });
 
+  it.each([proxyGet, proxyHead])(
+    'exposes the server final URL on GET/HEAD without trusting upstream headers',
+    async (handler) => {
+      const upstream = new Response('image', {
+        headers: {
+          'Content-Type': 'image/png',
+          'X-CGS-Final-URL': 'https://spoof.example.com/cgs.json',
+        },
+      });
+      Object.defineProperty(upstream, 'url', { value: 'https://cdn.example.com/game/image.png' });
+      jest.mocked(fetchPublicResource).mockResolvedValue(upstream);
+      const response = await handler(
+        new NextRequest('https://cgs.games/api/proxy/example.com/image'),
+      );
+      // A cached response retains both the exposed header and the established cache policy.
+      const cached = response.clone();
+      expect(cached.headers.get('x-cgs-final-url')).toBe('https://cdn.example.com/game/image.png');
+      expect(cached.headers.get('access-control-expose-headers')).toContain('X-CGS-Final-URL');
+      expect(cached.headers.get('cache-control')).toBe('public, max-age=3600');
+      expect(cached.headers.get('access-control-allow-origin')).toBe('*');
+      await Promise.all([response.body?.cancel(), cached.body?.cancel()]);
+    },
+  );
+
   it('preserves proxy success content and GET query parameters', async () => {
     jest
       .mocked(fetchPublicResource)
