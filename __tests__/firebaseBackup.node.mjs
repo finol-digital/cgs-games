@@ -2,6 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   configuration,
+  cloudApi,
+  startFirestoreExport,
   pages,
   snapshotTime,
   copyObject,
@@ -163,6 +165,263 @@ function fakeCloud({
 
 const storageCopies = (actions) =>
   actions.filter(({ path }) => path.includes('/b/assets/o/') && path.includes('/rewriteTo/'));
+
+describe('Cloud API failure handling', () => {
+  const endpoint =
+    'https://firestore.googleapis.com/v1/projects/source/databases/(default)/operations/1';
+  const identity = () => Response.json({ access_token: 'test-token', expires_in: 3600 });
+
+  for (const failure of ['timeout', 'body-timeout', 'network', '503']) {
+    it(`retries a GET after ${failure} and returns the recovered response`, async () => {
+      let requests = 0;
+      const delays = [];
+      const api = cloudApi(
+        async (url) => {
+          if (url.startsWith('http://metadata.')) return identity();
+          if (++requests === 1) {
+            if (failure === '503') return new Response('', { status: 503 });
+            if (failure === 'network') throw new TypeError('fetch failed');
+            if (failure === 'body-timeout')
+              return {
+                ok: true,
+                status: 200,
+                json: async () => {
+                  throw new DOMException('secret details', 'TimeoutError');
+                },
+              };
+            throw new DOMException('secret details', 'TimeoutError');
+          }
+          return Response.json({ done: true });
+        },
+        {
+          pause: async (delay) => {
+            delays.push(delay);
+          },
+        },
+      );
+      assert.deepEqual(await api(endpoint), { done: true });
+      assert.equal(requests, 2);
+      assert.deepEqual(delays, [1000]);
+    });
+  }
+
+  it('bounds GET timeout retries and omits sensitive error details', async () => {
+    let requests = 0;
+    const delays = [];
+    const api = cloudApi(
+      async (url) => {
+        if (url.startsWith('http://metadata.')) return identity();
+        requests++;
+        throw new DOMException('sensitive response and object path', 'TimeoutError');
+      },
+      {
+        pause: async (delay) => {
+          delays.push(delay);
+        },
+      },
+    );
+    await assert.rejects(
+      () => api(endpoint),
+      (error) => {
+        assert.equal(error.message, 'Cloud API GET firestore.googleapis.com timed out');
+        assert.equal(error.retryable, true);
+        return true;
+      },
+    );
+    assert.equal(requests, 5);
+    assert.deepEqual(delays, [1000, 2000, 4000, 8000]);
+  });
+
+  for (const status of [403, 503]) {
+    it(`does not resubmit POST on HTTP ${status}`, async () => {
+      let requests = 0;
+      const api = cloudApi(async (url) => {
+        if (url.startsWith('http://metadata.')) return identity();
+        requests++;
+        return new Response('sensitive response', { status });
+      });
+      await assert.rejects(
+        () => api(endpoint, { method: 'POST', body: {} }),
+        (error) => {
+          assert.equal(error.retryable, status === 503);
+          assert.equal(error.message, `Cloud API POST firestore.googleapis.com returned ${status}`);
+          return true;
+        },
+      );
+      assert.equal(requests, 1);
+    });
+  }
+
+  it('does not retry a GET permission failure', async () => {
+    let requests = 0;
+    const api = cloudApi(async (url) => {
+      if (url.startsWith('http://metadata.')) return identity();
+      requests++;
+      return new Response('', { status: 403 });
+    });
+    await assert.rejects(() => api(endpoint), /returned 403/);
+    assert.equal(requests, 1);
+  });
+
+  it('marks an ambiguous POST timeout for discovery without resubmitting it', async () => {
+    let submissions = 0;
+    const api = cloudApi(async (url) => {
+      if (url.startsWith('http://metadata.')) return identity();
+      submissions++;
+      throw new DOMException('request timed out', 'TimeoutError');
+    });
+    await assert.rejects(
+      () => api(endpoint, { method: 'POST', body: {} }),
+      (error) => {
+        assert.equal(error.retryable, true);
+        assert.equal(error.message, 'Cloud API POST firestore.googleapis.com timed out');
+        return true;
+      },
+    );
+    assert.equal(submissions, 1);
+  });
+});
+
+describe('Firestore export request recovery', () => {
+  const databaseUrl = 'https://firestore.googleapis.com/v1/projects/production/databases/(default)';
+  const body = {
+    outputUriPrefix: 'gs://staging/exports/unique-run',
+    snapshotTime: now.toISOString(),
+  };
+  const operation = {
+    name: 'projects/production/databases/(default)/operations/recovered',
+    metadata: {
+      '@type': 'type.googleapis.com/google.firestore.admin.v1.ExportDocumentsMetadata',
+      ...body,
+    },
+  };
+  const failure = () =>
+    Object.assign(new Error('Cloud API POST firestore.googleapis.com timed out'), {
+      retryable: true,
+    });
+
+  it('finds an accepted export on a later page after delayed visibility without another POST', async () => {
+    let submissions = 0;
+    let listings = 0;
+    const delays = [];
+    const result = await startFirestoreExport(
+      async (url, options = {}) => {
+        if (options.method === 'POST') {
+          submissions++;
+          throw failure();
+        }
+        if (new URL(url).searchParams.has('pageToken')) return { operations: [operation] };
+        if (++listings === 1) return {};
+        return {
+          operations: [
+            {
+              ...operation,
+              metadata: {
+                ...operation.metadata,
+                outputUriPrefix: 'gs://staging/exports/another-run',
+              },
+            },
+            {
+              ...operation,
+              metadata: { ...operation.metadata, snapshotTime: '2026-10-12T00:00:00Z' },
+            },
+          ],
+          nextPageToken: 'next',
+        };
+      },
+      databaseUrl,
+      body,
+      {
+        pause: async (delay) => {
+          delays.push(delay);
+        },
+      },
+    );
+    assert.equal(result, operation);
+    assert.equal(submissions, 1);
+    assert.equal(listings, 2);
+    assert.deepEqual(delays, [15000]);
+  });
+
+  it('fails after bounded discovery if no matching export exists without resubmitting', async () => {
+    let submissions = 0;
+    let listings = 0;
+    await assert.rejects(
+      () =>
+        startFirestoreExport(
+          async (url, options = {}) => {
+            if (options.method === 'POST') {
+              submissions++;
+              throw failure();
+            }
+            listings++;
+            return {
+              operations: [
+                {
+                  ...operation,
+                  metadata: {
+                    ...operation.metadata,
+                    outputUriPrefix: 'gs://staging/exports/other',
+                  },
+                },
+              ],
+            };
+          },
+          databaseUrl,
+          body,
+          { pause: async () => {} },
+        ),
+      /No matching Firestore export/,
+    );
+    assert.equal(submissions, 1);
+    assert.equal(listings, 6);
+  });
+
+  it('does not attempt discovery for a permanent submission failure', async () => {
+    let calls = 0;
+    await assert.rejects(
+      () =>
+        startFirestoreExport(
+          async () => {
+            calls++;
+            throw new Error('permission denied');
+          },
+          databaseUrl,
+          body,
+        ),
+      /permission denied/,
+    );
+    assert.equal(calls, 1);
+  });
+
+  for (const failedOperation of [false, true]) {
+    it(`${failedOperation ? 'rejects a failed' : 'finishes an accepted'} export recovered after a lost POST response`, async () => {
+      const { api, saved, actions } = fakeCloud();
+      let recovered;
+      const wrapped = async (url, options = {}) => {
+        if (url.endsWith(':exportDocuments')) {
+          recovered = await api(url, options);
+          recovered.metadata = { ...recovered.metadata, ...operation.metadata, ...options.body };
+          if (failedOperation) recovered.error = { code: 13 };
+          throw failure();
+        }
+        if (url.includes('/operations?')) return { operations: [{ ...recovered, done: false }] };
+        if (url.endsWith('/operations/1')) return recovered;
+        return api(url, options);
+      };
+      const backup = () => runBackup(config, wrapped, { now: () => now, pause: async () => {} });
+      if (failedOperation) {
+        await assert.rejects(backup, /Firestore export failed/);
+        assert.ok(![...saved.keys()].some((key) => key.startsWith('completed/')));
+      } else {
+        const manifest = await backup();
+        assert.equal(manifest.firestore.documentCount, '1480');
+        assert.ok([...saved.keys()].at(-1).startsWith('completed/'));
+      }
+      assert.equal(actions.filter(({ path }) => path.endsWith(':exportDocuments')).length, 1);
+    });
+  }
+});
 
 describe('Firebase disaster recovery backups', () => {
   it('alerts on major account, database or file loss while ignoring small or unavailable baselines', () => {
