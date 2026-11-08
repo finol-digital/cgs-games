@@ -171,7 +171,7 @@ describe('Cloud API failure handling', () => {
     'https://firestore.googleapis.com/v1/projects/source/databases/(default)/operations/1';
   const identity = () => Response.json({ access_token: 'test-token', expires_in: 3600 });
 
-  for (const failure of ['timeout', 'body-timeout', 'network', '503']) {
+  for (const failure of ['timeout', 'body-timeout', 'body-network', 'network', '503']) {
     it(`retries a GET after ${failure} and returns the recovered response`, async () => {
       let requests = 0;
       const delays = [];
@@ -181,11 +181,12 @@ describe('Cloud API failure handling', () => {
           if (++requests === 1) {
             if (failure === '503') return new Response('', { status: 503 });
             if (failure === 'network') throw new TypeError('fetch failed');
-            if (failure === 'body-timeout')
+            if (failure === 'body-timeout' || failure === 'body-network')
               return {
                 ok: true,
                 status: 200,
                 json: async () => {
+                  if (failure === 'body-network') throw new TypeError('terminated');
                   throw new DOMException('secret details', 'TimeoutError');
                 },
               };
@@ -230,6 +231,43 @@ describe('Cloud API failure handling', () => {
     );
     assert.equal(requests, 5);
     assert.deepEqual(delays, [1000, 2000, 4000, 8000]);
+  });
+
+  for (const method of ['GET', 'POST']) {
+    it(`does not retry invalid JSON in a ${method} response`, async () => {
+      let requests = 0;
+      const api = cloudApi(async (url) => {
+        if (url.startsWith('http://metadata.')) return identity();
+        requests++;
+        return new Response('not valid JSON', { status: 200 });
+      });
+      await assert.rejects(
+        () => api(endpoint, { method }),
+        (error) => {
+          assert.equal(error.retryable, false);
+          return true;
+        },
+      );
+      assert.equal(requests, 1);
+    });
+  }
+
+  it('rejects a local serialization error before making any network request', async () => {
+    const body = {};
+    body.self = body;
+    let requests = 0;
+    const api = cloudApi(async () => {
+      requests++;
+    });
+    await assert.rejects(
+      () => api(endpoint, { method: 'POST', body }),
+      (error) => {
+        assert.ok(error instanceof TypeError);
+        assert.equal(error.retryable, undefined);
+        return true;
+      },
+    );
+    assert.equal(requests, 0);
   });
 
   for (const status of [403, 503]) {
@@ -299,6 +337,32 @@ describe('Firestore export request recovery', () => {
     Object.assign(new Error('Cloud API POST firestore.googleapis.com timed out'), {
       retryable: true,
     });
+
+  it('discovers an export after its POST response stream terminates without resubmitting', async () => {
+    let submissions = 0;
+    let listings = 0;
+    const api = cloudApi(async (url, options) => {
+      if (url.startsWith('http://metadata.'))
+        return Response.json({ access_token: 'test-token', expires_in: 3600 });
+      if (options.method === 'POST') {
+        submissions++;
+        assert.equal(url, `${databaseUrl}:exportDocuments`);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => {
+            throw new TypeError('terminated');
+          },
+        };
+      }
+      listings++;
+      assert.equal(new URL(url).pathname, '/v1/projects/production/databases/(default)/operations');
+      return Response.json({ operations: [operation] });
+    });
+    assert.deepEqual(await startFirestoreExport(api, databaseUrl, body), operation);
+    assert.equal(submissions, 1);
+    assert.equal(listings, 1);
+  });
 
   it('finds an accepted export on a later page after delayed visibility without another POST', async () => {
     let submissions = 0;

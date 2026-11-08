@@ -52,10 +52,16 @@ export function configuration(env) {
   return config;
 }
 
-// Runtime identity comes from Cloud Run. No production key or .env file is loaded.
+/**
+ * Build a Cloud Run identity client with bounded retries for transient reads.
+ * Writes are submitted once; ambiguous failures are flagged for caller recovery.
+ * Errors omit response bodies, paths, and credentials. No .env file is loaded.
+ */
 export function cloudApi(fetcher = globalThis.fetch, { pause = sleep } = {}) {
   let cached;
   return async function api(url, { method = 'GET', body, raw = false } = {}) {
+    // Keep local serialization errors outside the network-failure classification.
+    const payload = body === undefined ? undefined : raw ? body : JSON.stringify(body);
     if (!cached || cached.expiresAt < Date.now() + 60000) {
       const response = await fetcher(
         'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
@@ -74,7 +80,7 @@ export function cloudApi(fetcher = globalThis.fetch, { pause = sleep } = {}) {
         const response = await fetcher(url, {
           method,
           headers: { Authorization: `Bearer ${cached.token}`, 'Content-Type': 'application/json' },
-          ...(body === undefined ? {} : { body: raw ? body : JSON.stringify(body) }),
+          ...(payload === undefined ? {} : { body: payload }),
           signal: AbortSignal.timeout(120000),
         });
         if (response.ok) return response.status === 204 ? {} : await response.json();
@@ -84,7 +90,8 @@ export function cloudApi(fetcher = globalThis.fetch, { pause = sleep } = {}) {
         };
       } catch (error) {
         const timedOut = ['TimeoutError', 'AbortError'].includes(error.name);
-        const networkFailure = error instanceof TypeError && error.message === 'fetch failed';
+        // Fetch uses TypeError for both request failures and terminated response streams.
+        const networkFailure = error instanceof TypeError;
         failure = {
           reason: timedOut ? 'timed out' : 'response could not be read',
           retryable: timedOut || networkFailure,
@@ -133,6 +140,11 @@ export function snapshotTime(now, earliestVersionTime) {
   return new Date(timestamp).toISOString();
 }
 
+/**
+ * Submit an export once, then discover it after an ambiguous transient failure.
+ * Only the exact destination and snapshot of this run can be recovered. Discovery
+ * is bounded; the caller must still poll and validate the returned operation.
+ */
 export async function startFirestoreExport(
   api,
   databaseUrl,
@@ -312,6 +324,11 @@ export async function exportAuth(api, source, save) {
   return { users: count, pages: pageNumber };
 }
 
+/**
+ * Archive Auth, Firestore, Storage, and configuration under a unique run prefix.
+ * Publish the completion marker only after export polling and all archival work
+ * succeed, so the freshness monitor never accepts a partial backup.
+ */
 export async function runBackup(
   config,
   api,
