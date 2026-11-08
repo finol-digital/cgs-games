@@ -141,6 +141,17 @@ describe('bounded streaming public resources', () => {
 });
 
 describe('safe game specification retrieval', () => {
+  it.each([false, true])(
+    'records the validated final URL (stream=%s), ignoring spoofed headers',
+    async (stream) => {
+      respond(302, '', { location: 'https://cdn.example.com/games/cgs.json' });
+      respond(200, '{}', { 'x-cgs-final-url': 'https://spoof.example.com/cgs.json' });
+      const response = await fetchPublicResource('https://example.com/start', { stream });
+      expect(response.url).toBe('https://cdn.example.com/games/cgs.json');
+      expect(await response.text()).toBe('{}');
+    },
+  );
+
   it('identifies CGS when fetching images, including after an upstream redirect', async () => {
     respond(302, '', { location: 'https://cdn.example.com/banner.png' });
     respond(200, 'image bytes', { 'content-type': 'image/png' });

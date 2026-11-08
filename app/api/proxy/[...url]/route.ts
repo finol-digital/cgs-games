@@ -15,6 +15,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Expose-Headers': 'X-CGS-Final-URL',
   // An upstream HTML/SVG document must never execute with CGS's Firebase session.
   'Content-Security-Policy': "sandbox; default-src 'none'",
   'X-Content-Type-Options': 'nosniff',
@@ -110,6 +111,8 @@ async function forward(request: Request, method: 'GET' | 'POST') {
     }
     const headers = new Headers(corsHeaders);
     headers.set('Content-Type', contentType);
+    // Keep this alongside the body in browser/CDN caches, including HEAD responses.
+    if (response.url) headers.set('X-CGS-Final-URL', response.url);
     // Binary downloads must never be rendered as a page on the cgs.games origin.
     if (DOWNLOAD_TYPES.has(mediaType)) headers.set('Content-Disposition', 'attachment');
     const encoding = response.headers.get('content-encoding');
