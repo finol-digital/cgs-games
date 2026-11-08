@@ -88,6 +88,33 @@ Because each file is archived at most once per 30-day period and kept for 130 da
 
 Run `npm run test:backups` for backup and restore failure-path tests. The main CI workflow runs these alongside the application tests. Runtime changes require redeploying this separate job; an application deployment does not update it.
 
+### Export timeouts and stale-backup alerts
+
+A Firestore export can finish after the backup worker's HTTP request times out. That leaves an export in the temporary bucket, but no complete archive: Auth, game files, configuration, checksums, and the final `completed/` marker must still be assembled by a successful worker run. Do not create a completion marker manually or disable the freshness alert because a Firestore operation reports success.
+
+The worker retries transient GET failures (including request and response-body timeouts) up to four times with exponential backoff. It does not automatically repeat writes. If the export submission times out or returns a transient HTTP error, it searches the database's paginated operation list for an export with this run's exact unique destination and snapshot time. It makes at most six discovery passes, 15 seconds apart, then fails if no match appears. A recovered operation goes through the usual polling, error checks, and archival steps. `firestore_export_recovery_started` and `firestore_export_recovered` identify this path in logs. Errors include the HTTP method and service host without logging response bodies or sensitive paths.
+
+Deploy this recovery change from a checkout containing the updated scripts using the full deployment command below. Do **not** use `-SkipFoundation` for this update: the worker's `firebaseBackupReader` role also needs the new read-only `datastore.operations.list` permission. The deployment builds the updated worker image and updates all three jobs.
+
+```powershell
+./scripts/backups/deploy.ps1
+if ($LASTEXITCODE -ne 0) { throw 'Backup deployment failed.' }
+gcloud run jobs execute firebase-backup --project=cgs-games-backups --region=us-central1 --wait
+if ($LASTEXITCODE -ne 0) { throw 'Backup failed; inspect its execution logs.' }
+gcloud run jobs execute backup-monitor --project=cgs-games-backups --region=us-central1 --wait
+```
+
+For diagnosis, retrieve all available operations before sorting in PowerShell; limiting the CLI output can omit recent operations:
+
+```powershell
+$operationsJson = gcloud firestore operations list --project=cgs-games --database='(default)' --format=json
+if ($LASTEXITCODE -ne 0) { throw 'Could not retrieve Firestore operations.' }
+$operations = ($operationsJson -join "`n") | ConvertFrom-Json
+$operations | Sort-Object { $_.metadata.startTime } -Descending | Select-Object -First 10 | ConvertTo-Json -Depth 20
+```
+
+After redeployment, verify both a new `backup_completed` log entry and a successful `backup_health_checked` entry. A monitor failure can also indicate a data-volume decline or an overdue restore drill; inspect its message if it still fails after the fresh backup.
+
 ## Recovery procedure
 
 1. Contain the incident and revoke compromised access. Preserve evidence. Choose a completed backup from **before** corruption began, even if it is older than the newest backup.

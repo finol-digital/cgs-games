@@ -109,7 +109,7 @@ $roleFile = Join-Path $outputDirectory 'source-reader-role.json'
 @{
     title = 'Firebase backup export reader'; stage = 'GA'; description = 'Export data and read recovery configuration without changing production data.'
     includedPermissions = @(
-        'datastore.databases.export', 'datastore.databases.getMetadata', 'datastore.operations.get',
+        'datastore.databases.export', 'datastore.databases.getMetadata', 'datastore.operations.get', 'datastore.operations.list',
         'datastore.indexes.list', 'datastore.indexes.get',
         'firebaseauth.configs.get', 'firebaseauth.configs.getHashConfig', 'firebaseauth.configs.getSecret', 'firebaseauth.users.get',
         'firebaserules.releases.get', 'firebaserules.releases.list', 'firebaserules.rulesets.get',

@@ -52,10 +52,16 @@ export function configuration(env) {
   return config;
 }
 
-// Runtime identity comes from Cloud Run. No production key or .env file is loaded.
-export function cloudApi(fetcher = globalThis.fetch) {
+/**
+ * Build a Cloud Run identity client with bounded retries for transient reads.
+ * Writes are submitted once; ambiguous failures are flagged for caller recovery.
+ * Errors omit response bodies, paths, and credentials. No .env file is loaded.
+ */
+export function cloudApi(fetcher = globalThis.fetch, { pause = sleep } = {}) {
   let cached;
   return async function api(url, { method = 'GET', body, raw = false } = {}) {
+    // Keep local serialization errors outside the network-failure classification.
+    const payload = body === undefined ? undefined : raw ? body : JSON.stringify(body);
     if (!cached || cached.expiresAt < Date.now() + 60000) {
       const response = await fetcher(
         'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
@@ -69,19 +75,40 @@ export function cloudApi(fetcher = globalThis.fetch) {
       cached = { token: token.access_token, expiresAt: Date.now() + token.expires_in * 1000 };
     }
     for (let attempt = 0; ; attempt++) {
-      const response = await fetcher(url, {
-        method,
-        headers: { Authorization: `Bearer ${cached.token}`, 'Content-Type': 'application/json' },
-        ...(body === undefined ? {} : { body: raw ? body : JSON.stringify(body) }),
-        signal: AbortSignal.timeout(120000),
-      });
-      if (response.ok) return response.status === 204 ? {} : response.json();
-      if (method === 'GET' && [429, 500, 502, 503, 504].includes(response.status) && attempt < 4) {
-        await sleep(1000 * 2 ** attempt);
+      let failure;
+      try {
+        const response = await fetcher(url, {
+          method,
+          headers: { Authorization: `Bearer ${cached.token}`, 'Content-Type': 'application/json' },
+          ...(payload === undefined ? {} : { body: payload }),
+          signal: AbortSignal.timeout(120000),
+        });
+        if (response.ok) return response.status === 204 ? {} : await response.json();
+        failure = {
+          reason: `returned ${response.status}`,
+          retryable: [429, 500, 502, 503, 504].includes(response.status),
+        };
+      } catch (error) {
+        const timedOut = ['TimeoutError', 'AbortError'].includes(error.name);
+        // Fetch uses TypeError for both request failures and terminated response streams.
+        const networkFailure = error instanceof TypeError;
+        failure = {
+          reason: timedOut ? 'timed out' : 'response could not be read',
+          retryable: timedOut || networkFailure,
+        };
+      }
+      if (method === 'GET' && failure.retryable && attempt < 4) {
+        await pause(1000 * 2 ** attempt);
         continue;
       }
       // Never include response bodies, object paths, tokens, or account data in logs.
-      throw new Error(`Cloud API ${method} ${new URL(url).hostname} returned ${response.status}`);
+      // A failed write may already have succeeded remotely; never blindly retry it.
+      throw Object.assign(
+        new Error(`Cloud API ${method} ${new URL(url).hostname} ${failure.reason}`),
+        {
+          retryable: failure.retryable,
+        },
+      );
     }
   };
 }
@@ -111,6 +138,50 @@ export function snapshotTime(now, earliestVersionTime) {
   if (timestamp < Date.parse(earliestVersionTime))
     throw new Error('PITR history is not ready; retry later');
   return new Date(timestamp).toISOString();
+}
+
+/**
+ * Submit an export once, then discover it after an ambiguous transient failure.
+ * Only the exact destination and snapshot of this run can be recovered. Discovery
+ * is bounded; the caller must still poll and validate the returned operation.
+ */
+export async function startFirestoreExport(
+  api,
+  databaseUrl,
+  body,
+  { pause = sleep, log = () => {} } = {},
+) {
+  try {
+    return await api(`${databaseUrl}:exportDocuments`, { method: 'POST', body });
+  } catch (error) {
+    if (!error.retryable) throw error;
+    // The request may have been accepted before its response timed out. Recover only
+    // this run's uniquely named export; never submit the POST again or adopt another run.
+    log('firestore_export_recovery_started');
+    for (let attempt = 0; attempt < 6; attempt++) {
+      if (attempt) await pause(15000);
+      for await (const operations of pages(
+        api,
+        `${databaseUrl}/operations?pageSize=100`,
+        'operations',
+      )) {
+        const operation = operations.find(
+          (candidate) =>
+            candidate.metadata?.['@type'] ===
+              'type.googleapis.com/google.firestore.admin.v1.ExportDocumentsMetadata' &&
+            candidate.metadata.outputUriPrefix === body.outputUriPrefix &&
+            Date.parse(candidate.metadata.snapshotTime) === Date.parse(body.snapshotTime),
+        );
+        if (operation) {
+          log('firestore_export_recovered');
+          return operation;
+        }
+      }
+    }
+    throw new Error(
+      `No matching Firestore export operation found after request failure: ${error.message}`,
+    );
+  }
 }
 
 async function saveJson(api, bucket, name, value) {
@@ -253,6 +324,11 @@ export async function exportAuth(api, source, save) {
   return { users: count, pages: pageNumber };
 }
 
+/**
+ * Archive Auth, Firestore, Storage, and configuration under a unique run prefix.
+ * Publish the completion marker only after export polling and all archival work
+ * succeed, so the freshness monitor never accepts a partial backup.
+ */
 export async function runBackup(
   config,
   api,
@@ -313,13 +389,15 @@ export async function runBackup(
   log('auth_exported', { users: manifest.auth.users });
 
   const exportPrefix = `exports/${run}`;
-  const operation = await api(`${databaseUrl}:exportDocuments`, {
-    method: 'POST',
-    body: {
+  const operation = await startFirestoreExport(
+    api,
+    databaseUrl,
+    {
       outputUriPrefix: `gs://${config.staging}/${exportPrefix}`,
       snapshotTime: manifest.firestoreSnapshotTime,
     },
-  });
+    { pause, log },
+  );
   if (!operation.name?.startsWith(`${databasePath}/operations/`))
     throw new Error('Invalid export operation');
   let result = operation;
