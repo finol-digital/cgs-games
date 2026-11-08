@@ -11,7 +11,7 @@ export function apiPolicy(request: Request): {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, API-Version',
     'Access-Control-Expose-Headers':
-      'API-Version, RateLimit, RateLimit-Policy, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Cache, X-Ocr-Pending, Deprecation, Sunset, Link',
+      'API-Version, RateLimit, RateLimit-Policy, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Cache, X-Ocr-Pending, X-CGS-Final-URL, Deprecation, Sunset, Link',
     'API-Version': '1',
     Vary: 'API-Version',
   };
