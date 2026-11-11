@@ -15,6 +15,7 @@
     "test:backups": "node --test __tests__/firebaseBackup.node.mjs && pwsh -NoProfile -File __tests__/firebaseAuthRestore.tests.ps1",
     "test:rules": "node --test --test-concurrency=1 __tests__/usernameRules.emulator.mjs __tests__/ownershipRules.emulator.mjs __tests__/storageRules.emulator.mjs",
     "audit:firebase": "node scripts/audit-firebase-ownership.mjs",
+    "backfill:visibility": "node scripts/backfill-game-visibility.mjs",
     "check:usernames": "node scripts/check-username-conflicts.mjs",
     "verify:agents": "node scripts/verify-agent-readiness.mjs",
     "typecheck": "next typegen && tsc --noEmit",

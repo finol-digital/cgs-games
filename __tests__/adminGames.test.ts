@@ -1,21 +1,18 @@
 /** @jest-environment node */
-import {
-  adminDb,
-  adminGetAllGames,
-  adminGetGames,
-  adminGetGamesFor,
-  MAX_PUBLIC_SCAN_DOCS,
-} from '@/lib/firebase/admin';
+import { readFileSync } from 'node:fs';
+import { adminDb, adminGetAllGames, adminGetGames, adminGetGamesFor } from '@/lib/firebase/admin';
 
 jest.mock('firebase-admin/app', () => ({ getApps: () => [{}] }));
 jest.mock('firebase-admin/auth', () => ({ getAuth: () => ({}) }));
 jest.mock('firebase-admin/storage', () => ({ getStorage: () => ({}) }));
 jest.mock('firebase-admin/firestore', () => ({ getFirestore: () => ({ collection: jest.fn() }) }));
 
+type GameDoc = ReturnType<typeof gameDoc>;
+
 /** A stored game document; legacy listings omit visibility entirely. */
-function gameDoc(id: string, visibility?: string) {
+function gameDoc(id: string, visibility?: string, username = 'creator') {
   const data: Record<string, unknown> = {
-    username: 'creator',
+    username,
     slug: id,
     name: id,
     bannerImageUrl: '',
@@ -28,83 +25,99 @@ function gameDoc(id: string, visibility?: string) {
 }
 
 /**
- * Serves `docs`, newest first, through the orderBy/limit/startAfter chain, recording each page
- * read as [limit, cursor id] so tests can check how far past private games the listing paged.
+ * Serves `docs`, newest first, like Firestore: an equality filter never matches a missing field.
+ * Each read is recorded as its filters, ordering and limit, and the documents it returned.
  */
-function mockGames(docs: ReturnType<typeof gameDoc>[]) {
-  const pages: [number, string | null][] = [];
-  const where = jest.fn();
-  const page = (count: number, after: ReturnType<typeof gameDoc> | null) => ({
-    startAfter: (cursor: ReturnType<typeof gameDoc>) => page(count, cursor),
+function mockGames(docs: GameDoc[]) {
+  const reads: { filters: unknown[][]; orderBy: unknown[]; limit: number; read: string[] }[] = [];
+  const query = (filters: unknown[][], orderBy: unknown[] = [], limit = Infinity) => ({
+    where: (field: string, op: string, value: unknown) =>
+      query([...filters, [field, op, value]], orderBy, limit),
+    orderBy: (...order: unknown[]) => query(filters, order, limit),
+    limit: (count: number) => query(filters, orderBy, count),
     get: async () => {
-      pages.push([count, after?.id ?? null]);
-      const start = after ? docs.indexOf(after) + 1 : 0;
-      return { docs: docs.slice(start, start + count) };
+      const matches = docs
+        .filter((doc) => filters.every(([field, , value]) => doc.data()[field as string] === value))
+        .slice(0, limit);
+      reads.push({ filters, orderBy, limit, read: matches.map((doc) => doc.id) });
+      return { docs: matches };
     },
   });
-  const games = { orderBy: () => ({ limit: (count: number) => page(count, null) }), where };
-  where.mockReturnValue(games);
-  (adminDb.collection as jest.Mock).mockReturnValue(games);
-  return { pages, where };
+  (adminDb.collection as jest.Mock).mockReturnValue(query([]));
+  return reads;
 }
 
 describe('game listings', () => {
   beforeEach(() => jest.resetAllMocks());
 
-  it('treats legacy listings without a visibility field as public', async () => {
-    mockGames([gameDoc('legacy'), gameDoc('listed', 'public')]);
+  it('reads only the newest public games for the catalog', async () => {
+    const reads = mockGames([
+      gameDoc('hidden', 'private'),
+      gameDoc('newest', 'public'),
+      gameDoc('older', 'public'),
+    ]);
     const games = await adminGetAllGames();
     expect(games.map((game) => [game.id, game.visibility])).toEqual([
-      ['legacy', 'public'],
-      ['listed', 'public'],
+      ['newest', 'public'],
+      ['older', 'public'],
+    ]);
+    expect(reads).toEqual([
+      {
+        filters: [['visibility', '==', 'public']],
+        orderBy: ['uploadedAt', 'desc'],
+        limit: 100,
+        read: ['newest', 'older'],
+      },
     ]);
   });
 
-  it('pages past private games, in larger pages, to fill the requested count', async () => {
-    const { pages } = mockGames([
+  it('reads exactly as many public games as the home page shows', async () => {
+    const reads = mockGames([
       gameDoc('first', 'private'),
-      gameDoc('second'),
+      gameDoc('second', 'public'),
       gameDoc('third', 'private'),
-      gameDoc('fourth', 'private'),
+      gameDoc('fourth', 'public'),
       gameDoc('fifth', 'public'),
-      gameDoc('sixth'),
     ]);
-    expect((await adminGetGames(2)).map((game) => game.id)).toEqual(['second', 'fifth']);
-    expect(pages).toEqual([
-      [2, null],
-      [100, 'second'],
-    ]);
+    expect((await adminGetGames(2)).map((game) => game.id)).toEqual(['second', 'fourth']);
+    expect(reads).toHaveLength(1);
+    expect(reads[0]).toMatchObject({ limit: 2, read: ['second', 'fourth'] });
   });
 
-  it('stops at the end of the collection when too few games are public', async () => {
-    const { pages } = mockGames([gameDoc('only'), gameDoc('hidden', 'private')]);
-    expect((await adminGetGames(2)).map((game) => game.id)).toEqual(['only']);
-    expect(pages).toEqual([
-      [2, null],
-      [100, 'hidden'],
+  it("lists only a creator's public games unless they are requested", async () => {
+    const reads = mockGames([
+      gameDoc('hidden', 'private'),
+      gameDoc('listed', 'public'),
+      gameDoc('legacy'),
     ]);
-  });
-
-  it('bounds the documents scanned when many private games are newest', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    const docs = Array.from({ length: 600 }, (_, index) => gameDoc(`hidden-${index}`, 'private'));
-    docs.push(gameDoc('too-old'));
-    const { pages } = mockGames(docs);
-    expect(await adminGetGames(2)).toEqual([]);
-    expect(pages.map(([limit]) => limit)).toEqual([2, 100, 100, 100, 100, 98]);
-    expect(pages.reduce((total, [limit]) => total + limit, 0)).toBe(MAX_PUBLIC_SCAN_DOCS);
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
-  });
-
-  it("hides a creator's private games unless they are requested", async () => {
-    const { where } = mockGames([gameDoc('hidden', 'private'), gameDoc('listed')]);
     expect((await adminGetGamesFor('creator')).map((game) => game.id)).toEqual(['listed']);
-    expect(where).toHaveBeenCalledWith('username', '==', 'creator');
+    expect(reads[0].filters).toEqual([
+      ['username', '==', 'creator'],
+      ['visibility', '==', 'public'],
+    ]);
+
     const all = await adminGetGamesFor('creator', { includePrivate: true });
     expect(all.map((game) => [game.id, game.visibility])).toEqual([
       ['hidden', 'private'],
       ['listed', 'public'],
+      // A listing that missed the backfill still reads as public, as it always has.
+      ['legacy', 'public'],
+    ]);
+    expect(reads[1].filters).toEqual([['username', '==', 'creator']]);
+  });
+
+  it('has a composite index for every public catalog query', () => {
+    const { indexes } = JSON.parse(readFileSync('firestore.indexes.json', 'utf8')) as {
+      indexes: { collectionGroup: string; fields: { fieldPath: string; order: string }[] }[];
+    };
+    const games = indexes
+      .filter((index) => index.collectionGroup === 'games')
+      .map((index) => index.fields.map(({ fieldPath, order }) => `${fieldPath} ${order}`));
+    expect(games).toContainEqual(['visibility ASCENDING', 'uploadedAt DESCENDING']);
+    expect(games).toContainEqual([
+      'username ASCENDING',
+      'visibility ASCENDING',
+      'uploadedAt DESCENDING',
     ]);
   });
 });
