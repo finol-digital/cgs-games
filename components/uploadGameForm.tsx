@@ -40,11 +40,17 @@ function createUploadId() {
 
 interface UploadFormProps {
   visibility: GameVisibility;
+  /** Shared so the visibility and mode controls stay locked while a submission is in flight. */
+  loading: boolean;
+  // eslint-disable-next-line no-unused-vars -- This parameter describes the callback's type.
+  setLoading: (loading: boolean) => void;
 }
 
 function GameUploadForm() {
   const [mode, setMode] = useState<UploadMode>('zip');
   const [visibility, setVisibility] = useState<GameVisibility>('public');
+  // An in-flight submission already captured its visibility, so changing it then would mislead.
+  const [loading, setLoading] = useState(false);
 
   return (
     <section>
@@ -52,6 +58,7 @@ function GameUploadForm() {
         <button
           type="button"
           onClick={() => setMode('zip')}
+          disabled={loading}
           className={`rounded-md px-4 py-2 text-sm font-medium transition ${
             mode === 'zip'
               ? 'bg-blue-600 text-white'
@@ -63,6 +70,7 @@ function GameUploadForm() {
         <button
           type="button"
           onClick={() => setMode('url')}
+          disabled={loading}
           className={`rounded-md px-4 py-2 text-sm font-medium transition ${
             mode === 'url'
               ? 'bg-blue-600 text-white'
@@ -78,6 +86,7 @@ function GameUploadForm() {
           id="private"
           name="private"
           checked={visibility === 'private'}
+          disabled={loading}
           onChange={(e) => setVisibility(e.target.checked ? 'private' : 'public')}
           className="mt-1"
         />
@@ -87,19 +96,18 @@ function GameUploadForm() {
         </span>
       </label>
       {mode === 'url' ? (
-        <AutoUpdateUrlForm visibility={visibility} />
+        <AutoUpdateUrlForm visibility={visibility} loading={loading} setLoading={setLoading} />
       ) : (
-        <ZipUploadForm visibility={visibility} />
+        <ZipUploadForm visibility={visibility} loading={loading} setLoading={setLoading} />
       )}
     </section>
   );
 }
 
-function AutoUpdateUrlForm({ visibility }: UploadFormProps) {
+function AutoUpdateUrlForm({ visibility, loading, setLoading }: UploadFormProps) {
   const router = useRouter();
   const { username } = useContext(UserContext);
   const [autoUpdateUrl, setAutoUpdateUrl] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   let isValid = false;
@@ -176,11 +184,10 @@ function AutoUpdateUrlForm({ visibility }: UploadFormProps) {
   );
 }
 
-function ZipUploadForm({ visibility }: UploadFormProps) {
+function ZipUploadForm({ visibility, loading, setLoading }: UploadFormProps) {
   const router = useRouter();
   const { username } = useContext(UserContext);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');

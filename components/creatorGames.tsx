@@ -17,6 +17,8 @@ type SerializedGame = Omit<Game, 'uploadedAt'> & { uploadedAt: string };
 export default function CreatorGames({ username, games }: CreatorGamesProps) {
   const { user, username: viewer } = useContext(UserContext);
   const [ownedGames, setOwnedGames] = useState<Game[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const owner = viewer === username ? user : null;
 
   useEffect(() => {
@@ -32,15 +34,31 @@ export default function CreatorGames({ username, games }: CreatorGamesProps) {
         const mine: SerializedGame[] = await response.json();
         if (cancelled) return;
         setOwnedGames(mine.map((game) => ({ ...game, uploadedAt: new Date(game.uploadedAt) })));
+        setLoadFailed(false);
       } catch (error) {
-        // The public list is still accurate; only the owner's private games are missing from it.
         console.error('Error loading your games:', error);
+        if (!cancelled) setLoadFailed(true);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [owner]);
+  }, [owner, attempt]);
 
-  return <GamesDeck games={owner && ownedGames ? ownedGames : games} canManage />;
+  if (owner && ownedGames) return <GamesDeck games={ownedGames} canManage />;
+  if (owner && loadFailed) {
+    // The public games are still accurate, but "No games found" would hide the private ones.
+    return (
+      <>
+        <div role="alert" className="mb-4 flex flex-col items-center text-center">
+          <p>Your private games could not be loaded.</p>
+          <button type="button" onClick={() => setAttempt((count) => count + 1)}>
+            Retry
+          </button>
+        </div>
+        {games.length > 0 && <GamesDeck games={games} canManage />}
+      </>
+    );
+  }
+  return <GamesDeck games={games} canManage />;
 }

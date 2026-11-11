@@ -1,5 +1,11 @@
 /** @jest-environment node */
-import { adminDb, adminGetAllGames, adminGetGames, adminGetGamesFor } from '@/lib/firebase/admin';
+import {
+  adminDb,
+  adminGetAllGames,
+  adminGetGames,
+  adminGetGamesFor,
+  MAX_PUBLIC_SCAN_DOCS,
+} from '@/lib/firebase/admin';
 
 jest.mock('firebase-admin/app', () => ({ getApps: () => [{}] }));
 jest.mock('firebase-admin/auth', () => ({ getAuth: () => ({}) }));
@@ -54,7 +60,7 @@ describe('game listings', () => {
     ]);
   });
 
-  it('pages past private games to fill the requested count with public ones', async () => {
+  it('pages past private games, in larger pages, to fill the requested count', async () => {
     const { pages } = mockGames([
       gameDoc('first', 'private'),
       gameDoc('second'),
@@ -66,8 +72,7 @@ describe('game listings', () => {
     expect((await adminGetGames(2)).map((game) => game.id)).toEqual(['second', 'fifth']);
     expect(pages).toEqual([
       [2, null],
-      [2, 'second'],
-      [2, 'fourth'],
+      [100, 'second'],
     ]);
   });
 
@@ -76,8 +81,20 @@ describe('game listings', () => {
     expect((await adminGetGames(2)).map((game) => game.id)).toEqual(['only']);
     expect(pages).toEqual([
       [2, null],
-      [2, 'hidden'],
+      [100, 'hidden'],
     ]);
+  });
+
+  it('bounds the documents scanned when many private games are newest', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const docs = Array.from({ length: 600 }, (_, index) => gameDoc(`hidden-${index}`, 'private'));
+    docs.push(gameDoc('too-old'));
+    const { pages } = mockGames(docs);
+    expect(await adminGetGames(2)).toEqual([]);
+    expect(pages.map(([limit]) => limit)).toEqual([2, 100, 100, 100, 100, 98]);
+    expect(pages.reduce((total, [limit]) => total + limit, 0)).toBe(MAX_PUBLIC_SCAN_DOCS);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it("hides a creator's private games unless they are requested", async () => {

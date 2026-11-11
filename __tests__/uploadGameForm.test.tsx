@@ -155,6 +155,29 @@ describe('UploadGameForm', () => {
     expect(JSON.parse(requestInit.body)).toMatchObject({ visibility: 'private' });
   });
 
+  it('should lock the Private choice and modes while an upload is in flight', async () => {
+    // eslint-disable-next-line no-unused-vars -- This parameter describes the callback's type.
+    let finish: (response: unknown) => void = () => {};
+    global.fetch = jest.fn(() => new Promise((resolve) => (finish = resolve))) as jest.Mock;
+    renderWithUser({ uid: 'test-uid' }, 'testuser');
+    const user = userEvent.setup();
+
+    await user.upload(
+      screen.getByLabelText(/Upload .cgs.zip file/i),
+      new File(['zip-content'], 'test-game.cgs.zip', { type: 'application/zip' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Upload .cgs.zip to CGS Games' }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('checkbox', { name: /Private/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Enter AutoUpdate URL' })).toBeDisabled();
+
+    finish({ ok: false, json: async () => ({ error: 'Processing failed' }) });
+    expect(await screen.findByText('Processing failed')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Private/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Enter AutoUpdate URL' })).toBeEnabled();
+  });
+
   it('should keep the Private choice when switching to URL mode', async () => {
     renderWithUser({ uid: 'test-uid' }, 'testuser');
     const user = userEvent.setup();
