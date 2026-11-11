@@ -144,8 +144,18 @@ describe('CLI authentication and publishing', () => {
     expect(requests.map((request) => request.path)).toEqual(['/api/cli/session', '/api/games']);
     expect(JSON.parse(requests[1].body)).toEqual({
       autoUpdateUrl: 'https://example.test/cgs.json',
+      visibility: 'public',
     });
     expect(await readdir(directory)).toEqual([]);
+  });
+  it('publishes a private URL listing with --private', async () => {
+    await run(['upload', '--url', 'https://example.test/cgs.json', '--private'], '', {
+      CGS_TOKEN: 'fixture-token',
+    });
+    expect(JSON.parse(requests[1].body)).toEqual({
+      autoUpdateUrl: 'https://example.test/cgs.json',
+      visibility: 'private',
+    });
   });
   it('never sends credentials on public reads', async () => {
     await run(['browse'], '', { CGS_TOKEN: 'fixture-token' });
@@ -171,13 +181,19 @@ describe('CLI authentication and publishing', () => {
     expect(JSON.parse((await run(['upload', '--file', file, '--dry-run'])).stdout)).toMatchObject({
       dryRun: true,
       bytes: 7,
+      visibility: 'public',
     });
+    expect(
+      JSON.parse((await run(['upload', '--file', file, '--private', '--dry-run'])).stdout),
+    ).toMatchObject({ dryRun: true, visibility: 'private' });
     for (const args of [
       [],
       ['--url', 'http://example.test/cgs.json'],
       ['--file', 'bad.txt'],
       ['--url', 'https://example.test/cgs.json', '--file', file],
       ['--url', 'https://example.test/cgs.json', '--sandbox'],
+      ['--url', 'https://example.test/cgs.json', '--private', '--private'],
+      ['--url', 'https://example.test/cgs.json', '--private', 'yes'],
     ]) {
       await expect(run(['upload', ...args])).rejects.toMatchObject({ code: 1 });
     }
@@ -232,6 +248,7 @@ describe('CLI authentication and publishing', () => {
       expect(publish).toEqual({
         stagedPath: expect.stringMatching(/^staged-uploads\/test-user\/[a-f0-9-]+\.cgs\.zip$/),
         originalFilename: 'game.cgs.zip',
+        visibility: 'public',
       });
       expect(new URL(storage.url).searchParams.get('name')).toBe(publish.stagedPath);
       expect(decodeURIComponent(new URL(data.calls[3].url).pathname)).toContain(

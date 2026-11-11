@@ -19,6 +19,7 @@ const game: Game = {
   autoUpdateUrl: '',
   copyright: '',
   uploadedAt: new Date('2026-10-07T00:30:00.000Z'),
+  visibility: 'public',
 };
 const originalFetch = global.fetch;
 
@@ -32,10 +33,10 @@ describe('game deletion feedback', () => {
     [false, 'creator'],
     [true, 'someone-else'],
     [true, null],
-  ])('hides deletion when canDelete=%s and username=%s', (canDelete, username) => {
+  ])('hides deletion when canManage=%s and username=%s', (canManage, username) => {
     render(
       <UserContext.Provider value={{ user: null, username }}>
-        <GameCard game={game} canDelete={canDelete} />
+        <GameCard game={game} canManage={canManage} />
       </UserContext.Provider>,
     );
     expect(screen.queryByRole('button', { name: 'Delete game' })).not.toBeInTheDocument();
@@ -56,7 +57,7 @@ describe('game deletion feedback', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, text: async () => body });
     render(
       <UserContext.Provider value={{ user: null, username: 'creator' }}>
-        <GameCard game={game} canDelete />
+        <GameCard game={game} canManage />
       </UserContext.Provider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Delete game' }));
@@ -76,7 +77,7 @@ describe('game upload date', () => {
   it('hydrates without a mismatch when the browser uses a different locale and time zone', () => {
     const localeDate = jest.spyOn(Date.prototype, 'toLocaleDateString');
     localeDate.mockReturnValue('10/7/2026');
-    const card = <GameCard game={game} canDelete={false} />;
+    const card = <GameCard game={game} canManage={false} />;
     const container = document.createElement('div');
     container.innerHTML = renderToString(card);
     expect(container.querySelector('time')).toHaveTextContent('2026-10-07');
@@ -97,7 +98,7 @@ describe('game upload date', () => {
   it('shows when the game was uploaded', () => {
     render(
       <UserContext.Provider value={{ user: null, username: 'creator' }}>
-        <GameCard game={game} canDelete={false} />
+        <GameCard game={game} canManage={false} />
       </UserContext.Provider>,
     );
 
@@ -105,5 +106,74 @@ describe('game upload date', () => {
       'datetime',
       game.uploadedAt.toISOString(),
     );
+  });
+});
+
+describe('game visibility controls', () => {
+  it.each([
+    [false, 'creator'],
+    [true, 'someone-else'],
+    [true, null],
+  ])('hides visibility controls when canManage=%s and username=%s', (canManage, username) => {
+    render(
+      <UserContext.Provider value={{ user: null, username }}>
+        <GameCard game={game} canManage={canManage} />
+      </UserContext.Provider>,
+    );
+    expect(screen.queryByRole('button', { name: /^Make game/ })).not.toBeInTheDocument();
+  });
+
+  it('labels a private game and offers to make it public', () => {
+    render(
+      <UserContext.Provider value={{ user: null, username: 'creator' }}>
+        <GameCard game={{ ...game, visibility: 'private' }} canManage />
+      </UserContext.Provider>,
+    );
+    expect(screen.getByText('Private')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Make game public' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete game' })).toBeInTheDocument();
+  });
+
+  it('does not label public games as private', () => {
+    render(<GameCard game={game} canManage={false} />);
+    expect(screen.queryByText('Private')).not.toBeInTheDocument();
+  });
+
+  it('requests the private visibility for its owner and reports a failure', async () => {
+    const alert = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'You can only update your own games' }),
+    });
+    render(
+      <UserContext.Provider value={{ user: null, username: 'creator' }}>
+        <GameCard game={game} canManage />
+      </UserContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Make game private' }));
+    await waitFor(() => expect(alert).toHaveBeenCalledWith('You can only update your own games'));
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/games/game-id',
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+        body: JSON.stringify({ visibility: 'private' }),
+      }),
+    );
+    expect(screen.getByRole('button', { name: 'Make game private' })).toBeEnabled();
+  });
+
+  it('asks for confirmation before listing a private game publicly', () => {
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    global.fetch = jest.fn();
+    render(
+      <UserContext.Provider value={{ user: null, username: 'creator' }}>
+        <GameCard game={{ ...game, visibility: 'private' }} canManage />
+      </UserContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Make game public' }));
+    expect(confirm).toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

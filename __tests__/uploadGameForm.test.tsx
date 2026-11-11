@@ -132,6 +132,48 @@ describe('UploadGameForm', () => {
     expect(JSON.parse(requestInit.body)).toEqual({
       stagedPath: expect.stringMatching(/^staged-uploads\/test-uid\/[A-Za-z0-9_-]+\.cgs\.zip$/),
       originalFilename: 'test-game.cgs.zip',
+      visibility: 'public',
+    });
+    expect(mockPush).toHaveBeenCalledWith('/testuser/test-game');
+  });
+
+  it('should publish a zip privately when Private is checked', async () => {
+    renderWithUser({ uid: 'test-uid' }, 'testuser');
+    const user = userEvent.setup();
+
+    expect(screen.getByRole('checkbox', { name: /Private/ })).not.toBeChecked();
+    await user.click(screen.getByRole('checkbox', { name: /Private/ }));
+    await user.upload(
+      screen.getByLabelText(/Upload .cgs.zip file/i),
+      new File(['zip-content'], 'test-game.cgs.zip', { type: 'application/zip' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Upload .cgs.zip to CGS Games' }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    const [url, requestInit] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('/api/games/upload');
+    expect(JSON.parse(requestInit.body)).toMatchObject({ visibility: 'private' });
+  });
+
+  it('should keep the Private choice when switching to URL mode', async () => {
+    renderWithUser({ uid: 'test-uid' }, 'testuser');
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('checkbox', { name: /Private/ }));
+    await user.click(screen.getByText('Enter AutoUpdate URL'));
+    expect(screen.getByRole('checkbox', { name: /Private/ })).toBeChecked();
+    await user.type(
+      screen.getByLabelText(/Enter CGS AutoUpdate Url/i),
+      'https://example.com/game/cgs.json',
+    );
+    await user.click(screen.getByRole('button', { name: 'Submit AutoUpdate Url to CGS Games' }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    const [url, requestInit] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toBe('/api/games');
+    expect(JSON.parse(requestInit.body)).toEqual({
+      autoUpdateUrl: 'https://example.com/game/cgs.json',
+      visibility: 'private',
     });
     expect(mockPush).toHaveBeenCalledWith('/testuser/test-game');
   });

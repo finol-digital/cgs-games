@@ -4,7 +4,7 @@ Official command line client for the [CGS Games API](https://cgs.games/developer
 Requires Node.js 22 or later. No runtime dependencies. Public reads need no credentials.
 
 ```sh
-npm install --global https://cgs.games/downloads/cgs-games-cli-1.0.0.tgz
+npm install --global https://cgs.games/downloads/cgs-games-cli-1.1.0.tgz
 cgs-games games
 cgs-games browse
 cgs-games games --sandbox
@@ -22,6 +22,7 @@ cgs-games auth login
 cgs-games auth status
 cgs-games upload --file ./my-game.cgs.zip --dry-run
 cgs-games upload --file ./my-game.cgs.zip
+cgs-games upload --file ./my-game.cgs.zip --private
 cgs-games upload --url https://example.com/my-game/cgs.json
 cgs-games auth logout
 ```
@@ -42,7 +43,10 @@ with owner-only file permissions on POSIX. Keep that directory private on Window
 `auth logout` removes the selected origin's saved token; it does not clear your
 environment variable or revoke browser sessions. Reads never send credentials.
 
-Upload commands publish real listings under your creator account. `--dry-run`
+Upload commands publish real listings under your creator account. Add
+`--private` to publish a game that is not listed in the catalog or on your
+creator page; anyone with its page link can still open it. Change visibility
+later on the game's page or your creator page. `--dry-run`
 checks arguments, file extension and size without authentication or network
 requests; it does not validate ZIP contents or server permissions. Archives must
 be nonempty `.cgs.zip` files up to 100 MiB. They are staged directly in Firebase

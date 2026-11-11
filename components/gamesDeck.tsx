@@ -4,11 +4,11 @@ import GameCard from '@/components/gameCard';
 /** Lists games with a page-specific number of eager banners; longer lists stay lazy. */
 export default function GamesDeck({
   games,
-  canDelete = false,
+  canManage = false,
   priorityCount = 1,
 }: {
   games: Game[];
-  canDelete?: boolean;
+  canManage?: boolean;
   priorityCount?: number;
 }) {
   const isEmpty = games.length == 0;
@@ -22,7 +22,7 @@ export default function GamesDeck({
           <GameCard
             game={game}
             key={game.id}
-            canDelete={canDelete}
+            canManage={canManage}
             priority={index < priorityCount}
           />
         );

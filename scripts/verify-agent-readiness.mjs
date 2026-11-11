@@ -130,12 +130,12 @@ for (const path of ['/about', '/contact', '/privacy', '/developers']) {
     );
   }
 }
-const cliPackage = await fetch(new URL('/downloads/cgs-games-cli-1.0.0.tgz', origin));
+const cliPackage = await fetch(new URL('/downloads/cgs-games-cli-1.1.0.tgz', origin));
 assert.equal(cliPackage.status, 200);
 const cliBytes = Buffer.from(await cliPackage.arrayBuffer());
 assert.deepEqual(
   cliBytes,
-  await readFile(new URL('../public/downloads/cgs-games-cli-1.0.0.tgz', import.meta.url)),
+  await readFile(new URL('../public/downloads/cgs-games-cli-1.1.0.tgz', import.meta.url)),
 );
 console.log('PASS versioned CLI package download matches the tested local artifact');
 const sitemap = await check('/sitemap.xml', { type: 'application/xml' });

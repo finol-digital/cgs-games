@@ -32,6 +32,7 @@ import {
   storedBytesFor,
 } from '@/lib/firebase/quota';
 import { isHttpsUrl } from '@/lib/gameMetadata';
+import { GameVisibility, parseGameVisibility } from '@/lib/game';
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const UPLOAD_CONCURRENCY = 4;
 const STAGED_UPLOAD_PREFIX = 'staged-uploads';
@@ -44,12 +45,16 @@ interface AuthenticatedUser {
 interface StagedUploadRequest {
   stagedPath?: unknown;
   originalFilename?: unknown;
+  visibility?: unknown;
 }
 
 interface ProcessZipUploadInput extends AuthenticatedUser {
   filename: string;
   zipBuffer: Buffer;
+  visibility: GameVisibility;
 }
+
+const INVALID_VISIBILITY = 'visibility must be "public" or "private"';
 
 /** Converts upload validation and processing failures to the shared JSON contract. */
 function jsonError(error: string, status: number) {
@@ -117,7 +122,12 @@ async function processStagedUpload({
   username,
   stagedPath,
   originalFilename,
-}: AuthenticatedUser & { stagedPath: string; originalFilename: string }) {
+  visibility,
+}: AuthenticatedUser & {
+  stagedPath: string;
+  originalFilename: string;
+  visibility: GameVisibility;
+}) {
   if (!isValidStagedPath(uid, stagedPath)) {
     console.error('Invalid staged upload path', { uid, stagedPath });
     return jsonError('Invalid staged upload path', 400);
@@ -150,7 +160,13 @@ async function processStagedUpload({
       return jsonError('File exceeds maximum size of 100MB', 413);
     }
 
-    return await processZipUpload({ uid, username, filename: originalFilename, zipBuffer });
+    return await processZipUpload({
+      uid,
+      username,
+      filename: originalFilename,
+      zipBuffer,
+      visibility,
+    });
   } finally {
     try {
       await stagedFile.delete();
@@ -181,12 +197,16 @@ async function processMultipartUpload(request: Request, { uid, username }: Authe
     return jsonError('Only .cgs.zip files are accepted', 400);
   }
 
+  const visibility = parseGameVisibility(formData.get('visibility'));
+  if (!visibility) return jsonError(INVALID_VISIBILITY, 400);
+
   const arrayBuffer = await file.arrayBuffer();
   return processZipUpload({
     uid,
     username,
     filename: file.name,
     zipBuffer: Buffer.from(arrayBuffer),
+    visibility,
   });
 }
 
@@ -249,7 +269,13 @@ async function forEachLimited<T>(
 }
 
 /** Validates the game archive, publishes supported assets, and creates its catalog entry. */
-async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZipUploadInput) {
+async function processZipUpload({
+  uid,
+  username,
+  filename,
+  zipBuffer,
+  visibility,
+}: ProcessZipUploadInput) {
   console.log('Processing upload', { uid, username, filename, size: zipBuffer.length });
 
   if (zipBuffer.length > MAX_FILE_SIZE) {
@@ -412,6 +438,7 @@ async function processZipUpload({ uid, username, filename, zipBuffer }: ProcessZ
       autoUpdateUrl,
       copyright: cgsJson.copyright || username,
       uploadedAt: FieldValue.serverTimestamp(),
+      visibility,
       storageBasePath,
     };
 
@@ -457,11 +484,14 @@ export async function POST(request: Request) {
       if (typeof body.stagedPath !== 'string' || typeof body.originalFilename !== 'string') {
         return jsonError('Invalid staged upload request', 400);
       }
+      const visibility = parseGameVisibility(body.visibility);
+      if (!visibility) return jsonError(INVALID_VISIBILITY, 400);
 
       return await processStagedUpload({
         ...authenticatedUser,
         stagedPath: body.stagedPath,
         originalFilename: body.originalFilename,
+        visibility,
       });
     }
 

@@ -11,6 +11,8 @@ export async function generateMetadata(props: {
   const game = await adminGetGame(params.username, params.slug);
   if (!game) return notFound();
   return {
+    // Private games are unlisted, so search engines should not list them either.
+    ...(game.visibility === 'private' && { robots: { index: false } }),
     title: game.name + ' | CGS Games',
     description: 'Play ' + game.name + ' on CGS',
     openGraph: {

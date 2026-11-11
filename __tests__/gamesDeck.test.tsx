@@ -14,6 +14,7 @@ const games: Game[] = ['First', 'Second', 'Third'].map((name) => ({
   autoUpdateUrl: '',
   copyright: '',
   uploadedAt: new Date('2026-10-07T00:30:00.000Z'),
+  visibility: 'public' as const,
 }));
 
 describe('game banner loading', () => {

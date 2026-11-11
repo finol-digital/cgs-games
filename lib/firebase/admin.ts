@@ -4,6 +4,7 @@ import {
   DocumentData,
   FieldValue,
   getFirestore,
+  Query,
   QueryDocumentSnapshot,
   Timestamp,
 } from 'firebase-admin/firestore';
@@ -54,21 +55,42 @@ function gameFromDoc(doc: QueryDocumentSnapshot): Game {
     autoUpdateUrl: data.autoUpdateUrl,
     copyright: data.copyright,
     uploadedAt: data.uploadedAt.toDate(),
+    // Listings predating visibility have no field and were all published publicly.
+    visibility: data.visibility === 'private' ? 'private' : 'public',
   };
 }
 
-export async function adminGetAllGames(): Promise<Game[]> {
-  const snapshot = await adminDb.collection('games').orderBy('uploadedAt', 'desc').limit(100).get();
-  return snapshot.docs.map(gameFromDoc);
+/**
+ * Returns up to `count` of the newest public games. Firestore cannot query for a missing field, so
+ * private games are skipped here rather than filtered by the query, paging past them as needed.
+ */
+async function latestPublicGames(games: Query, count: number): Promise<Game[]> {
+  const found: Game[] = [];
+  let page = games.orderBy('uploadedAt', 'desc').limit(count);
+  for (;;) {
+    const snapshot = await page.get();
+    for (const doc of snapshot.docs) {
+      const game = gameFromDoc(doc);
+      if (game.visibility === 'public') found.push(game);
+      if (found.length === count) return found;
+    }
+    if (snapshot.docs.length < count) return found;
+    page = page.startAfter(snapshot.docs[snapshot.docs.length - 1]);
+  }
 }
 
-export async function adminGetGamesFor(username: string): Promise<Game[]> {
-  const snapshot = await adminDb
-    .collection('games')
-    .where('username', '==', username)
-    .orderBy('uploadedAt', 'desc')
-    .limit(100)
-    .get();
+export async function adminGetAllGames(): Promise<Game[]> {
+  return latestPublicGames(adminDb.collection('games'), 100);
+}
+
+/** Lists a creator's public games, or every game when the creator themselves is asking. */
+export async function adminGetGamesFor(
+  username: string,
+  { includePrivate = false }: { includePrivate?: boolean } = {},
+): Promise<Game[]> {
+  const games = adminDb.collection('games').where('username', '==', username);
+  if (!includePrivate) return latestPublicGames(games, 100);
+  const snapshot = await games.orderBy('uploadedAt', 'desc').limit(100).get();
   return snapshot.docs.map(gameFromDoc);
 }
 
@@ -81,14 +103,10 @@ export async function adminCreatorExists(username: string): Promise<boolean> {
 }
 
 export async function adminGetGames(count: number): Promise<Game[]> {
-  const snapshot = await adminDb
-    .collection('games')
-    .orderBy('uploadedAt', 'desc')
-    .limit(count)
-    .get();
-  return snapshot.docs.map(gameFromDoc);
+  return latestPublicGames(adminDb.collection('games'), count);
 }
 
+/** Finds a game by its page URL regardless of visibility: private games stay open by link. */
 export async function adminGetGame(username: string, slug: string): Promise<Game | undefined> {
   const encodedSlug = encodeURIComponent(slug);
   const encodedSnapshot = await adminDb

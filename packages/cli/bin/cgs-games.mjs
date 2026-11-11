@@ -4,7 +4,7 @@ import { parseOrigin, requestJson } from './lib/http.mjs';
 import { authCommand } from './lib/auth.mjs';
 import { uploadCommand } from './lib/upload.mjs';
 
-const help = `CGS Games CLI 1.0.0
+const help = `CGS Games CLI 1.1.0
 Usage: cgs-games <games|browse|openapi|auth|upload> [options]
 
 games       Read the newest public games (up to 100).
@@ -19,6 +19,7 @@ upload      Publish a real listing using --url HTTPS_URL or --file GAME.cgs.zip.
 --base-url  Default: https://cgs.games. Local HTTP is allowed on loopback only.
 --no-browser  Print the auth login URL without opening a browser.
 --token-stdin Read a Firebase ID token from stdin for auth login.
+--private   Publish an upload as private: unlisted, but open to anyone with its link.
 --dry-run   Validate upload arguments/files without authentication or network requests.
 --help      Show this help.
 --version   Show the CLI version.
@@ -39,7 +40,7 @@ async function main(args) {
     return;
   }
   if (args.length === 1 && args[0] === '--version') {
-    process.stdout.write('1.0.0\n');
+    process.stdout.write('1.1.0\n');
     return;
   }
   const [requestedCommand, ...remaining] = args;
@@ -51,7 +52,8 @@ async function main(args) {
     throw new Error('Use auth login, auth status, or auth logout.');
   const allowed = new Set(['--base-url']);
   if (command === 'games') allowed.add('--sandbox');
-  if (command === 'upload') ['--url', '--file', '--dry-run'].forEach((flag) => allowed.add(flag));
+  if (command === 'upload')
+    ['--url', '--file', '--private', '--dry-run'].forEach((flag) => allowed.add(flag));
   if (action === 'login') ['--no-browser', '--token-stdin'].forEach((flag) => allowed.add(flag));
   const values = {};
   for (let index = 0; index < remaining.length; index++) {
@@ -79,6 +81,7 @@ async function main(args) {
     result = await uploadCommand(origin, {
       url: values['--url'],
       file: values['--file'],
+      isPrivate: values['--private'],
       dryRun: values['--dry-run'],
     });
   } else {

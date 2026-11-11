@@ -1,20 +1,16 @@
 'use client';
 
-import { useContext, useState, type MouseEvent } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { LoaderCircle, Trash2 } from 'lucide-react';
 import { auth } from '@/lib/firebase/firebase';
-import { UserContext } from '@/lib/context';
-import { CardAction } from '@/components/ui/card';
 
 interface DeleteGameButtonProps {
   gameId: string;
-  owner: string;
 }
 
-/** Keeps owner-only deletion interactive without hydrating the entire game card. */
-export default function DeleteGameButton({ gameId, owner }: DeleteGameButtonProps) {
+/** Deletes an owned game; GameOwnerActions only renders it for the game's owner. */
+export default function DeleteGameButton({ gameId }: DeleteGameButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const { username } = useContext(UserContext);
   /** Confirms deletion, authenticates the API request, and refreshes the list after success. */
   const handleDelete = async (e: MouseEvent) => {
     e.preventDefault(); // Prevent card click event
@@ -60,23 +56,20 @@ export default function DeleteGameButton({ gameId, owner }: DeleteGameButtonProp
     }
   };
 
-  if (username !== owner) return null;
   return (
-    <CardAction className="shrink-0">
-      <button
-        type="button"
-        onClick={handleDelete}
-        disabled={isDeleting}
-        className="m-0! flex size-11 items-center justify-center rounded-lg! bg-transparent! p-0! text-slate-400! hover:bg-red-950/50! hover:text-red-300! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:cursor-wait"
-        aria-label="Delete game"
-        title="Delete game"
-      >
-        {isDeleting ? (
-          <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-        ) : (
-          <Trash2 className="size-4" aria-hidden="true" />
-        )}
-      </button>
-    </CardAction>
+    <button
+      type="button"
+      onClick={handleDelete}
+      disabled={isDeleting}
+      className="m-0! flex size-11 items-center justify-center rounded-lg! bg-transparent! p-0! text-slate-400! hover:bg-red-950/50! hover:text-red-300! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:cursor-wait"
+      aria-label="Delete game"
+      title="Delete game"
+    >
+      {isDeleting ? (
+        <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+      ) : (
+        <Trash2 className="size-4" aria-hidden="true" />
+      )}
+    </button>
   );
 }

@@ -1,9 +1,9 @@
 import Game from '@/lib/game';
 import Link from 'next/link';
-import { CalendarDays, CircleUserRound } from 'lucide-react';
+import { CalendarDays, CircleUserRound, Lock } from 'lucide-react';
 import Banner from '@/components/banner';
 
-import DeleteGameButton from '@/components/deleteGameButton';
+import GameOwnerActions from '@/components/gameOwnerActions';
 import LocalDate from '@/components/localDate';
 import {
   Card,
@@ -16,12 +16,13 @@ import {
 
 interface GameCardProps {
   game: Game;
-  canDelete: boolean;
+  /** Offers owner-only visibility and deletion controls when the owner is signed in. */
+  canManage: boolean;
   priority?: boolean;
 }
 
 /** Renders public game content on the server, with small interactive controls. */
-export default function GameCard({ game, canDelete, priority = false }: GameCardProps) {
+export default function GameCard({ game, canManage, priority = false }: GameCardProps) {
   return (
     <Card className="gap-0 overflow-hidden rounded-2xl border-slate-700/60 bg-slate-800 py-0 shadow-sm transition-colors hover:border-slate-600 focus-within:border-slate-500">
       <CardHeader className="flex flex-row items-start gap-4 px-6 py-5">
@@ -48,8 +49,16 @@ export default function GameCard({ game, canDelete, priority = false }: GameCard
               </Link>
             </span>
           </CardDescription>
+          {game.visibility === 'private' && (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-slate-600 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+              <Lock className="size-3" aria-hidden="true" />
+              Private
+            </p>
+          )}
         </div>
-        {canDelete && <DeleteGameButton gameId={game.id} owner={game.username} />}
+        {canManage && (
+          <GameOwnerActions gameId={game.id} owner={game.username} visibility={game.visibility} />
+        )}
       </CardHeader>
       <CardContent className="px-6 pb-5">
         <Banner

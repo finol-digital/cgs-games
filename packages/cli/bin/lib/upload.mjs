@@ -54,7 +54,8 @@ async function cleanupStage(bucket, stagedPath, token) {
 }
 
 /** Validates input before authentication, then publishes once using the existing API contract. */
-export async function uploadCommand(origin, { url, file, dryRun }) {
+export async function uploadCommand(origin, { url, file, isPrivate, dryRun }) {
+  const visibility = isPrivate ? 'private' : 'public';
   let size;
   if (url) {
     let source;
@@ -76,6 +77,7 @@ export async function uploadCommand(origin, { url, file, dryRun }) {
     return {
       dryRun: true,
       origin: origin.origin,
+      visibility,
       ...(url ? { autoUpdateUrl: url } : { filename: basename(file), bytes: size }),
     };
   const token = await loadToken(origin);
@@ -91,7 +93,7 @@ export async function uploadCommand(origin, { url, file, dryRun }) {
   if (url)
     return requestJson(new URL('/api/games', origin), {
       ...options,
-      body: JSON.stringify({ autoUpdateUrl: url }),
+      body: JSON.stringify({ autoUpdateUrl: url, visibility }),
     });
   const bytes = await readFile(file);
   if (bytes.length !== size || bytes.length > maximumSize)
@@ -101,7 +103,7 @@ export async function uploadCommand(origin, { url, file, dryRun }) {
     await stageArchive(session.storageBucket, stagedPath, bytes, token);
     return await requestJson(new URL('/api/games/upload', origin), {
       ...options,
-      body: JSON.stringify({ stagedPath, originalFilename: basename(file) }),
+      body: JSON.stringify({ stagedPath, originalFilename: basename(file), visibility }),
     });
   } finally {
     await cleanupStage(session.storageBucket, stagedPath, token);

@@ -4,8 +4,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Only the authenticated server APIs can publish or delete games. In particular,
     // a client cannot replace the username or forge a Storage cleanup prefix.
+    // Catalogs are served by the server, which omits private (unlisted) games; a client query
+    // could otherwise enumerate them. A single listing stays readable, like its page.
     match /games/{gameId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if false;
       allow write: if false;
     }
 

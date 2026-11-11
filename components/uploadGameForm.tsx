@@ -2,6 +2,7 @@
 
 import React, { useContext, useRef, useState } from 'react';
 import { UserContext } from '@/lib/context';
+import { GameVisibility } from '@/lib/game';
 import { auth } from '@/lib/firebase/firebase';
 import { storage } from '@/lib/firebase/storage';
 import { getIdToken } from 'firebase/auth';
@@ -37,8 +38,13 @@ function createUploadId() {
   );
 }
 
+interface UploadFormProps {
+  visibility: GameVisibility;
+}
+
 function GameUploadForm() {
   const [mode, setMode] = useState<UploadMode>('zip');
+  const [visibility, setVisibility] = useState<GameVisibility>('public');
 
   return (
     <section>
@@ -66,12 +72,30 @@ function GameUploadForm() {
           Enter AutoUpdate URL
         </button>
       </div>
-      {mode === 'url' ? <AutoUpdateUrlForm /> : <ZipUploadForm />}
+      <label htmlFor="private" className="mb-4 flex items-start gap-2">
+        <input
+          type="checkbox"
+          id="private"
+          name="private"
+          checked={visibility === 'private'}
+          onChange={(e) => setVisibility(e.target.checked ? 'private' : 'public')}
+          className="mt-1"
+        />
+        <span>
+          Private: don&apos;t list this game in Browse or on your profile. Anyone with its link can
+          still open it, and you can change this later.
+        </span>
+      </label>
+      {mode === 'url' ? (
+        <AutoUpdateUrlForm visibility={visibility} />
+      ) : (
+        <ZipUploadForm visibility={visibility} />
+      )}
     </section>
   );
 }
 
-function AutoUpdateUrlForm() {
+function AutoUpdateUrlForm({ visibility }: UploadFormProps) {
   const router = useRouter();
   const { username } = useContext(UserContext);
   const [autoUpdateUrl, setAutoUpdateUrl] = useState('');
@@ -109,6 +133,7 @@ function AutoUpdateUrlForm() {
         },
         body: JSON.stringify({
           autoUpdateUrl,
+          visibility,
         }),
       });
 
@@ -151,7 +176,7 @@ function AutoUpdateUrlForm() {
   );
 }
 
-function ZipUploadForm() {
+function ZipUploadForm({ visibility }: UploadFormProps) {
   const router = useRouter();
   const { username } = useContext(UserContext);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -239,6 +264,7 @@ function ZipUploadForm() {
         body: JSON.stringify({
           stagedPath,
           originalFilename: selectedFile.name,
+          visibility,
         }),
       });
 
