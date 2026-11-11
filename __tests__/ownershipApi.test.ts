@@ -1,8 +1,9 @@
 /** @jest-environment node */
 import { POST as publish } from '@/app/api/games/route';
 import { POST as upload } from '@/app/api/games/upload/route';
-import { DELETE as remove } from '@/app/api/games/[id]/route';
-import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
+import { DELETE as remove, PATCH as updateGame } from '@/app/api/games/[id]/route';
+import { GET as listMine } from '@/app/api/games/mine/route';
+import { adminAuth, adminDb, adminGetGamesFor, adminStorage } from '@/lib/firebase/admin';
 import { fetchGameSpecification } from '@/lib/fetchGameSpecification';
 import JSZip from 'jszip';
 
@@ -10,12 +11,14 @@ jest.mock('@/lib/firebase/admin', () => ({
   adminAuth: { verifyIdToken: jest.fn() },
   adminDb: { collection: jest.fn() },
   adminStorage: { bucket: jest.fn() },
+  adminGetGamesFor: jest.fn(),
 }));
 jest.mock('@/lib/fetchGameSpecification', () => ({
   fetchGameSpecification: jest.fn(),
   UnsafeGameUrlError: class extends Error {},
 }));
 const erase = jest.fn();
+const update = jest.fn();
 const add = jest.fn();
 const fileDelete = jest.fn();
 const listFiles = jest.fn();
@@ -71,6 +74,7 @@ beforeEach(() => {
         data: () => (name === 'users' ? profile : name === 'usernames' ? registration : game),
       }),
       delete: erase,
+      update,
     }),
     add,
     where: query.where,
@@ -294,5 +298,124 @@ describe('privileged Firebase write APIs', () => {
     stagedBucket(await zip.generateAsync({ type: 'nodebuffer' }));
     expect((await upload(stagedRequest())).status).toBe(200);
     expect(add).toHaveBeenCalledWith(expect.objectContaining({ bannerImageUrl: '/CardBack.png' }));
+  });
+});
+
+describe('game visibility APIs', () => {
+  const patchRequest = (body: unknown) =>
+    new Request('https://cgs.games/api/games/game-id', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer fixture-token', 'Content-Type': 'application/json' },
+      body: typeof body === 'string' ? body : JSON.stringify(body),
+    });
+  /** Stages a minimal valid archive and returns the matching JSON upload request body. */
+  async function stagedGame(extra: Record<string, unknown> = {}) {
+    const zip = new JSZip();
+    zip.file('cgs.json', JSON.stringify({ name: 'My Game' }));
+    stagedBucket(await zip.generateAsync({ type: 'nodebuffer' }));
+    return {
+      stagedPath: 'staged-uploads/alice-uid/x.cgs.zip',
+      originalFilename: 'game.cgs.zip',
+      ...extra,
+    };
+  }
+
+  it.each([
+    [undefined, 'public'],
+    ['public', 'public'],
+    ['private', 'private'],
+  ])('publishes a URL listing with visibility %s as %s', async (visibility, stored) => {
+    const response = await publish(
+      request({ autoUpdateUrl: 'https://example.test/cgs.json', visibility }),
+    );
+    expect(response.status).toBe(200);
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ visibility: stored }));
+  });
+
+  it.each([
+    [undefined, 'public'],
+    ['private', 'private'],
+  ])('publishes a staged archive with visibility %s as %s', async (visibility, stored) => {
+    const response = await upload(request(await stagedGame({ visibility })));
+    expect(response.status).toBe(200);
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ visibility: stored }));
+  });
+
+  it('publishes a multipart archive privately', async () => {
+    const zip = new JSZip();
+    zip.file('cgs.json', JSON.stringify({ name: 'My Game' }));
+    stagedBucket(Buffer.alloc(0));
+    const form = new FormData();
+    form.append(
+      'file',
+      new File([await zip.generateAsync({ type: 'arraybuffer' })], 'game.cgs.zip'),
+    );
+    form.append('visibility', 'private');
+    const response = await upload(
+      new Request('https://cgs.games/api/games/upload', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fixture-token' },
+        body: form,
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ visibility: 'private' }));
+  });
+
+  it.each(['hidden', '', true])('refuses to publish with visibility %j', async (visibility) => {
+    const url = await publish(
+      request({ autoUpdateUrl: 'https://example.test/cgs.json', visibility }),
+    );
+    expect(url.status).toBe(400);
+    expect((await upload(request(await stagedGame({ visibility })))).status).toBe(400);
+    expect(add).not.toHaveBeenCalled();
+  });
+
+  it.each(['public', 'private'])('lets the verified owner make a game %s', async (visibility) => {
+    const response = await updateGame(patchRequest({ visibility }), context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true, visibility });
+    expect(update).toHaveBeenCalledWith({ visibility });
+    expect(adminAuth.verifyIdToken).toHaveBeenCalledWith('fixture-token', true);
+  });
+
+  it.each([{}, { visibility: 'hidden' }, { visibility: true }, 'not json'])(
+    'rejects an invalid visibility request %j',
+    async (body) => {
+      expect((await updateGame(patchRequest(body), context)).status).toBe(400);
+      expect(update).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([{ username: 'bob' }, { ownerUid: 'bob-uid' }])(
+    'refuses to change the visibility of another creator game %j',
+    async (change) => {
+      game = { ...game, ...change };
+      const response = await updateGame(patchRequest({ visibility: 'private' }), context);
+      expect(response.status).toBe(403);
+      expect(update).not.toHaveBeenCalled();
+    },
+  );
+
+  it('requires a valid token before changing visibility', async () => {
+    jest.mocked(adminAuth.verifyIdToken).mockRejectedValue(new Error('revoked'));
+    const response = await updateGame(patchRequest({ visibility: 'private' }), context);
+    expect(response.status).toBe(401);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('lists every game, private ones included, for the verified creator', async () => {
+    jest.mocked(adminGetGamesFor).mockResolvedValue([]);
+    const response = await listMine(request());
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(adminGetGamesFor).toHaveBeenCalledWith('alice', { includePrivate: true });
+  });
+
+  it('does not list games for a forged profile or an anonymous request', async () => {
+    registration = { uid: 'victim' };
+    expect((await listMine(request())).status).toBe(403);
+    expect((await listMine(new Request('https://cgs.games/api/games/mine'))).status).toBe(401);
+    expect(adminGetGamesFor).not.toHaveBeenCalled();
   });
 });

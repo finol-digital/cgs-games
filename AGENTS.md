@@ -197,8 +197,9 @@ import { Card, CardAction } from './ui/card';
 ### Game Data Operations
 
 ```typescript
-// Fetch games
-import { getAllGames, getGamesFor } from '@/lib/firebase/firestore';
+// Fetch games on the server. Catalogs omit private (unlisted) games, which stay reachable by
+// their /{username}/{slug} link; Firestore rules deny client queries of the games collection.
+import { adminGetAllGames, adminGetGamesFor, adminGetGame } from '@/lib/firebase/admin';
 
 // Game interface
 import Game from '@/lib/game';

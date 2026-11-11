@@ -95,7 +95,7 @@ describe('official read-only CLI', () => {
   });
 
   it('provides version and help without network access', async () => {
-    expect((await execute(process.execPath, [cli, '--version'])).stdout.trim()).toBe('1.0.0');
+    expect((await execute(process.execPath, [cli, '--version'])).stdout.trim()).toBe('1.1.0');
     const help = (await execute(process.execPath, [cli, '--help'])).stdout;
     expect(help).toContain('https://cgs.games/developers');
     expect(help).toContain('browse      Alias for games');

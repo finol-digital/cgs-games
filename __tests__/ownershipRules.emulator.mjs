@@ -12,6 +12,8 @@ import {
   getDoc,
   getDocs,
   collection,
+  query,
+  where,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -95,6 +97,16 @@ describe('cross-account data isolation', () => {
         }),
       );
       await assertSucceeds(getDoc(doc(db, 'games', 'alice-game')));
+    });
+    it(`opens a single game by ID but denies game enumeration for ${uid}`, async () => {
+      // Catalogs come from the server, which omits private games; queries would expose them.
+      const db = client(uid);
+      await assertSucceeds(getDoc(doc(db, 'games', 'alice-game')));
+      await assertFails(getDocs(collection(db, 'games')));
+      await assertFails(getDocs(query(collection(db, 'games'), where('username', '==', 'alice'))));
+      await assertFails(
+        getDocs(query(collection(db, 'games'), where('visibility', '==', 'public'))),
+      );
     });
     it(`denies cache, unknown collection, and nested collection access for ${uid}`, async () => {
       const db = client(uid);

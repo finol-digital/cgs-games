@@ -56,7 +56,11 @@ export default function DevelopersPage() {
       <ul>
         <li>
           <code>GET /api/games</code>: public catalog; <code>GET /api/browse</code> is a compatible
-          alias.
+          alias. Private games are omitted, though their pages stay open to anyone with the link.
+        </li>
+        <li>
+          <code>GET /api/games/mine</code>: list the authenticated creator&apos;s games, including
+          private games.
         </li>
         <li>
           <code>POST /api/games</code>: publish a game from an auto-update URL with a Firebase ID
@@ -76,6 +80,10 @@ export default function DevelopersPage() {
         <li>
           <code>DELETE /api/games/&#123;id&#125;</code>: delete an owned game using its catalog
           document ID, not its slug. Success is plain text.
+        </li>
+        <li>
+          <code>PATCH /api/games/&#123;id&#125;</code>: set an owned game&apos;s{' '}
+          <code>visibility</code> to <code>public</code> or <code>private</code> (unlisted).
         </li>
         <li>
           <code>GET /api/proxy/&#123;url&#125;</code> and{' '}
@@ -147,12 +155,12 @@ export default function DevelopersPage() {
       <h2 id="cli">Official CGS Games CLI</h2>
       <p>
         The CLI requires Node.js 22 or newer and prints JSON to standard output. Install the{' '}
-        <a href="/downloads/cgs-games-cli-1.0.0.tgz">versioned CLI package</a> directly from this
+        <a href="/downloads/cgs-games-cli-1.1.0.tgz">versioned CLI package</a> directly from this
         site. npm registry publication is pending; the download does not depend on a registry
         package name.
       </p>
       <pre>
-        <code>{`npm install --global https://cgs.games/downloads/cgs-games-cli-1.0.0.tgz
+        <code>{`npm install --global https://cgs.games/downloads/cgs-games-cli-1.1.0.tgz
 cgs-games games
 cgs-games browse
 cgs-games games --sandbox
@@ -161,6 +169,7 @@ cgs-games auth login
 cgs-games auth status
 cgs-games upload --file ./my-game.cgs.zip --dry-run
 cgs-games upload --file ./my-game.cgs.zip
+cgs-games upload --file ./my-game.cgs.zip --private
 cgs-games upload --url https://example.com/my-game/cgs.json
 cgs-games auth logout`}</code>
       </pre>

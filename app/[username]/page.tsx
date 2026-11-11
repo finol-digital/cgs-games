@@ -1,5 +1,5 @@
 import Footer from '@/components/footer';
-import GamesDeck from '@/components/gamesDeck';
+import CreatorGames from '@/components/creatorGames';
 import { adminCreatorExists, adminGetGamesFor } from '@/lib/firebase/admin';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -21,7 +21,7 @@ export async function generateMetadata(props: {
   };
 }
 
-/** Lists a creator's games, preserving empty profiles while rejecting unknown creators. */
+/** Lists a creator's public games, preserving empty profiles while rejecting unknown creators. */
 export default async function Page(props: { params: Promise<{ username: string }> }) {
   const params = await props.params;
   const games = await adminGetGamesFor(params.username);
@@ -30,7 +30,7 @@ export default async function Page(props: { params: Promise<{ username: string }
     <>
       <main className="main-content">
         <h1 className="text-center text-4xl font-bold my-4">{params.username}&apos;s games</h1>
-        <GamesDeck games={games} canDelete={true} />
+        <CreatorGames username={params.username} games={games} />
       </main>
       <Footer copyrightNotice={`${params.username}`} />
     </>

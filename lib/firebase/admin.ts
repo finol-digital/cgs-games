@@ -4,6 +4,7 @@ import {
   DocumentData,
   FieldValue,
   getFirestore,
+  Query,
   QueryDocumentSnapshot,
   Timestamp,
 } from 'firebase-admin/firestore';
@@ -54,21 +55,58 @@ function gameFromDoc(doc: QueryDocumentSnapshot): Game {
     autoUpdateUrl: data.autoUpdateUrl,
     copyright: data.copyright,
     uploadedAt: data.uploadedAt.toDate(),
+    // Listings predating visibility have no field and were all published publicly.
+    visibility: data.visibility === 'private' ? 'private' : 'public',
   };
 }
 
-export async function adminGetAllGames(): Promise<Game[]> {
-  const snapshot = await adminDb.collection('games').orderBy('uploadedAt', 'desc').limit(100).get();
-  return snapshot.docs.map(gameFromDoc);
+/** Documents read per page once the first page turns out to hold private games. */
+const PUBLIC_SCAN_PAGE_SIZE = 100;
+/** Bounds the documents one catalog read examines, however many private games are newest. */
+export const MAX_PUBLIC_SCAN_DOCS = 500;
+
+/**
+ * Returns up to `count` of the newest public games. Firestore cannot query for a missing field, so
+ * private games are skipped here rather than filtered by the query, paging past them as needed.
+ * Private games are rare, so the first page costs no more than an unfiltered read; later pages are
+ * larger, and the scan stops after MAX_PUBLIC_SCAN_DOCS, returning what it found.
+ */
+async function latestPublicGames(games: Query, count: number): Promise<Game[]> {
+  const found: Game[] = [];
+  const newest = games.orderBy('uploadedAt', 'desc');
+  let cursor: QueryDocumentSnapshot | undefined;
+  let pageSize = count;
+  let scanned = 0;
+  while (scanned < MAX_PUBLIC_SCAN_DOCS) {
+    const limit = Math.min(pageSize, MAX_PUBLIC_SCAN_DOCS - scanned);
+    const page = newest.limit(limit);
+    const snapshot = await (cursor ? page.startAfter(cursor) : page).get();
+    scanned += snapshot.docs.length;
+    for (const doc of snapshot.docs) {
+      const game = gameFromDoc(doc);
+      if (game.visibility === 'public') found.push(game);
+      if (found.length === count) return found;
+    }
+    if (snapshot.docs.length < limit) return found;
+    cursor = snapshot.docs[snapshot.docs.length - 1];
+    pageSize = Math.max(count, PUBLIC_SCAN_PAGE_SIZE);
+  }
+  console.warn('Public game scan stopped at its document limit', { count, found: found.length });
+  return found;
 }
 
-export async function adminGetGamesFor(username: string): Promise<Game[]> {
-  const snapshot = await adminDb
-    .collection('games')
-    .where('username', '==', username)
-    .orderBy('uploadedAt', 'desc')
-    .limit(100)
-    .get();
+export async function adminGetAllGames(): Promise<Game[]> {
+  return latestPublicGames(adminDb.collection('games'), 100);
+}
+
+/** Lists a creator's public games, or every game when the creator themselves is asking. */
+export async function adminGetGamesFor(
+  username: string,
+  { includePrivate = false }: { includePrivate?: boolean } = {},
+): Promise<Game[]> {
+  const games = adminDb.collection('games').where('username', '==', username);
+  if (!includePrivate) return latestPublicGames(games, 100);
+  const snapshot = await games.orderBy('uploadedAt', 'desc').limit(100).get();
   return snapshot.docs.map(gameFromDoc);
 }
 
@@ -81,14 +119,10 @@ export async function adminCreatorExists(username: string): Promise<boolean> {
 }
 
 export async function adminGetGames(count: number): Promise<Game[]> {
-  const snapshot = await adminDb
-    .collection('games')
-    .orderBy('uploadedAt', 'desc')
-    .limit(count)
-    .get();
-  return snapshot.docs.map(gameFromDoc);
+  return latestPublicGames(adminDb.collection('games'), count);
 }
 
+/** Finds a game by its page URL regardless of visibility: private games stay open by link. */
 export async function adminGetGame(username: string, slug: string): Promise<Game | undefined> {
   const encodedSlug = encodeURIComponent(slug);
   const encodedSnapshot = await adminDb

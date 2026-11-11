@@ -130,12 +130,12 @@ for (const path of ['/about', '/contact', '/privacy', '/developers']) {
     );
   }
 }
-const cliPackage = await fetch(new URL('/downloads/cgs-games-cli-1.0.0.tgz', origin));
+const cliPackage = await fetch(new URL('/downloads/cgs-games-cli-1.1.0.tgz', origin));
 assert.equal(cliPackage.status, 200);
 const cliBytes = Buffer.from(await cliPackage.arrayBuffer());
 assert.deepEqual(
   cliBytes,
-  await readFile(new URL('../public/downloads/cgs-games-cli-1.0.0.tgz', import.meta.url)),
+  await readFile(new URL('../public/downloads/cgs-games-cli-1.1.0.tgz', import.meta.url)),
 );
 console.log('PASS versioned CLI package download matches the tested local artifact');
 const sitemap = await check('/sitemap.xml', { type: 'application/xml' });
@@ -227,7 +227,9 @@ for (const [path, operations] of Object.entries(spec.paths)) {
     .replace('{url}', 'example.com/resource');
   if ('head' in operations) {
     const headPath = path.includes('{url}') ? '/api/proxy/cgs.games/robots.txt' : concrete;
-    const result = await check(headPath, { method: 'HEAD' });
+    // An authenticated operation must refuse this credential-free request without a body.
+    const status = operations.head.security?.length ? 401 : 200;
+    const result = await check(headPath, { method: 'HEAD', status });
     assert.equal(result.text, '');
   }
   for (const method of ['get', 'head', 'post', 'delete'].filter((method) => method in operations)) {

@@ -8,6 +8,7 @@ import { fetchGameSpecification, UnsafeGameUrlError } from '@/lib/fetchGameSpeci
 import { ownsRegisteredUsername } from '@/lib/firebase/ownership';
 import { countGamesFor, gameQuotaResponse, MAX_GAMES_PER_USER } from '@/lib/firebase/quota';
 import { isHttpsUrl, MAX_URL_LENGTH, validateGameMetadata } from '@/lib/gameMetadata';
+import { parseGameVisibility } from '@/lib/game';
 
 /** Lists the newest public games and returns a structured error if storage is unavailable. */
 export async function GET() {
@@ -42,6 +43,8 @@ export async function POST(request: Request) {
     if (autoUpdateUrl.length > MAX_URL_LENGTH) {
       return apiError(`autoUpdateUrl must be at most ${MAX_URL_LENGTH} characters`, 400);
     }
+    const visibility = parseGameVisibility(body.visibility);
+    if (!visibility) return apiError('visibility must be "public" or "private"', 400);
 
     const idToken = authHeader.split('Bearer ')[1];
     // Verify the Firebase ID token
@@ -122,6 +125,7 @@ export async function POST(request: Request) {
       autoUpdateUrl: autoUpdateUrl,
       copyright: cardGameSpecification.copyright ? cardGameSpecification.copyright : username,
       uploadedAt: FieldValue.serverTimestamp(),
+      visibility,
     };
 
     if (game.bannerImageUrl !== DEFAULT_CARD_BACK_PATH && !isHttpsUrl(game.bannerImageUrl)) {

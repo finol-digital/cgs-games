@@ -204,6 +204,17 @@ describe('page negotiation and missing routes', () => {
     ).toBe('GET, HEAD, OPTIONS');
   });
 
+  it("supports HEAD on the creator's own games listing, like every GET endpoint", async () => {
+    for (const method of ['GET', 'HEAD']) {
+      const response = await proxy(request('/api/games/mine', '*/*', method));
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+    }
+    expect((await proxy(request('/api/games/mine', '*/*', 'DELETE'))).status).toBe(405);
+    expect((await proxy(request('/api/games/mine', '*/*', 'OPTIONS'))).headers.get('allow')).toBe(
+      'GET, HEAD, OPTIONS',
+    );
+  });
+
   it('retains error strings, CORS and retry headers with machine-readable fields', async () => {
     const response = apiError('Slow down', 429, {
       'Retry-After': '60',

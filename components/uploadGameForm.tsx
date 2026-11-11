@@ -2,6 +2,7 @@
 
 import React, { useContext, useRef, useState } from 'react';
 import { UserContext } from '@/lib/context';
+import { GameVisibility } from '@/lib/game';
 import { auth } from '@/lib/firebase/firebase';
 import { storage } from '@/lib/firebase/storage';
 import { getIdToken } from 'firebase/auth';
@@ -37,8 +38,19 @@ function createUploadId() {
   );
 }
 
+interface UploadFormProps {
+  visibility: GameVisibility;
+  /** Shared so the visibility and mode controls stay locked while a submission is in flight. */
+  loading: boolean;
+  // eslint-disable-next-line no-unused-vars -- This parameter describes the callback's type.
+  setLoading: (loading: boolean) => void;
+}
+
 function GameUploadForm() {
   const [mode, setMode] = useState<UploadMode>('zip');
+  const [visibility, setVisibility] = useState<GameVisibility>('public');
+  // An in-flight submission already captured its visibility, so changing it then would mislead.
+  const [loading, setLoading] = useState(false);
 
   return (
     <section>
@@ -46,6 +58,7 @@ function GameUploadForm() {
         <button
           type="button"
           onClick={() => setMode('zip')}
+          disabled={loading}
           className={`rounded-md px-4 py-2 text-sm font-medium transition ${
             mode === 'zip'
               ? 'bg-blue-600 text-white'
@@ -57,6 +70,7 @@ function GameUploadForm() {
         <button
           type="button"
           onClick={() => setMode('url')}
+          disabled={loading}
           className={`rounded-md px-4 py-2 text-sm font-medium transition ${
             mode === 'url'
               ? 'bg-blue-600 text-white'
@@ -66,16 +80,34 @@ function GameUploadForm() {
           Enter AutoUpdate URL
         </button>
       </div>
-      {mode === 'url' ? <AutoUpdateUrlForm /> : <ZipUploadForm />}
+      <label htmlFor="private" className="mb-4 flex items-start gap-2">
+        <input
+          type="checkbox"
+          id="private"
+          name="private"
+          checked={visibility === 'private'}
+          disabled={loading}
+          onChange={(e) => setVisibility(e.target.checked ? 'private' : 'public')}
+          className="mt-1"
+        />
+        <span>
+          Private: don&apos;t list this game in Browse or on your profile. Anyone with its link can
+          still open it, and you can change this later.
+        </span>
+      </label>
+      {mode === 'url' ? (
+        <AutoUpdateUrlForm visibility={visibility} loading={loading} setLoading={setLoading} />
+      ) : (
+        <ZipUploadForm visibility={visibility} loading={loading} setLoading={setLoading} />
+      )}
     </section>
   );
 }
 
-function AutoUpdateUrlForm() {
+function AutoUpdateUrlForm({ visibility, loading, setLoading }: UploadFormProps) {
   const router = useRouter();
   const { username } = useContext(UserContext);
   const [autoUpdateUrl, setAutoUpdateUrl] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   let isValid = false;
@@ -109,6 +141,7 @@ function AutoUpdateUrlForm() {
         },
         body: JSON.stringify({
           autoUpdateUrl,
+          visibility,
         }),
       });
 
@@ -151,11 +184,10 @@ function AutoUpdateUrlForm() {
   );
 }
 
-function ZipUploadForm() {
+function ZipUploadForm({ visibility, loading, setLoading }: UploadFormProps) {
   const router = useRouter();
   const { username } = useContext(UserContext);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
@@ -239,6 +271,7 @@ function ZipUploadForm() {
         body: JSON.stringify({
           stagedPath,
           originalFilename: selectedFile.name,
+          visibility,
         }),
       });
 
