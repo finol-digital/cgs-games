@@ -969,6 +969,108 @@
         },
         "description": "List the authenticated creator's games, including private games omitted from GET /api/games. See https://cgs.games/developers for integration guidance."
       },
+      "head": {
+        "operationId": "listMyGamesHeaders",
+        "summary": "Read headers for list the authenticated creator's games",
+        "security": [
+          {
+            "firebaseIdToken": []
+          }
+        ],
+        "description": "Same authentication, query parameters and processing as GET, without a response body.",
+        "responses": {
+          "200": {
+            "description": "Up to 100 of your games, public and private, ordered by uploadedAt descending.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "Allow": {
+                "description": "Allowed HTTP methods.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error. See code, message, and hint for recovery.",
+            "headers": {
+              "API-Version": {
+                "description": "Supported major API version.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["1"]
+                }
+              }
+            }
+          }
+        }
+      },
       "options": {
         "operationId": "optionsapigamesmine",
         "summary": "Discover allowed methods and CORS preflight permissions",
@@ -988,7 +1090,7 @@
             "in": "header",
             "schema": {
               "type": "string",
-              "enum": ["GET"]
+              "enum": ["GET", "HEAD"]
             },
             "description": "Method requested by a browser preflight."
           },
@@ -1010,7 +1112,7 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "GET, OPTIONS"
+                "example": "GET, HEAD, OPTIONS"
               },
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -1022,7 +1124,7 @@
                 "schema": {
                   "type": "string"
                 },
-                "example": "GET, OPTIONS"
+                "example": "GET, HEAD, OPTIONS"
               },
               "Access-Control-Allow-Headers": {
                 "schema": {

@@ -227,7 +227,9 @@ for (const [path, operations] of Object.entries(spec.paths)) {
     .replace('{url}', 'example.com/resource');
   if ('head' in operations) {
     const headPath = path.includes('{url}') ? '/api/proxy/cgs.games/robots.txt' : concrete;
-    const result = await check(headPath, { method: 'HEAD' });
+    // An authenticated operation must refuse this credential-free request without a body.
+    const status = operations.head.security?.length ? 401 : 200;
+    const result = await check(headPath, { method: 'HEAD', status });
     assert.equal(result.text, '');
   }
   for (const method of ['get', 'head', 'post', 'delete'].filter((method) => method in operations)) {

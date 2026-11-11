@@ -49,7 +49,7 @@ export function apiMethods(path: string): string[] | null {
   if (path === '/api/games') return ['GET', 'HEAD', 'POST', 'OPTIONS'];
   if (path === '/api/browse' || path === '/api/gatcg_spoilers') return ['GET', 'HEAD', 'OPTIONS'];
   if (path === '/api/games/upload') return ['POST', 'OPTIONS'];
-  if (path === '/api/games/mine') return ['GET', 'OPTIONS'];
+  if (path === '/api/games/mine') return ['GET', 'HEAD', 'OPTIONS'];
   if (/^\/api\/games\/[^/]+$/.test(path)) return ['PATCH', 'DELETE', 'OPTIONS'];
   if (/^\/api\/proxy\/.+/.test(path)) return ['GET', 'HEAD', 'POST', 'OPTIONS'];
   return null;
