@@ -91,6 +91,37 @@ spoiled 404s there and is served solely by `/api/images/spoilers/...`.
 `resolveImageUrl` in `lib/gatcgSpoilers.ts` rewrites every image onto the API
 route, which serves all sets.
 
+### Game Visibility
+
+Games are `'public'` or `'private'` (unlisted). Catalogs (home page, Browse,
+`GET /api/games`, creator profiles) query `where('visibility', '==', 'public')`,
+backed by composite indexes in `firestore.indexes.json`. Firestore can't match a
+missing field, so every `games` document must store `visibility`: a listing
+without it is missing from every catalog. New listings always store it; older
+ones were backfilled with:
+
+```bash
+# Dry run: reports how many games lack a valid visibility (`remaining`).
+npm run backfill:visibility
+# Sets visibility: 'public' on them. Safe to rerun.
+npm run backfill:visibility -- --write
+```
+
+Set `FIREBASE_PROJECT_ID` (e.g. `cgs-games`). It uses the Firebase Admin
+service account in `.env` if there is one, and otherwise Application Default
+Credentials from `gcloud auth application-default login`. Each write is conditioned on
+the game being unchanged since it was read, so a game made private meanwhile is
+never published; those are reported under `failed` and retried by a rerun.
+
+Any change that adds a catalog query on a new field needs the same rollout,
+because merging to `main` deploys immediately:
+
+1. Deploy the indexes (`firebase deploy --only firestore:indexes --project cgs-games`)
+   and wait until they finish building in the Firebase console.
+2. Run the backfill with `--write` against production, then rerun the dry run
+   and confirm it reports `"remaining": 0`.
+3. Only then merge the query change to `main`.
+
 ## Code Style Guidelines
 
 ### TypeScript & React Patterns
